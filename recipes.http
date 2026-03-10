@@ -1,0 +1,32 @@
+### Create a new recipe
+POST http://localhost:9090/api/v1/recipes
+X-User-Id: 123e4567-e89b-12d3-a456-426614174000
+Content-Type: application/json
+
+{
+  "title": "Test Recipe",
+  "description": "My awesome coffee recipe",
+  "brewMethod": "V60",
+  "difficulty": "easy",
+  "roastLevel": "Medium",
+  "beans": "Colombian beans",
+  "steps": [
+    {"order":1,"title":"Boil water","description":"Heat water to 92C"},
+    {"order":2,"title":"Pour over","description":"Pour slowly over coffee grounds"}
+  ]
+}
+
+### Get your recipes
+GET http://localhost:9090/api/v1/recipes
+X-User-Id: 123e4567-e89b-12d3-a456-426614174000
+Accept: application/json
+
+### Pagination example
+GET http://localhost:9090/api/v1/recipes?page=1&limit=1&difficulty=easy
+X-User-Id: 123e4567-e89b-12d3-a456-426614174000
+Accept: application/json
+
+### Delete your recipe
+DELETE http://localhost:9090/api/v1/recipes/6d45b4df-22c4-44a1-9adb-ad1c9108d8e7
+X-User-Id: 123e4567-e89b-12d3-a456-426614174000
+Accept: application/json

@@ -1,0 +1,74 @@
+package main
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"github.com/nikpivkin/roasti-app-backend/internal/api"
+	"github.com/nikpivkin/roasti-app-backend/internal/db"
+	"github.com/nikpivkin/roasti-app-backend/internal/recipe"
+	"github.com/nikpivkin/roasti-app-backend/internal/server"
+)
+
+func main() {
+	if err := run(); err != nil {
+		log.Fatal(err.Error())
+	}
+}
+
+const (
+	serverAddr      = ":9090"
+	shutdownTimeout = 5 * time.Second
+)
+
+func run() error {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	database, err := db.NewSQLite("data.db")
+	if err != nil {
+		return fmt.Errorf("create db: %w", err)
+	}
+
+	if err := db.InitSchema(database); err != nil {
+		return fmt.Errorf("init schema: %w", err)
+	}
+
+	recipeRepo := recipe.NewRepository(database)
+	recipeService := recipe.NewService(recipeRepo)
+	router := api.NewRouter(recipeService)
+
+	errCh := make(chan error, 1)
+	s := server.New(serverAddr, router)
+	go func() {
+		log.Printf("Server started at %s", serverAddr)
+		if err := s.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			errCh <- err
+		}
+	}()
+
+	select {
+	case <-ctx.Done():
+		log.Println(context.Cause(ctx).Error())
+	case err := <-errCh:
+		return fmt.Errorf("server failed: %w", err)
+	}
+
+	shutdownCtx, cancel := context.WithTimeout(ctx, shutdownTimeout)
+	defer cancel()
+
+	log.Printf("Shutdown server")
+	if err := s.Shutdown(shutdownCtx); err != nil {
+		return fmt.Errorf("shutdown server: %w", err)
+	}
+
+	log.Printf("Server stopped")
+	return nil
+}
