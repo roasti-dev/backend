@@ -1,0 +1,254 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/OAI/OpenAPI-Specification/refs/heads/main/_archive_/schemas/v3.0/schema.yaml
+openapi: 3.0.0
+info:
+  version: 0.0.1
+  title: Roasti App
+paths:
+  /health:
+    get:
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "OK"
+  /api/v1/recipes:
+    get:
+      summary: List recipes
+      parameters:
+        - $ref: '#/components/parameters/AuthorIDParam'
+        - $ref: '#/components/parameters/BrewMethodParam'
+        - $ref: '#/components/parameters/DifficultyParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/PageParam'
+      responses:
+        '200':
+          description: Paginated list of recipes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRecipes'
+        '400':
+          description: Bad request
+        '500':
+          description: Internal server error
+
+    post:
+      summary: Create recipe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRecipeRequest'
+      responses:
+        '201':
+          description: Recipe created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateRecipeResponse'
+        '400':
+          description: Bad request
+
+  /api/v1/recipes/{recipe_id}:
+    delete:
+      summary: Delete recipe
+      parameters:
+        - in: path
+          name: recipe_id
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Deleted
+        '400':
+          description: Bad request
+
+components:
+  parameters:
+    AuthorIDParam:
+      name: author_id
+      in: query
+      description: ID of the author
+      required: false
+      schema:
+        type: string
+
+    BrewMethodParam:
+      name: brew_method
+      in: query
+      description: Filter by brew method
+      required: false
+      schema:
+        $ref: './models.yaml#/components/schemas/BrewMethod'
+
+    DifficultyParam:
+      name: difficulty
+      in: query
+      description: Filter by difficulty
+      required: false
+      schema:
+        $ref: './models.yaml#/components/schemas/Difficulty'
+
+    LimitParam:
+      name: limit
+      in: query
+      description: Maximum number of recipes to return
+      required: false
+      schema:
+        type: integer
+        default: 50
+
+    PageParam:
+      name: page
+      in: query
+      description: Page of recipes
+      required: false
+      schema:
+        type: integer
+        default: 0
+  schemas:
+    PaginatedResult:
+      type: object
+      description: Generic paginated response
+      properties:
+        items:
+          type: array
+          items: {}
+          description: List of items on this page
+        page:
+          type: integer
+          format: uint64
+          description: Current page number
+        limit:
+          type: integer
+          format: uint64
+          description: Maximum number of items per page
+        total_count:
+          type: integer
+          format: int64
+          description: Total number of items available
+      required:
+        - items
+        - page
+        - limit
+        - total_count
+    PaginatedRecipes:
+      allOf:
+        - $ref: '#/components/schemas/PaginatedResult'
+        - type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Recipe'
+    BrewStep:
+      type: object
+      description: Single step of the brewing process
+      properties:
+        order:
+          type: integer
+          description: Order of the step in the recipe
+        title:
+          type: string
+          description: Short title of the step
+        description:
+          type: string
+          description: Detailed instructions for the step
+        duration_seconds:
+          type: integer
+          nullable: true
+          description: Optional duration of the step in seconds
+      required:
+        - order
+        - title
+        - description
+      x-go-type: recipe.BrewStep
+      x-go-type-imports:
+        - path: 'github.com/nikpivkin/roasti-app-backend/internal/recipe'
+
+    Recipe:
+      type: object
+      description: Coffee brewing recipe
+      properties:
+        id:
+          type: string
+          description: Unique recipe identifier
+        author_id:
+          type: string
+          description: ID of the user who created the recipe
+        title:
+          type: string
+          description: Recipe title
+        description:
+          type: string
+          description: Detailed description of the recipe
+        image_url:
+          type: string
+          nullable: true
+          description: Optional image illustrating the recipe
+        brew_method:
+          $ref: './models.yaml#/components/schemas/BrewMethod'
+        difficulty:
+          $ref: './models.yaml#/components/schemas/Difficulty'
+        roast_level:
+          $ref: './models.yaml#/components/schemas/RoastLevel'
+        beans:
+          type: string
+          nullable: true
+          description: Coffee beans used for the recipe
+        steps:
+          type: array
+          description: Ordered list of brewing steps
+          items:
+            $ref: '#/components/schemas/BrewStep'
+      required:
+        - id
+        - author_id
+        - title
+        - description
+        - brew_method
+        - difficulty
+        - steps
+      x-go-type: recipe.Recipe
+      x-go-type-imports:
+        - path: 'github.com/nikpivkin/roasti-app-backend/internal/recipe'
+
+    CreateRecipeRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - title
+        - description
+        - brew_method
+        - difficulty
+        - steps
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        image_url:
+          type: string
+          nullable: true
+          description: Optional image illustrating the recipe
+        brew_method:
+          $ref: './models.yaml#/components/schemas/BrewMethod'
+        difficulty:
+          $ref: './models.yaml#/components/schemas/Difficulty'
+        roast_level:
+          $ref: './models.yaml#/components/schemas/RoastLevel'
+        beans:
+          type: string
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/BrewStep'
+
+    CreateRecipeResponse:
+      $ref: '#/components/schemas/Recipe'
+

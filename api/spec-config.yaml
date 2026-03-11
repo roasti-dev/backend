@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/oapi-codegen/oapi-codegen/v2.6.0/configuration-schema.json
+package: api
+
+generate:
+  std-http-server: true
+  strict-server: true
+  client: false
+  models: true
+  embedded-spec: true
+
+output-options:
+  skip-prune: true
+
+import-mapping:
+  './models.yaml': 'github.com/nikpivkin/roasti-app-backend/internal/api/models'

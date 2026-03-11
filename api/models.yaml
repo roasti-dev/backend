@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/OAI/OpenAPI-Specification/refs/heads/main/_archive_/schemas/v3.0/schema.yaml
+openapi: 3.0.0
+info:
+  title: Models only
+  version: 0.0.1
+components:
+  schemas:
+    BrewMethod:
+      type: string
+      description: Coffee brewing method
+      enum:
+        - none
+        - v60
+        - french_press
+        - aeropress
+        - chemex
+        - cold_brew
+        - expresso_machine
+        - moka_pot
+
+    Difficulty:
+      type: string
+      description: Difficulty level of the recipe
+      enum:
+        - none
+        - easy
+        - medium
+        - hard
+
+    RoastLevel:
+      type: string
+      nullable: true
+      description: Coffee roast level
+      default: none
+      enum:
+        - none
+        - ligth
+        - medium_light
+        - medium
+        - medium_dark
+        - dark

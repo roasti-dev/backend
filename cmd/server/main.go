@@ -11,9 +11,12 @@ import (
 	"syscall"
 	"time"
 
+	middleware "github.com/oapi-codegen/nethttp-middleware"
+
 	"github.com/nikpivkin/roasti-app-backend/internal/api"
 	"github.com/nikpivkin/roasti-app-backend/internal/db"
 	"github.com/nikpivkin/roasti-app-backend/internal/recipe"
+	"github.com/nikpivkin/roasti-app-backend/internal/seed"
 	"github.com/nikpivkin/roasti-app-backend/internal/server"
 )
 
@@ -43,10 +46,29 @@ func run() error {
 
 	recipeRepo := recipe.NewRepository(database)
 	recipeService := recipe.NewService(recipeRepo)
-	router := api.NewRouter(recipeService)
 
+	if err := seed.Run(ctx, seed.Services{
+		RecipeService: recipeService,
+	}); err != nil {
+		return err
+	}
+
+	swagger, err := api.GetSwagger()
+	if err != nil {
+		return err
+	}
+
+	middleware.OapiRequestValidator(swagger)
+
+	strictHandler := api.NewServerHandler(recipeService)
+	handler := api.NewStrictHandler(strictHandler, nil)
+
+	router := http.NewServeMux()
+	api.HandlerFromMux(handler, router)
+
+	h := api.UserMiddleware(middleware.OapiRequestValidator(swagger)(router))
 	errCh := make(chan error, 1)
-	s := server.New(serverAddr, router)
+	s := server.New(serverAddr, h)
 	go func() {
 		log.Printf("Server started at %s", serverAddr)
 		if err := s.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {

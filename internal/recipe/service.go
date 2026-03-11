@@ -3,9 +3,8 @@ package recipe
 import (
 	"context"
 	"errors"
-	"fmt"
-	"net/http"
 
+	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
 	"github.com/nikpivkin/roasti-app-backend/internal/ids"
 	"github.com/nikpivkin/roasti-app-backend/internal/pagination"
 )
@@ -34,34 +33,9 @@ func (s *Service) CreateRecipe(ctx context.Context, userID string, recipe Recipe
 
 type ListRecipesParams struct {
 	AuthorID   string
-	BrewMethod *BrewMethod
-	Difficulty *Difficulty
+	BrewMethod *models.BrewMethod
+	Difficulty *models.Difficulty
 	Pagination pagination.Pagination
-}
-
-func ParseListRecipesParams(r *http.Request) (ListRecipesParams, error) {
-	q := r.URL.Query()
-
-	params := ListRecipesParams{
-		Pagination: pagination.FromRequest(r),
-		AuthorID:   q.Get("author_id"),
-	}
-
-	if s := q.Get("brew_method"); s != "" {
-		val, err := ParseBrewMethod(s)
-		if err != nil {
-			return params, fmt.Errorf("invalid brew_method param: %w", err)
-		}
-		params.BrewMethod = &val
-	}
-	if s := q.Get("difficulty"); s != "" {
-		val, err := ParseDifficulty(s)
-		if err != nil {
-			return params, fmt.Errorf("invalid difficulty param: %w", err)
-		}
-		params.Difficulty = &val
-	}
-	return params, nil
 }
 
 func (s *Service) ListRecipes(ctx context.Context, userID string, params ListRecipesParams) (pagination.PaginatedResult[Recipe], error) {

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
 	"github.com/nikpivkin/roasti-app-backend/internal/pagination"
 )
 
@@ -54,11 +55,11 @@ func (r *Repository) ListRecipes(ctx context.Context, params ListRecipesParams) 
 	if params.AuthorID != "" {
 		conds["author_id"] = params.AuthorID
 	}
-	if params.BrewMethod != nil {
-		conds["brew_method"] = *params.BrewMethod
+	if params.BrewMethod != nil && *params.BrewMethod != models.BrewMethodNone {
+		conds["brew_method"] = params.BrewMethod
 	}
-	if params.Difficulty != nil {
-		conds["difficulty"] = *params.Difficulty
+	if params.Difficulty != nil && *params.Difficulty != models.DifficultyNone {
+		conds["difficulty"] = params.Difficulty
 	}
 	if len(conds) > 0 {
 		sb = sb.Where(conds)
@@ -132,7 +133,10 @@ func (r *Repository) ListRecipes(ctx context.Context, params ListRecipesParams) 
 }
 
 func (r *Repository) DeleteRecipe(ctx context.Context, userID, recipeID string) error {
-	query := r.psql.Delete("recipes").Where(sq.Eq{"author_id": userID, "id": recipeID})
+	query := r.psql.Delete("recipes").Where(sq.And{
+		sq.Eq{"author_id": userID},
+		sq.Eq{"id": recipeID},
+	})
 	_, err := query.RunWith(r.db).ExecContext(ctx)
 	return err
 }

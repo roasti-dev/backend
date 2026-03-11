@@ -35,9 +35,9 @@ func InitSchema(db *sql.DB) error {
 			title TEXT NOT NULL,
 			description TEXT NOT NULL,
 			image_url TEXT,
-			brew_method INTEGER NOT NULL,
-			difficulty INTEGER NOT NULL,
-			roast_level INTEGER,
+			brew_method TEXT NOT NULL,
+			difficulty TEXT NOT NULL,
+			roast_level TEXT,
 			beans TEXT
 			-- FOREIGN KEY(author_id) REFERENCES users(id)
 		);`,

@@ -1,14 +1,14 @@
 ### Create a new recipe
 POST http://localhost:9090/api/v1/recipes
-X-User-Id: 123e4567-e89b-12d3-a456-426614174000
+X-User-Id: test-user
 Content-Type: application/json
 
 {
   "title": "Test Recipe",
   "description": "My awesome coffee recipe",
-  "brewMethod": "V60",
+  "brew_method": "v60",
   "difficulty": "easy",
-  "roastLevel": "Medium",
+  "roast_level": "medium",
   "beans": "Colombian beans",
   "steps": [
     {"order":1,"title":"Boil water","description":"Heat water to 92C"},
@@ -18,7 +18,7 @@ Content-Type: application/json
 
 ### Get your recipes
 GET http://localhost:9090/api/v1/recipes
-X-User-Id: 123e4567-e89b-12d3-a456-426614174000
+X-User-Id: test-user
 Accept: application/json
 
 ### Pagination example
@@ -27,6 +27,6 @@ X-User-Id: 123e4567-e89b-12d3-a456-426614174000
 Accept: application/json
 
 ### Delete your recipe
-DELETE http://localhost:9090/api/v1/recipes/6d45b4df-22c4-44a1-9adb-ad1c9108d8e7
+DELETE http://localhost:9090/api/v1/recipes/c2629d0c-044f-4eca-8911-15fa5d843e71
 X-User-Id: 123e4567-e89b-12d3-a456-426614174000
 Accept: application/json

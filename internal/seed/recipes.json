@@ -1,0 +1,560 @@
+{
+  "recipes": [
+    {
+      "title": "Classic V60 Pour Over",
+      "description": "Clean and balanced cup highlighting bright acidity and delicate aromatics.",
+      "brew_method": "v60",
+      "difficulty": "medium",
+      "roast_level": "medium_light",
+      "beans": "Ethiopian Yirgacheffe",
+      "steps": [
+        {
+          "order": 1,
+          "title": "Rinse Filter",
+          "description": "Rinse paper filter with hot water and discard rinse water.",
+          "duration_seconds": 20
+        },
+        {
+          "order": 2,
+          "title": "Bloom",
+          "description": "Add 20g medium grind coffee and pour 40g water to bloom.",
+          "duration_seconds": 30
+        },
+        {
+          "order": 3,
+          "title": "Main Pour",
+          "description": "Slowly pour remaining water until reaching 300g total.",
+          "duration_seconds": 90
+        },
+        {
+          "order": 4,
+          "title": "Drawdown",
+          "description": "Allow water to fully drain.",
+          "duration_seconds": 60
+        }
+      ]
+    },
+    {
+      "title": "V60 Sweet Bloom",
+      "description": "Emphasizes sweetness by extending bloom phase.",
+      "brew_method": "v60",
+      "difficulty": "medium",
+      "roast_level": "medium",
+      "beans": "Colombian Huila",
+      "steps": [
+        {
+          "order": 1,
+          "title": "Bloom",
+          "description": "Add 18g coffee and pour 60g water for extended bloom.",
+          "duration_seconds": 45
+        },
+        {
+          "order": 2,
+          "title": "First Pour",
+          "description": "Pour slowly to 180g total water.",
+          "duration_seconds": 45
+        },
+        {
+          "order": 3,
+          "title": "Final Pour",
+          "description": "Pour to reach 280g total water.",
+          "duration_seconds": 45
+        },
+        {
+          "order": 4,
+          "title": "Drawdown",
+          "description": "Allow coffee to drain fully.",
+          "duration_seconds": 60
+        }
+      ]
+    },
+    {
+      "title": "Chemex Clean Cup",
+      "description": "Very clean cup with delicate body and clarity.",
+      "brew_method": "chemex",
+      "difficulty": "medium",
+      "roast_level": "light",
+      "beans": "Kenyan AA",
+      "steps": [
+        {
+          "order": 1,
+          "title": "Rinse Filter",
+          "description": "Rinse Chemex filter thoroughly with hot water.",
+          "duration_seconds": 20
+        },
+        {
+          "order": 2,
+          "title": "Bloom",
+          "description": "Add 30g coffee and pour 60g water.",
+          "duration_seconds": 30
+        },
+        {
+          "order": 3,
+          "title": "Main Pour",
+          "description": "Slowly pour to reach 500g water.",
+          "duration_seconds": 120
+        },
+        {
+          "order": 4,
+          "title": "Drawdown",
+          "description": "Let coffee drain completely.",
+          "duration_seconds": 90
+        }
+      ]
+    },
+    {
+      "title": "French Press Classic",
+      "description": "Full-bodied coffee with heavy mouthfeel.",
+      "brew_method": "french_press",
+      "difficulty": "easy",
+      "roast_level": "medium_dark",
+      "beans": "Brazilian Santos",
+      "steps": [
+        {
+          "order": 1,
+          "title": "Add Coffee",
+          "description": "Add 30g coarse ground coffee to press."
+        },
+        {
+          "order": 2,
+          "title": "Bloom",
+          "description": "Pour small amount of water and bloom.",
+          "duration_seconds": 30
+        },
+        {
+          "order": 3,
+          "title": "Fill",
+          "description": "Fill with water to 500ml and stir gently."
+        },
+        {
+          "order": 4,
+          "title": "Steep",
+          "description": "Let coffee steep before pressing.",
+          "duration_seconds": 240
+        },
+        {
+          "order": 5,
+          "title": "Press",
+          "description": "Slowly press the plunger down."
+        }
+      ]
+    },
+    {
+      "title": "Aeropress Championship Style",
+      "description": "Bright and syrupy cup using inverted Aeropress method.",
+      "brew_method": "aeropress",
+      "difficulty": "medium",
+      "roast_level": "medium",
+      "beans": "Costa Rica Tarrazu",
+      "steps": [
+        {
+          "order": 1,
+          "title": "Setup",
+          "description": "Assemble Aeropress inverted and add 18g coffee."
+        },
+        {
+          "order": 2,
+          "title": "Pour",
+          "description": "Add 200g water and stir.",
+          "duration_seconds": 10
+        },
+        {
+          "order": 3,
+          "title": "Steep",
+          "description": "Let coffee steep.",
+          "duration_seconds": 60
+        },
+        {
+          "order": 4,
+          "title": "Press",
+          "description": "Flip onto cup and press slowly.",
+          "duration_seconds": 30
+        }
+      ]
+    },
+    {
+      "title": "Aeropress Smooth",
+      "description": "Smooth and balanced Aeropress recipe.",
+      "brew_method": "aeropress",
+      "difficulty": "easy",
+      "roast_level": "medium",
+      "beans": "Guatemala Antigua",
+      "steps": [
+        {
+          "order": 1,
+          "title": "Add Coffee",
+          "description": "Add 16g medium grind coffee."
+        },
+        {
+          "order": 2,
+          "title": "Pour Water",
+          "description": "Pour 220g hot water.",
+          "duration_seconds": 10
+        },
+        {
+          "order": 3,
+          "title": "Stir",
+          "description": "Stir gently.",
+          "duration_seconds": 5
+        },
+        {
+          "order": 4,
+          "title": "Press",
+          "description": "Press slowly.",
+          "duration_seconds": 25
+        }
+      ]
+    },
+    {
+      "title": "Classic Cold Brew",
+      "description": "Smooth low-acid coffee concentrate brewed overnight.",
+      "brew_method": "cold_brew",
+      "difficulty": "easy",
+      "roast_level": "medium_dark",
+      "beans": "Colombian Supremo",
+      "steps": [
+        {
+          "order": 1,
+          "title": "Combine",
+          "description": "Add 100g coarse coffee to jar and pour 1L cold water."
+        },
+        {
+          "order": 2,
+          "title": "Steep",
+          "description": "Refrigerate and steep.",
+          "duration_seconds": 43200
+        },
+        {
+          "order": 3,
+          "title": "Filter",
+          "description": "Strain through filter."
+        }
+      ]
+    },
+    {
+      "title": "Japanese Iced Coffee",
+      "description": "Flash brewed coffee poured over ice for vibrant acidity.",
+      "brew_method": "v60",
+      "difficulty": "medium",
+      "roast_level": "light",
+      "beans": "Ethiopian Sidamo",
+      "steps": [
+        {
+          "order": 1,
+          "title": "Add Ice",
+          "description": "Add 150g ice to server."
+        },
+        {
+          "order": 2,
+          "title": "Bloom",
+          "description": "Add 20g coffee and bloom with 40g water.",
+          "duration_seconds": 30
+        },
+        {
+          "order": 3,
+          "title": "Brew",
+          "description": "Pour remaining 160g water.",
+          "duration_seconds": 90
+        }
+      ]
+    },
+    {
+      "title": "Espresso Classic",
+      "description": "Balanced espresso with crema and chocolate notes.",
+      "brew_method": "expresso_machine",
+      "difficulty": "hard",
+      "roast_level": "dark",
+      "beans": "Italian Roast Blend",
+      "steps": [
+        {
+          "order": 1,
+          "title": "Grind",
+          "description": "Grind 18g coffee fine."
+        },
+        {
+          "order": 2,
+          "title": "Tamp",
+          "description": "Tamp evenly with firm pressure."
+        },
+        {
+          "order": 3,
+          "title": "Extract",
+          "description": "Extract espresso.",
+          "duration_seconds": 30
+        }
+      ]
+    },
+    {
+      "title": "Espresso Ristretto",
+      "description": "Short intense espresso shot.",
+      "brew_method": "expresso_machine",
+      "difficulty": "hard",
+      "roast_level": "dark",
+      "beans": "Brazilian Espresso Blend",
+      "steps": [
+        {
+          "order": 1,
+          "title": "Grind",
+          "description": "Grind 18g coffee fine."
+        },
+        {
+          "order": 2,
+          "title": "Tamp",
+          "description": "Tamp firmly."
+        },
+        {
+          "order": 3,
+          "title": "Extract",
+          "description": "Pull short 20s shot.",
+          "duration_seconds": 20
+        }
+      ]
+    },
+    {
+      "title": "Moka Pot Strong Brew",
+      "description": "Strong stovetop coffee with rich body.",
+      "brew_method": "moka_pot",
+      "difficulty": "medium",
+      "roast_level": "medium_dark",
+      "beans": "Lavazza Qualita Rossa",
+      "steps": [
+        {
+          "order": 1,
+          "title": "Fill Water",
+          "description": "Fill base with hot water."
+        },
+        {
+          "order": 2,
+          "title": "Add Coffee",
+          "description": "Fill basket with medium-fine grind."
+        },
+        {
+          "order": 3,
+          "title": "Brew",
+          "description": "Heat on stove until coffee flows."
+        }
+      ]
+    },
+    {
+      "title": "Moka Pot Creamy",
+      "description": "Smooth moka pot brew with reduced bitterness.",
+      "brew_method": "moka_pot",
+      "difficulty": "medium",
+      "roast_level": "medium",
+      "beans": "Brazilian Cerrado",
+      "steps": [
+        {
+          "order": 1,
+          "title": "Fill Water",
+          "description": "Add hot water to base."
+        },
+        {
+          "order": 2,
+          "title": "Coffee",
+          "description": "Fill basket with coffee."
+        },
+        {
+          "order": 3,
+          "title": "Brew",
+          "description": "Brew on medium heat."
+        }
+      ]
+    },
+    {
+      "title": "Strong French Press",
+      "description": "Extra bold French press recipe.",
+      "brew_method": "french_press",
+      "difficulty": "easy",
+      "roast_level": "dark",
+      "beans": "Sumatra Mandheling",
+      "steps": [
+        {
+          "order": 1,
+          "title": "Coffee",
+          "description": "Add 35g coarse coffee."
+        },
+        {
+          "order": 2,
+          "title": "Water",
+          "description": "Add 500ml hot water."
+        },
+        {
+          "order": 3,
+          "title": "Steep",
+          "description": "Steep before pressing.",
+          "duration_seconds": 240
+        }
+      ]
+    },
+    {
+      "title": "Light Chemex",
+      "description": "Bright and tea-like Chemex brew.",
+      "brew_method": "chemex",
+      "difficulty": "medium",
+      "roast_level": "light",
+      "beans": "Panama Boquete",
+      "steps": [
+        {
+          "order": 1,
+          "title": "Bloom",
+          "description": "Bloom 30g coffee with 60g water.",
+          "duration_seconds": 30
+        },
+        {
+          "order": 2,
+          "title": "Brew",
+          "description": "Pour slowly to 500g water.",
+          "duration_seconds": 120
+        }
+      ]
+    },
+    {
+      "title": "Aeropress Quick",
+      "description": "Fast Aeropress brew for busy mornings.",
+      "brew_method": "aeropress",
+      "difficulty": "easy",
+      "roast_level": "medium",
+      "beans": "Colombian Excelso",
+      "steps": [
+        {
+          "order": 1,
+          "title": "Coffee",
+          "description": "Add 15g coffee."
+        },
+        {
+          "order": 2,
+          "title": "Water",
+          "description": "Pour 200g water."
+        },
+        {
+          "order": 3,
+          "title": "Press",
+          "description": "Press after brief steep.",
+          "duration_seconds": 30
+        }
+      ]
+    },
+    {
+      "title": "Balanced V60",
+      "description": "Balanced brew highlighting sweetness and body.",
+      "brew_method": "v60",
+      "difficulty": "medium",
+      "roast_level": "medium",
+      "beans": "Rwanda Nyamasheke",
+      "steps": [
+        {
+          "order": 1,
+          "title": "Bloom",
+          "description": "Bloom with 40g water.",
+          "duration_seconds": 30
+        },
+        {
+          "order": 2,
+          "title": "Brew",
+          "description": "Pour slowly to 300g water.",
+          "duration_seconds": 90
+        }
+      ]
+    },
+    {
+      "title": "Sweet Chemex",
+      "description": "Chemex brew focusing on sweetness.",
+      "brew_method": "chemex",
+      "difficulty": "medium",
+      "roast_level": "medium_light",
+      "beans": "El Salvador Pacamara",
+      "steps": [
+        {
+          "order": 1,
+          "title": "Bloom",
+          "description": "Bloom with 60g water.",
+          "duration_seconds": 30
+        },
+        {
+          "order": 2,
+          "title": "Brew",
+          "description": "Pour to 500g water.",
+          "duration_seconds": 120
+        }
+      ]
+    },
+    {
+      "title": "Dark French Press",
+      "description": "Heavy and smoky cup.",
+      "brew_method": "french_press",
+      "difficulty": "easy",
+      "roast_level": "dark",
+      "beans": "French Roast",
+      "steps": [
+        {
+          "order": 1,
+          "title": "Coffee",
+          "description": "Add coarse coffee."
+        },
+        {
+          "order": 2,
+          "title": "Water",
+          "description": "Add hot water."
+        },
+        {
+          "order": 3,
+          "title": "Steep",
+          "description": "Steep fully.",
+          "duration_seconds": 240
+        }
+      ]
+    },
+    {
+      "title": "Aeropress Bright",
+      "description": "Bright fruity Aeropress cup.",
+      "brew_method": "aeropress",
+      "difficulty": "medium",
+      "roast_level": "light",
+      "beans": "Ethiopian Guji",
+      "steps": [
+        {
+          "order": 1,
+          "title": "Coffee",
+          "description": "Add 17g coffee."
+        },
+        {
+          "order": 2,
+          "title": "Water",
+          "description": "Pour 220g water."
+        },
+        {
+          "order": 3,
+          "title": "Press",
+          "description": "Press slowly.",
+          "duration_seconds": 30
+        }
+      ]
+    },
+    {
+      "title": "Long Cold Brew",
+      "description": "Very smooth long-steep cold brew.",
+      "brew_method": "cold_brew",
+      "difficulty": "easy",
+      "roast_level": "medium",
+      "beans": "Brazilian Mogiana",
+      "steps": [
+        {
+          "order": 1,
+          "title": "Combine",
+          "description": "Add 120g coffee and 1L water."
+        },
+        {
+          "order": 2,
+          "title": "Steep",
+          "description": "Steep overnight.",
+          "duration_seconds": 57600
+        },
+        {
+          "order": 3,
+          "title": "Filter",
+          "description": "Filter through paper filter."
+        }
+      ]
+    }
+  ]
+}
