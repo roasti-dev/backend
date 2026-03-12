@@ -44,16 +44,24 @@ build-debian:
 		$(GO) build -ldflags="-s -w" -o $(OUTPUT_DEBIAN) ./cmd/server
 
 start:
-	$(GO) run ./cmd/server
+	DEBUG=true $(GO) run ./cmd/server
 
 DEPLOY_USER ?= root
 DEPLOY_PATH ?= /home/app
+BACKEND_SERVICE := backend
+REMOTE := $(DEPLOY_USER)@$(DEPLOY_HOST)
+REMOTE_BIN := $(DEPLOY_PATH)/$(OUTPUT_DEBIAN)
 
 deploy: build-debian
 ifndef DEPLOY_HOST
 	$(error DEPLOY_HOST is not set)
 endif
-	scp $(OUTPUT_DEBIAN) $(DEPLOY_USER)@$(DEPLOY_HOST):$(DEPLOY_PATH)
-	ssh $(DEPLOY_USER)@$(DEPLOY_HOST) 'chmod +x $(DEPLOY_PATH)'
+	scp $(OUTPUT_DEBIAN) $(REMOTE):$(REMOTE_BIN).new
+	ssh $(REMOTE) '\
+		mv $(REMOTE_BIN).new $(REMOTE_BIN) && \
+		chmod +x $(REMOTE_BIN) && \
+		sudo systemctl restart $(BACKEND_SERVICE) && \
+		sudo systemctl status $(BACKEND_SERVICE) --no-pager \
+	'
 
-.PHONY: build start
+.PHONY: build start deploy
