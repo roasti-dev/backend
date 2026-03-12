@@ -97,6 +97,9 @@ type LimitParam = int
 // PageParam defines model for PageParam.
 type PageParam = int
 
+// UserIDHeader defines model for UserIDHeader.
+type UserIDHeader = string
+
 // GetApiV1RecipesParams defines parameters for GetApiV1Recipes.
 type GetApiV1RecipesParams struct {
 	// AuthorId ID of the author
@@ -113,6 +116,21 @@ type GetApiV1RecipesParams struct {
 
 	// Page Page of recipes
 	Page *PageParam `form:"page,omitempty" json:"page,omitempty"`
+
+	// XUserId User ID
+	XUserId UserIDHeader `json:"X-User-Id"`
+}
+
+// PostApiV1RecipesParams defines parameters for PostApiV1Recipes.
+type PostApiV1RecipesParams struct {
+	// XUserId User ID
+	XUserId UserIDHeader `json:"X-User-Id"`
+}
+
+// DeleteApiV1RecipesRecipeIdParams defines parameters for DeleteApiV1RecipesRecipeId.
+type DeleteApiV1RecipesRecipeIdParams struct {
+	// XUserId User ID
+	XUserId UserIDHeader `json:"X-User-Id"`
 }
 
 // PostApiV1RecipesJSONRequestBody defines body for PostApiV1Recipes for application/json ContentType.
@@ -125,10 +143,10 @@ type ServerInterface interface {
 	GetApiV1Recipes(w http.ResponseWriter, r *http.Request, params GetApiV1RecipesParams)
 	// Create recipe
 	// (POST /api/v1/recipes)
-	PostApiV1Recipes(w http.ResponseWriter, r *http.Request)
+	PostApiV1Recipes(w http.ResponseWriter, r *http.Request, params PostApiV1RecipesParams)
 	// Delete recipe
 	// (DELETE /api/v1/recipes/{recipe_id})
-	DeleteApiV1RecipesRecipeId(w http.ResponseWriter, r *http.Request, recipeId string)
+	DeleteApiV1RecipesRecipeId(w http.ResponseWriter, r *http.Request, recipeId string, params DeleteApiV1RecipesRecipeIdParams)
 
 	// (GET /health)
 	GetHealth(w http.ResponseWriter, r *http.Request)
@@ -191,6 +209,31 @@ func (siw *ServerInterfaceWrapper) GetApiV1Recipes(w http.ResponseWriter, r *htt
 		return
 	}
 
+	headers := r.Header
+
+	// ------------- Required header parameter "X-User-Id" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-User-Id")]; found {
+		var XUserId UserIDHeader
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-User-Id", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-User-Id", valueList[0], &XUserId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-User-Id", Err: err})
+			return
+		}
+
+		params.XUserId = XUserId
+
+	} else {
+		err := fmt.Errorf("Header parameter X-User-Id is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-User-Id", Err: err})
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetApiV1Recipes(w, r, params)
 	}))
@@ -205,8 +248,38 @@ func (siw *ServerInterfaceWrapper) GetApiV1Recipes(w http.ResponseWriter, r *htt
 // PostApiV1Recipes operation middleware
 func (siw *ServerInterfaceWrapper) PostApiV1Recipes(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PostApiV1RecipesParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-User-Id" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-User-Id")]; found {
+		var XUserId UserIDHeader
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-User-Id", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-User-Id", valueList[0], &XUserId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-User-Id", Err: err})
+			return
+		}
+
+		params.XUserId = XUserId
+
+	} else {
+		err := fmt.Errorf("Header parameter X-User-Id is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-User-Id", Err: err})
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PostApiV1Recipes(w, r)
+		siw.Handler.PostApiV1Recipes(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -230,8 +303,36 @@ func (siw *ServerInterfaceWrapper) DeleteApiV1RecipesRecipeId(w http.ResponseWri
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteApiV1RecipesRecipeIdParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-User-Id" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-User-Id")]; found {
+		var XUserId UserIDHeader
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-User-Id", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-User-Id", valueList[0], &XUserId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-User-Id", Err: err})
+			return
+		}
+
+		params.XUserId = XUserId
+
+	} else {
+		err := fmt.Errorf("Header parameter X-User-Id is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-User-Id", Err: err})
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteApiV1RecipesRecipeId(w, r, recipeId)
+		siw.Handler.DeleteApiV1RecipesRecipeId(w, r, recipeId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -417,7 +518,8 @@ func (response GetApiV1Recipes500Response) VisitGetApiV1RecipesResponse(w http.R
 }
 
 type PostApiV1RecipesRequestObject struct {
-	Body *PostApiV1RecipesJSONRequestBody
+	Params PostApiV1RecipesParams
+	Body   *PostApiV1RecipesJSONRequestBody
 }
 
 type PostApiV1RecipesResponseObject interface {
@@ -443,6 +545,7 @@ func (response PostApiV1Recipes400Response) VisitPostApiV1RecipesResponse(w http
 
 type DeleteApiV1RecipesRecipeIdRequestObject struct {
 	RecipeId string `json:"recipe_id"`
+	Params   DeleteApiV1RecipesRecipeIdParams
 }
 
 type DeleteApiV1RecipesRecipeIdResponseObject interface {
@@ -554,8 +657,10 @@ func (sh *strictHandler) GetApiV1Recipes(w http.ResponseWriter, r *http.Request,
 }
 
 // PostApiV1Recipes operation middleware
-func (sh *strictHandler) PostApiV1Recipes(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) PostApiV1Recipes(w http.ResponseWriter, r *http.Request, params PostApiV1RecipesParams) {
 	var request PostApiV1RecipesRequestObject
+
+	request.Params = params
 
 	var body PostApiV1RecipesJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -585,10 +690,11 @@ func (sh *strictHandler) PostApiV1Recipes(w http.ResponseWriter, r *http.Request
 }
 
 // DeleteApiV1RecipesRecipeId operation middleware
-func (sh *strictHandler) DeleteApiV1RecipesRecipeId(w http.ResponseWriter, r *http.Request, recipeId string) {
+func (sh *strictHandler) DeleteApiV1RecipesRecipeId(w http.ResponseWriter, r *http.Request, recipeId string, params DeleteApiV1RecipesRecipeIdParams) {
 	var request DeleteApiV1RecipesRecipeIdRequestObject
 
 	request.RecipeId = recipeId
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.DeleteApiV1RecipesRecipeId(ctx, request.(DeleteApiV1RecipesRecipeIdRequestObject))
@@ -637,31 +743,31 @@ func (sh *strictHandler) GetHealth(w http.ResponseWriter, r *http.Request) {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"/35Msu8eGgAA",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

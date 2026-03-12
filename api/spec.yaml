@@ -18,6 +18,7 @@ paths:
     get:
       summary: List recipes
       parameters:
+        - $ref: '#/components/parameters/UserIDHeader'
         - $ref: '#/components/parameters/AuthorIDParam'
         - $ref: '#/components/parameters/BrewMethodParam'
         - $ref: '#/components/parameters/DifficultyParam'
@@ -37,6 +38,8 @@ paths:
 
     post:
       summary: Create recipe
+      parameters:
+        - $ref: '#/components/parameters/UserIDHeader'
       requestBody:
         required: true
         content:
@@ -57,6 +60,7 @@ paths:
     delete:
       summary: Delete recipe
       parameters:
+        - $ref: '#/components/parameters/UserIDHeader'
         - in: path
           name: recipe_id
           required: true
@@ -70,6 +74,14 @@ paths:
 
 components:
   parameters:
+    UserIDHeader:
+      name: X-User-Id
+      in: header
+      description: User ID
+      schema:
+        type: string
+        default: test-user
+      required: true
     AuthorIDParam:
       name: author_id
       in: query
@@ -101,7 +113,7 @@ components:
       required: false
       schema:
         type: integer
-        default: 50
+        default: 20
 
     PageParam:
       name: page
@@ -110,7 +122,8 @@ components:
       required: false
       schema:
         type: integer
-        default: 0
+        default: 1
+
   schemas:
     PaginatedResult:
       type: object
