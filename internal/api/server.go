@@ -34,15 +34,9 @@ func (s *ServerHandler) GetApiV1Recipes(ctx context.Context, request GetApiV1Rec
 			getOrDefault(request.Params.Page, pagination.DefaultPage),
 			getOrDefault(request.Params.Limit, pagination.DefaultLimit),
 		),
-		AuthorID: request.Params.AuthorId,
-	}
-
-	if request.Params.BrewMethod != nil {
-		params.BrewMethod = request.Params.BrewMethod
-	}
-
-	if request.Params.Difficulty != nil {
-		params.Difficulty = request.Params.Difficulty
+		AuthorID:   request.Params.AuthorId,
+		BrewMethod: request.Params.BrewMethod,
+		Difficulty: request.Params.Difficulty,
 	}
 
 	recipes, err := s.recipeService.ListRecipes(ctx, userID, params)
@@ -85,6 +79,27 @@ func (s *ServerHandler) PostApiV1Recipes(ctx context.Context, request PostApiV1R
 		return PostApiV1Recipes201JSONResponse{}, err
 	}
 	return PostApiV1Recipes201JSONResponse(created), nil
+}
+
+func (s *ServerHandler) PatchApiV1RecipesRecipeId(ctx context.Context, request PatchApiV1RecipesRecipeIdRequestObject) (PatchApiV1RecipesRecipeIdResponseObject, error) {
+	userID := requestctx.GetUserID(ctx)
+
+	params := recipe.UpdateRecipeParams{
+		Title:       request.Body.Title,
+		Description: request.Body.Description,
+		ImageURL:    request.Body.ImageUrl,
+		BrewMethod:  request.Body.BrewMethod,
+		Difficulty:  request.Body.Difficulty,
+		RoastLevel:  request.Body.RoastLevel,
+		Beans:       request.Body.Beans,
+		Public:      request.Body.Public,
+	}
+
+	updated, err := s.recipeService.UpdateRecipe(ctx, userID, request.RecipeId, params)
+	if err != nil {
+		return PatchApiV1RecipesRecipeId200JSONResponse{}, err
+	}
+	return PatchApiV1RecipesRecipeId200JSONResponse(updated), nil
 }
 
 func (s *ServerHandler) DeleteApiV1RecipesRecipeId(ctx context.Context, request DeleteApiV1RecipesRecipeIdRequestObject) (DeleteApiV1RecipesRecipeIdResponseObject, error) {

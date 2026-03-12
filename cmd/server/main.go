@@ -78,6 +78,14 @@ func run() error {
 			slog.ErrorContext(r.Context(), "API handler error",
 				slog.Any("error", err),
 			)
+
+			if apiErr, ok := err.(*recipe.ApiError); ok {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(apiErr.Status)
+				_ = json.NewEncoder(w).Encode(map[string]string{"error": apiErr.Message})
+				return
+			}
+
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		},
 	})

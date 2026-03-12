@@ -72,6 +72,47 @@ paths:
         '400':
           description: Bad request
 
+    patch:
+      summary: Update recipe
+      parameters:
+        - $ref: '#/components/parameters/UserIDHeader'
+        - name: recipe_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchRecipeRequest'
+      responses:
+        '200':
+          description: Recipe updated
+          content:
+            application/json:
+              schema:
+                $ref: './models.yaml#/components/schemas/Recipe'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: './models.yaml#/components/schemas/ApiErrorResponse'
+        '403':
+          description: Not allowed (not author)
+          content:
+            application/json:
+              schema:
+                $ref: './models.yaml#/components/schemas/ApiErrorResponse'
+        '404':
+          description: Recipe not found
+          content:
+            application/json:
+              schema:
+                $ref: './models.yaml#/components/schemas/ApiErrorResponse'
+
 components:
   parameters:
     UserIDHeader:
@@ -189,10 +230,35 @@ components:
         public:
           type: boolean
           default: false
+          description: Whether this recipe is publicly visible
         steps:
           type: array
           items:
             $ref: './models.yaml#/components/schemas/BrewStep'
+
+    PatchRecipeRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        image_url:
+          type: string
+          nullable: true
+        brew_method:
+          $ref: './models.yaml#/components/schemas/BrewMethod'
+        difficulty:
+          $ref: './models.yaml#/components/schemas/Difficulty'
+        roast_level:
+          $ref: './models.yaml#/components/schemas/RoastLevel'
+        beans:
+          type: string
+          nullable: true
+        public:
+          type: boolean
+          description: Whether this recipe is publicly visible
+      additionalProperties: false
 
     CreateRecipeResponse:
       $ref: './models.yaml#/components/schemas/Recipe'

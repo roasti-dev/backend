@@ -36,7 +36,9 @@ type CreateRecipeRequest struct {
 
 	// ImageUrl Optional image illustrating the recipe
 	ImageUrl *string `json:"image_url,omitempty"`
-	Public   *bool   `json:"public,omitempty"`
+
+	// Public Whether this recipe is publicly visible
+	Public *bool `json:"public,omitempty"`
 
 	// RoastLevel Coffee roast level
 	RoastLevel *externalRef0.RoastLevel `json:"roast_level,omitempty"`
@@ -74,6 +76,26 @@ type PaginatedResult struct {
 
 	// TotalCount Total number of items available
 	TotalCount int64 `json:"total_count"`
+}
+
+// PatchRecipeRequest defines model for PatchRecipeRequest.
+type PatchRecipeRequest struct {
+	Beans *string `json:"beans,omitempty"`
+
+	// BrewMethod Coffee brewing method
+	BrewMethod  *externalRef0.BrewMethod `json:"brew_method,omitempty"`
+	Description *string                  `json:"description,omitempty"`
+
+	// Difficulty Difficulty level of the recipe
+	Difficulty *externalRef0.Difficulty `json:"difficulty,omitempty"`
+	ImageUrl   *string                  `json:"image_url,omitempty"`
+
+	// Public Whether this recipe is publicly visible
+	Public *bool `json:"public,omitempty"`
+
+	// RoastLevel Coffee roast level
+	RoastLevel *externalRef0.RoastLevel `json:"roast_level,omitempty"`
+	Title      *string                  `json:"title,omitempty"`
 }
 
 // AuthorIDParam defines model for AuthorIDParam.
@@ -127,8 +149,17 @@ type DeleteApiV1RecipesRecipeIdParams struct {
 	XUserId UserIDHeader `json:"X-User-Id"`
 }
 
+// PatchApiV1RecipesRecipeIdParams defines parameters for PatchApiV1RecipesRecipeId.
+type PatchApiV1RecipesRecipeIdParams struct {
+	// XUserId User ID
+	XUserId UserIDHeader `json:"X-User-Id"`
+}
+
 // PostApiV1RecipesJSONRequestBody defines body for PostApiV1Recipes for application/json ContentType.
 type PostApiV1RecipesJSONRequestBody = CreateRecipeRequest
+
+// PatchApiV1RecipesRecipeIdJSONRequestBody defines body for PatchApiV1RecipesRecipeId for application/json ContentType.
+type PatchApiV1RecipesRecipeIdJSONRequestBody = PatchRecipeRequest
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -141,6 +172,9 @@ type ServerInterface interface {
 	// Delete recipe
 	// (DELETE /api/v1/recipes/{recipe_id})
 	DeleteApiV1RecipesRecipeId(w http.ResponseWriter, r *http.Request, recipeId string, params DeleteApiV1RecipesRecipeIdParams)
+	// Update recipe
+	// (PATCH /api/v1/recipes/{recipe_id})
+	PatchApiV1RecipesRecipeId(w http.ResponseWriter, r *http.Request, recipeId string, params PatchApiV1RecipesRecipeIdParams)
 
 	// (GET /health)
 	GetHealth(w http.ResponseWriter, r *http.Request)
@@ -336,6 +370,59 @@ func (siw *ServerInterfaceWrapper) DeleteApiV1RecipesRecipeId(w http.ResponseWri
 	handler.ServeHTTP(w, r)
 }
 
+// PatchApiV1RecipesRecipeId operation middleware
+func (siw *ServerInterfaceWrapper) PatchApiV1RecipesRecipeId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "recipe_id" -------------
+	var recipeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "recipe_id", r.PathValue("recipe_id"), &recipeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "recipe_id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PatchApiV1RecipesRecipeIdParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-User-Id" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-User-Id")]; found {
+		var XUserId UserIDHeader
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-User-Id", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-User-Id", valueList[0], &XUserId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-User-Id", Err: err})
+			return
+		}
+
+		params.XUserId = XUserId
+
+	} else {
+		err := fmt.Errorf("Header parameter X-User-Id is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-User-Id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PatchApiV1RecipesRecipeId(w, r, recipeId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetHealth operation middleware
 func (siw *ServerInterfaceWrapper) GetHealth(w http.ResponseWriter, r *http.Request) {
 
@@ -473,6 +560,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/recipes", wrapper.GetApiV1Recipes)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/recipes", wrapper.PostApiV1Recipes)
 	m.HandleFunc("DELETE "+options.BaseURL+"/api/v1/recipes/{recipe_id}", wrapper.DeleteApiV1RecipesRecipeId)
+	m.HandleFunc("PATCH "+options.BaseURL+"/api/v1/recipes/{recipe_id}", wrapper.PatchApiV1RecipesRecipeId)
 	m.HandleFunc("GET "+options.BaseURL+"/health", wrapper.GetHealth)
 
 	return m
@@ -562,6 +650,52 @@ func (response DeleteApiV1RecipesRecipeId400Response) VisitDeleteApiV1RecipesRec
 	return nil
 }
 
+type PatchApiV1RecipesRecipeIdRequestObject struct {
+	RecipeId string `json:"recipe_id"`
+	Params   PatchApiV1RecipesRecipeIdParams
+	Body     *PatchApiV1RecipesRecipeIdJSONRequestBody
+}
+
+type PatchApiV1RecipesRecipeIdResponseObject interface {
+	VisitPatchApiV1RecipesRecipeIdResponse(w http.ResponseWriter) error
+}
+
+type PatchApiV1RecipesRecipeId200JSONResponse externalRef0.Recipe
+
+func (response PatchApiV1RecipesRecipeId200JSONResponse) VisitPatchApiV1RecipesRecipeIdResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PatchApiV1RecipesRecipeId400JSONResponse externalRef0.ApiErrorResponse
+
+func (response PatchApiV1RecipesRecipeId400JSONResponse) VisitPatchApiV1RecipesRecipeIdResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PatchApiV1RecipesRecipeId403JSONResponse externalRef0.ApiErrorResponse
+
+func (response PatchApiV1RecipesRecipeId403JSONResponse) VisitPatchApiV1RecipesRecipeIdResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PatchApiV1RecipesRecipeId404JSONResponse externalRef0.ApiErrorResponse
+
+func (response PatchApiV1RecipesRecipeId404JSONResponse) VisitPatchApiV1RecipesRecipeIdResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type GetHealthRequestObject struct {
 }
 
@@ -590,6 +724,9 @@ type StrictServerInterface interface {
 	// Delete recipe
 	// (DELETE /api/v1/recipes/{recipe_id})
 	DeleteApiV1RecipesRecipeId(ctx context.Context, request DeleteApiV1RecipesRecipeIdRequestObject) (DeleteApiV1RecipesRecipeIdResponseObject, error)
+	// Update recipe
+	// (PATCH /api/v1/recipes/{recipe_id})
+	PatchApiV1RecipesRecipeId(ctx context.Context, request PatchApiV1RecipesRecipeIdRequestObject) (PatchApiV1RecipesRecipeIdResponseObject, error)
 
 	// (GET /health)
 	GetHealth(ctx context.Context, request GetHealthRequestObject) (GetHealthResponseObject, error)
@@ -710,6 +847,40 @@ func (sh *strictHandler) DeleteApiV1RecipesRecipeId(w http.ResponseWriter, r *ht
 	}
 }
 
+// PatchApiV1RecipesRecipeId operation middleware
+func (sh *strictHandler) PatchApiV1RecipesRecipeId(w http.ResponseWriter, r *http.Request, recipeId string, params PatchApiV1RecipesRecipeIdParams) {
+	var request PatchApiV1RecipesRecipeIdRequestObject
+
+	request.RecipeId = recipeId
+	request.Params = params
+
+	var body PatchApiV1RecipesRecipeIdJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PatchApiV1RecipesRecipeId(ctx, request.(PatchApiV1RecipesRecipeIdRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PatchApiV1RecipesRecipeId")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PatchApiV1RecipesRecipeIdResponseObject); ok {
+		if err := validResponse.VisitPatchApiV1RecipesRecipeIdResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // GetHealth operation middleware
 func (sh *strictHandler) GetHealth(w http.ResponseWriter, r *http.Request) {
 	var request GetHealthRequestObject
@@ -737,31 +908,34 @@ func (sh *strictHandler) GetHealth(w http.ResponseWriter, r *http.Request) {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"9Gnv3wx/BO70529wdLVa/RsAAP//oWq5tlkhAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
