@@ -1,5 +1,5 @@
 ### Create a new recipe
-POST http://localhost:9090/api/v1/recipes
+POST http://localhost:3000/api/v1/recipes
 X-User-Id: test-user
 Content-Type: application/json
 
@@ -17,16 +17,16 @@ Content-Type: application/json
 }
 
 ### Get your recipes
-GET http://localhost:9090/api/v1/recipes
+GET http://localhost:3000/api/v1/recipes
 X-User-Id: test-user
 Accept: application/json
 
 ### Pagination example
-GET http://localhost:9090/api/v1/recipes?page=1&limit=1&difficulty=easy
+GET http://localhost:3000/api/v1/recipes?page=20&limit=1&difficulty=easy
 X-User-Id: 123e4567-e89b-12d3-a456-426614174000
 Accept: application/json
 
 ### Delete your recipe
-DELETE http://localhost:9090/api/v1/recipes/c2629d0c-044f-4eca-8911-15fa5d843e71
+DELETE http://localhost:3000/api/v1/recipes/4b0bb025-5ec7-4b95-aa93-4160ee944ecb
 X-User-Id: 123e4567-e89b-12d3-a456-426614174000
 Accept: application/json

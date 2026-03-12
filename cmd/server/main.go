@@ -2,22 +2,28 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
+	"github.com/getkin/kin-openapi/openapi3"
 	middleware "github.com/oapi-codegen/nethttp-middleware"
 
+	"github.com/nikpivkin/roasti-app-backend/docs"
 	"github.com/nikpivkin/roasti-app-backend/internal/api"
 	"github.com/nikpivkin/roasti-app-backend/internal/db"
 	"github.com/nikpivkin/roasti-app-backend/internal/recipe"
 	"github.com/nikpivkin/roasti-app-backend/internal/seed"
 	"github.com/nikpivkin/roasti-app-backend/internal/server"
+
+	_ "embed"
 )
 
 func main() {
@@ -58,17 +64,25 @@ func run() error {
 		return err
 	}
 
-	middleware.OapiRequestValidator(swagger)
-
 	strictHandler := api.NewServerHandler(recipeService)
 	handler := api.NewStrictHandler(strictHandler, nil)
 
 	router := http.NewServeMux()
+	router.HandleFunc("/openapi.json", serveOpenAPIJSON(swagger))
+	router.Handle("/docs/", serveSwaggerStatic(docs.SwaggerHTML))
+	router.Handle("/docs", http.RedirectHandler("/docs/", http.StatusMovedPermanently))
+
 	api.HandlerFromMux(handler, router)
 
-	h := api.UserMiddleware(middleware.OapiRequestValidator(swagger)(router))
+	s := server.New(serverAddr, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/api/") {
+			api.UserMiddleware(middleware.OapiRequestValidator(swagger)(router)).ServeHTTP(w, r)
+		} else {
+			router.ServeHTTP(w, r)
+		}
+	}))
+
 	errCh := make(chan error, 1)
-	s := server.New(serverAddr, h)
 	go func() {
 		log.Printf("Server started at %s", serverAddr)
 		if err := s.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -93,4 +107,20 @@ func run() error {
 
 	log.Printf("Server stopped")
 	return nil
+}
+
+func serveSwaggerStatic(data []byte) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
+		w.Write(data)
+	}
+}
+
+func serveOpenAPIJSON(doc *openapi3.T) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(doc); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}
 }
