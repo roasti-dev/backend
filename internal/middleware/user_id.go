@@ -1,12 +1,12 @@
-package api
+package middleware
 
 import (
 	"net/http"
 
-	"github.com/nikpivkin/roasti-app-backend/internal/auth"
+	"github.com/nikpivkin/roasti-app-backend/internal/requestctx"
 )
 
-func UserMiddleware(next http.Handler) http.Handler {
+func UserID(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		userID := r.Header.Get("X-User-Id")
 		if userID == "" {
@@ -14,7 +14,7 @@ func UserMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := auth.WithUserID(r.Context(), userID)
+		ctx := requestctx.WithUserID(r.Context(), userID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

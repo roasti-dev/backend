@@ -1,0 +1,61 @@
+package middleware
+
+import (
+	"log/slog"
+	"net/http"
+	"time"
+)
+
+type responseWriter struct {
+	http.ResponseWriter
+	status int
+	size   int
+}
+
+func (w *responseWriter) WriteHeader(status int) {
+	w.status = status
+	w.ResponseWriter.WriteHeader(status)
+}
+
+func (w *responseWriter) Write(b []byte) (int, error) {
+	n, err := w.ResponseWriter.Write(b)
+	w.size += n
+	return n, err
+}
+
+func RequestLogging(logger *slog.Logger) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			start := time.Now()
+
+			logger.InfoContext(r.Context(), "request started",
+				"method", r.Method,
+				"path", r.URL.Path,
+				"user_agent", r.UserAgent(),
+				"remote_ip", r.RemoteAddr,
+			)
+
+			rw := &responseWriter{
+				ResponseWriter: w,
+				status:         http.StatusOK,
+			}
+
+			next.ServeHTTP(rw, r)
+
+			duration := float64(time.Since(start).Microseconds()) / 1000.0
+
+			level := slog.LevelInfo
+			if rw.status >= 500 {
+				level = slog.LevelError
+			} else if rw.status >= 400 {
+				level = slog.LevelWarn
+			}
+
+			logger.LogAttrs(r.Context(), level, "request finished",
+				slog.Int("status", rw.status),
+				slog.Float64("duration", duration),
+				slog.Int("size", rw.size),
+			)
+		})
+	}
+}

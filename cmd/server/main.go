@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -14,11 +14,13 @@ import (
 	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	middleware "github.com/oapi-codegen/nethttp-middleware"
+	oapimiddleware "github.com/oapi-codegen/nethttp-middleware"
 
 	"github.com/nikpivkin/roasti-app-backend/docs"
 	"github.com/nikpivkin/roasti-app-backend/internal/api"
 	"github.com/nikpivkin/roasti-app-backend/internal/db"
+	"github.com/nikpivkin/roasti-app-backend/internal/log"
+	"github.com/nikpivkin/roasti-app-backend/internal/middleware"
 	"github.com/nikpivkin/roasti-app-backend/internal/recipe"
 	"github.com/nikpivkin/roasti-app-backend/internal/seed"
 	"github.com/nikpivkin/roasti-app-backend/internal/server"
@@ -28,16 +30,22 @@ import (
 
 func main() {
 	if err := run(); err != nil {
-		log.Fatal(err.Error())
+		slog.Error("Error", log.Err(err))
+		os.Exit(1)
 	}
 }
 
 const (
+	appVersion = "0.0.1"
+
 	serverAddr      = ":9090"
 	shutdownTimeout = 5 * time.Second
 )
 
 func run() error {
+	logger := log.InitLogger(appVersion)
+	slog.SetDefault(logger)
+
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
@@ -65,26 +73,45 @@ func run() error {
 	}
 
 	strictHandler := api.NewServerHandler(recipeService)
-	handler := api.NewStrictHandler(strictHandler, nil)
+	handler := api.NewStrictHandlerWithOptions(strictHandler, nil, api.StrictHTTPServerOptions{
+		ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+			slog.ErrorContext(r.Context(), "API handler error",
+				slog.Any("error", err),
+			)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		},
+	})
 
 	router := http.NewServeMux()
 	router.HandleFunc("/openapi.json", serveOpenAPIJSON(swagger))
 	router.Handle("/docs/", serveSwaggerStatic(docs.SwaggerHTML))
 	router.Handle("/docs", http.RedirectHandler("/docs/", http.StatusMovedPermanently))
 
-	api.HandlerFromMux(handler, router)
+	api.HandlerWithOptions(handler, api.StdHTTPServerOptions{
+		BaseRouter: router,
+	})
 
-	s := server.New(serverAddr, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	apiHandler := middleware.Chain(
+		router,
+		oapimiddleware.OapiRequestValidator(swagger),
+		middleware.RequestLogging(slog.Default()),
+		middleware.RequestID,
+		middleware.UserID,
+	)
+
+	finalHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, "/api/") {
-			api.UserMiddleware(middleware.OapiRequestValidator(swagger)(router)).ServeHTTP(w, r)
+			apiHandler.ServeHTTP(w, r)
 		} else {
 			router.ServeHTTP(w, r)
 		}
-	}))
+	})
+
+	s := server.New(serverAddr, finalHandler)
 
 	errCh := make(chan error, 1)
 	go func() {
-		log.Printf("Server started at %s", serverAddr)
+		slog.Info("Server started", slog.String("addr", serverAddr))
 		if err := s.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errCh <- err
 		}
@@ -92,7 +119,7 @@ func run() error {
 
 	select {
 	case <-ctx.Done():
-		log.Println(context.Cause(ctx).Error())
+		slog.Info("Signal received", slog.Any("cause", context.Cause(ctx)))
 	case err := <-errCh:
 		return fmt.Errorf("server failed: %w", err)
 	}
@@ -100,18 +127,18 @@ func run() error {
 	shutdownCtx, cancel := context.WithTimeout(ctx, shutdownTimeout)
 	defer cancel()
 
-	log.Printf("Shutdown server")
+	slog.Info("Shutdown server")
 	if err := s.Shutdown(shutdownCtx); err != nil {
 		return fmt.Errorf("shutdown server: %w", err)
 	}
 
-	log.Printf("Server stopped")
+	slog.Info("Server stopped")
 	return nil
 }
 
 func serveSwaggerStatic(data []byte) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/plain")
+		w.Header().Set("Content-Type", "text/html")
 		w.Write(data)
 	}
 }

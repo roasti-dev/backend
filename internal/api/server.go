@@ -2,26 +2,31 @@ package api
 
 import (
 	"context"
+	"log/slog"
 
-	"github.com/nikpivkin/roasti-app-backend/internal/auth"
 	"github.com/nikpivkin/roasti-app-backend/internal/pagination"
 	"github.com/nikpivkin/roasti-app-backend/internal/recipe"
+	"github.com/nikpivkin/roasti-app-backend/internal/requestctx"
 )
 
 var _ StrictServerInterface = (*ServerHandler)(nil)
 
 type ServerHandler struct {
+	logger        *slog.Logger
 	recipeService *recipe.Service
 }
 
 func NewServerHandler(recipeService *recipe.Service) *ServerHandler {
 	return &ServerHandler{
+		logger:        slog.Default(),
 		recipeService: recipeService,
 	}
 }
 
 func (s *ServerHandler) GetApiV1Recipes(ctx context.Context, request GetApiV1RecipesRequestObject) (GetApiV1RecipesResponseObject, error) {
-	userID := auth.UserIDFromContext(ctx)
+	s.logger.DebugContext(ctx, "list recipes request")
+
+	userID := requestctx.GetUserID(ctx)
 
 	params := recipe.ListRecipesParams{
 		Pagination: pagination.New(
@@ -43,6 +48,10 @@ func (s *ServerHandler) GetApiV1Recipes(ctx context.Context, request GetApiV1Rec
 	if err != nil {
 		return GetApiV1Recipes200JSONResponse{}, err
 	}
+
+	s.logger.DebugContext(ctx, "recipes returned",
+		"count", len(recipes.Items),
+	)
 	return GetApiV1Recipes200JSONResponse{
 		Items:      recipes.Items,
 		Page:       recipes.Page,
@@ -52,7 +61,7 @@ func (s *ServerHandler) GetApiV1Recipes(ctx context.Context, request GetApiV1Rec
 }
 
 func (s *ServerHandler) PostApiV1Recipes(ctx context.Context, request PostApiV1RecipesRequestObject) (PostApiV1RecipesResponseObject, error) {
-	userID := auth.UserIDFromContext(ctx)
+	userID := requestctx.GetUserID(ctx)
 
 	recipe := recipe.Recipe{
 		Title:       request.Body.Title,
@@ -73,7 +82,7 @@ func (s *ServerHandler) PostApiV1Recipes(ctx context.Context, request PostApiV1R
 }
 
 func (s *ServerHandler) DeleteApiV1RecipesRecipeId(ctx context.Context, request DeleteApiV1RecipesRecipeIdRequestObject) (DeleteApiV1RecipesRecipeIdResponseObject, error) {
-	userID := auth.UserIDFromContext(ctx)
+	userID := requestctx.GetUserID(ctx)
 	if err := s.recipeService.DeleteRecioe(ctx, userID, request.RecipeId); err != nil {
 		return DeleteApiV1RecipesRecipeId204Response{}, err
 	}
