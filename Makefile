@@ -1,5 +1,7 @@
 GO ?= go
 
+OUTPUT_DEBIAN := app-debian
+
 STANDARD_ENUMS := ./internal/recipe/brew_method.go \
 	./internal/recipe/difficulty.go
 
@@ -36,7 +38,22 @@ oapi: $(OAPI_OUT)
 build:
 	$(GO) build -o app ./cmd/server
 
+# Debian 13 (Trixie) 64-bit
+build-debian:
+	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 \
+		$(GO) build -ldflags="-s -w" -o $(OUTPUT_DEBIAN) ./cmd/server
+
 start:
 	$(GO) run ./cmd/server
+
+DEPLOY_USER ?= root
+DEPLOY_PATH ?= /home/app
+
+deploy: build-debian
+ifndef DEPLOY_HOST
+	$(error DEPLOY_HOST is not set)
+endif
+	scp $(OUTPUT_DEBIAN) $(DEPLOY_USER)@$(DEPLOY_HOST):$(DEPLOY_PATH)
+	ssh $(DEPLOY_USER)@$(DEPLOY_HOST) 'chmod +x $(DEPLOY_PATH)'
 
 .PHONY: build start
