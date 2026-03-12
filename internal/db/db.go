@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	_ "modernc.org/sqlite"
@@ -38,7 +39,8 @@ func InitSchema(db *sql.DB) error {
 			brew_method TEXT NOT NULL,
 			difficulty TEXT NOT NULL,
 			roast_level TEXT,
-			beans TEXT
+			beans TEXT,
+			public BOOLEAN NOT NULL DEFAULT 0
 			-- FOREIGN KEY(author_id) REFERENCES users(id)
 		);`,
 		`CREATE TABLE IF NOT EXISTS brew_steps (
@@ -55,6 +57,13 @@ func InitSchema(db *sql.DB) error {
 	for _, q := range queries {
 		if _, err := db.Exec(q); err != nil {
 			return fmt.Errorf("init schema: %w", err)
+		}
+	}
+
+	_, err := db.Exec(`ALTER TABLE recipes ADD COLUMN public BOOLEAN NOT NULL DEFAULT 0;`)
+	if err != nil {
+		if !strings.Contains(err.Error(), "duplicate column name") {
+			return err
 		}
 	}
 

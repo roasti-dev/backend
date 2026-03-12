@@ -32,7 +32,7 @@ func (s *Service) CreateRecipe(ctx context.Context, userID string, recipe models
 }
 
 type ListRecipesParams struct {
-	AuthorID   string
+	AuthorID   *string
 	BrewMethod *models.BrewMethod
 	Difficulty *models.Difficulty
 	Pagination pagination.Pagination
@@ -41,12 +41,7 @@ type ListRecipesParams struct {
 func (s *Service) ListRecipes(
 	ctx context.Context, userID string, params ListRecipesParams,
 ) (pagination.PaginatedResult[models.Recipe], error) {
-	if params.AuthorID == "" {
-		params.AuthorID = userID
-	} else {
-		// TODO: check permissions
-	}
-	return s.repo.ListRecipes(ctx, params)
+	return s.repo.ListRecipes(ctx, params, userID)
 }
 
 func (s *Service) DeleteRecioe(ctx context.Context, userID, recipeID string) error {

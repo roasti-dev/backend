@@ -23,8 +23,8 @@ func NewRepository(db *sql.DB) *Repository {
 
 func (r *Repository) CreateRecipe(ctx context.Context, recipe models.Recipe) error {
 	query := r.psql.Insert("recipes").
-		Columns("id", "author_id", "title", "description", "image_url", "brew_method", "difficulty", "roast_level", "beans").
-		Values(recipe.Id, recipe.AuthorId, recipe.Title, recipe.Description, recipe.ImageUrl, recipe.BrewMethod, recipe.Difficulty, recipe.RoastLevel, recipe.Beans)
+		Columns("id", "author_id", "title", "description", "image_url", "brew_method", "difficulty", "roast_level", "beans", "public").
+		Values(recipe.Id, recipe.AuthorId, recipe.Title, recipe.Description, recipe.ImageUrl, recipe.BrewMethod, recipe.Difficulty, recipe.RoastLevel, recipe.Beans, recipe.Public)
 
 	_, err := query.RunWith(r.db).ExecContext(ctx)
 	if err != nil {
@@ -45,22 +45,32 @@ func (r *Repository) CreateRecipe(ctx context.Context, recipe models.Recipe) err
 	return nil
 }
 
-func (r *Repository) ListRecipes(ctx context.Context, params ListRecipesParams) (pagination.PaginatedResult[models.Recipe], error) {
+func (r *Repository) ListRecipes(ctx context.Context, params ListRecipesParams, currentUserID string) (pagination.PaginatedResult[models.Recipe], error) {
 	sb := r.psql.
 		Select("id", "author_id", "title", "description", "image_url",
-			"brew_method", "difficulty", "roast_level", "beans").
+			"brew_method", "difficulty", "roast_level", "beans", "public").
 		From("recipes")
 
 	conds := make(sq.Eq)
-	if params.AuthorID != "" {
-		conds["author_id"] = params.AuthorID
-	}
+
 	if params.BrewMethod != nil && *params.BrewMethod != models.BrewMethodNone {
 		conds["brew_method"] = params.BrewMethod
 	}
 	if params.Difficulty != nil && *params.Difficulty != models.DifficultyNone {
 		conds["difficulty"] = params.Difficulty
 	}
+
+	if params.AuthorID != nil {
+		authorID := *params.AuthorID
+		conds["author_id"] = authorID
+
+		if authorID != currentUserID {
+			conds["public"] = true
+		}
+	} else {
+		sb = sb.Where("(author_id = ? OR public = ?)", currentUserID, true)
+	}
+
 	if len(conds) > 0 {
 		sb = sb.Where(conds)
 	}
@@ -79,7 +89,7 @@ func (r *Repository) ListRecipes(ctx context.Context, params ListRecipesParams) 
 		if err := rows.Scan(
 			&rcp.Id, &rcp.AuthorId, &rcp.Title, &rcp.Description,
 			&rcp.ImageUrl, &rcp.BrewMethod, &rcp.Difficulty,
-			&rcp.RoastLevel, &rcp.Beans,
+			&rcp.RoastLevel, &rcp.Beans, &rcp.Public,
 		); err != nil {
 			return pagination.PaginatedResult[models.Recipe]{}, err
 		}

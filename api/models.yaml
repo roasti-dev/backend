@@ -92,6 +92,9 @@ components:
           type: string
           nullable: true
           description: Coffee beans used for the recipe
+        public:
+          type: boolean
+          description: Indicates whether the recipe is publicly visible.
         steps:
           type: array
           description: Ordered list of brewing steps
@@ -105,3 +108,4 @@ components:
         - brew_method
         - difficulty
         - steps
+        - public

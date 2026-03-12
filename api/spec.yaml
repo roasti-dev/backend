@@ -186,6 +186,9 @@ components:
           $ref: './models.yaml#/components/schemas/RoastLevel'
         beans:
           type: string
+        public:
+          type: boolean
+          default: false
         steps:
           type: array
           items:

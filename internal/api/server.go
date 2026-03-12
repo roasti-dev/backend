@@ -34,7 +34,7 @@ func (s *ServerHandler) GetApiV1Recipes(ctx context.Context, request GetApiV1Rec
 			getOrDefault(request.Params.Page, pagination.DefaultPage),
 			getOrDefault(request.Params.Limit, pagination.DefaultLimit),
 		),
-		AuthorID: fromPtr(request.Params.AuthorId),
+		AuthorID: request.Params.AuthorId,
 	}
 
 	if request.Params.BrewMethod != nil {
@@ -72,7 +72,12 @@ func (s *ServerHandler) PostApiV1Recipes(ctx context.Context, request PostApiV1R
 		Difficulty:  request.Body.Difficulty,
 		RoastLevel:  request.Body.RoastLevel,
 		Beans:       request.Body.Beans,
+		Public:      false,
 		Steps:       request.Body.Steps,
+	}
+
+	if request.Body.Public != nil {
+		recipe.Public = *request.Body.Public
 	}
 
 	created, err := s.recipeService.CreateRecipe(ctx, userID, recipe)
@@ -99,12 +104,4 @@ func getOrDefault[T any](ptr *T, def T) T {
 		return *ptr
 	}
 	return def
-}
-
-func fromPtr[T any](ptr *T) T {
-	if ptr != nil {
-		return *ptr
-	}
-	var zero T
-	return zero
 }

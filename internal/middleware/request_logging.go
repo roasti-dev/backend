@@ -28,11 +28,19 @@ func RequestLogging(logger *slog.Logger) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
 
+			query := r.URL.Query()
+			queryAttrs := make([]any, 0, len(query))
+
+			for key, values := range query {
+				queryAttrs = append(queryAttrs, slog.Any(key, values))
+			}
+
 			logger.InfoContext(r.Context(), "request started",
-				"method", r.Method,
-				"path", r.URL.Path,
-				"user_agent", r.UserAgent(),
-				"remote_ip", r.RemoteAddr,
+				slog.String("method", r.Method),
+				slog.String("path", r.URL.Path),
+				slog.String("user_agent", r.UserAgent()),
+				slog.String("remote_ip", r.RemoteAddr),
+				slog.Group("query", queryAttrs...),
 			)
 
 			rw := &responseWriter{
