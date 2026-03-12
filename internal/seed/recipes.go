@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
 	"github.com/nikpivkin/roasti-app-backend/internal/pagination"
 	"github.com/nikpivkin/roasti-app-backend/internal/recipe"
 
@@ -29,7 +30,7 @@ func seedRecipes(ctx context.Context, recipeService *recipe.Service) error {
 	}
 
 	var seed struct {
-		Recipes []recipe.Recipe `yaml:"recipes"`
+		Recipes []models.Recipe `yaml:"recipes"`
 	}
 
 	dec := json.NewDecoder(bytes.NewReader(recipesData))

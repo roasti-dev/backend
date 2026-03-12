@@ -19,12 +19,12 @@ func NewService(repo *Repository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) CreateRecipe(ctx context.Context, userID string, recipe Recipe) (Recipe, error) {
+func (s *Service) CreateRecipe(ctx context.Context, userID string, recipe models.Recipe) (models.Recipe, error) {
 	if recipe.Title == "" {
-		return Recipe{}, ErrEmptyTitle
+		return models.Recipe{}, ErrEmptyTitle
 	}
-	recipe.ID = ids.NewID()
-	recipe.AuthorID = userID
+	recipe.Id = ids.NewID()
+	recipe.AuthorId = userID
 	if err := s.repo.CreateRecipe(ctx, recipe); err != nil {
 		return recipe, nil
 	}
@@ -38,7 +38,9 @@ type ListRecipesParams struct {
 	Pagination pagination.Pagination
 }
 
-func (s *Service) ListRecipes(ctx context.Context, userID string, params ListRecipesParams) (pagination.PaginatedResult[Recipe], error) {
+func (s *Service) ListRecipes(
+	ctx context.Context, userID string, params ListRecipesParams,
+) (pagination.PaginatedResult[models.Recipe], error) {
 	if params.AuthorID == "" {
 		params.AuthorID = userID
 	} else {

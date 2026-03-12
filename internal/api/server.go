@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 
+	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
 	"github.com/nikpivkin/roasti-app-backend/internal/pagination"
 	"github.com/nikpivkin/roasti-app-backend/internal/recipe"
 	"github.com/nikpivkin/roasti-app-backend/internal/requestctx"
@@ -63,10 +64,10 @@ func (s *ServerHandler) GetApiV1Recipes(ctx context.Context, request GetApiV1Rec
 func (s *ServerHandler) PostApiV1Recipes(ctx context.Context, request PostApiV1RecipesRequestObject) (PostApiV1RecipesResponseObject, error) {
 	userID := requestctx.GetUserID(ctx)
 
-	recipe := recipe.Recipe{
+	recipe := models.Recipe{
 		Title:       request.Body.Title,
 		Description: request.Body.Description,
-		ImageURL:    request.Body.ImageUrl,
+		ImageUrl:    request.Body.ImageUrl,
 		BrewMethod:  request.Body.BrewMethod,
 		Difficulty:  request.Body.Difficulty,
 		RoastLevel:  request.Body.RoastLevel,

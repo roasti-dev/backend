@@ -39,3 +39,69 @@ components:
         - medium
         - medium_dark
         - dark
+
+    BrewStep:
+      type: object
+      description: Single step of the brewing process
+      properties:
+        order:
+          type: integer
+          description: Order of the step in the recipe
+        title:
+          type: string
+          description: Short title of the step
+        description:
+          type: string
+          description: Detailed instructions for the step
+        duration_seconds:
+          type: integer
+          nullable: true
+          description: Optional duration of the step in seconds
+      required:
+        - order
+        - title
+        - description
+
+    Recipe:
+      type: object
+      description: Coffee brewing recipe
+      properties:
+        id:
+          type: string
+          description: Unique recipe identifier
+        author_id:
+          type: string
+          description: ID of the user who created the recipe
+        title:
+          type: string
+          description: Recipe title
+        description:
+          type: string
+          description: Detailed description of the recipe
+        image_url:
+          type: string
+          nullable: true
+          description: Optional image illustrating the recipe
+        brew_method:
+          $ref: '#/components/schemas/BrewMethod'
+        difficulty:
+          $ref: '#/components/schemas/Difficulty'
+        roast_level:
+          $ref: '#/components/schemas/RoastLevel'
+        beans:
+          type: string
+          nullable: true
+          description: Coffee beans used for the recipe
+        steps:
+          type: array
+          description: Ordered list of brewing steps
+          items:
+            $ref: '#/components/schemas/BrewStep'
+      required:
+        - id
+        - author_id
+        - title
+        - description
+        - brew_method
+        - difficulty
+        - steps

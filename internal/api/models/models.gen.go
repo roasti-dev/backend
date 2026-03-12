@@ -108,8 +108,56 @@ func (e RoastLevel) Valid() bool {
 // BrewMethod Coffee brewing method
 type BrewMethod string
 
+// BrewStep Single step of the brewing process
+type BrewStep struct {
+	// Description Detailed instructions for the step
+	Description string `json:"description"`
+
+	// DurationSeconds Optional duration of the step in seconds
+	DurationSeconds *int `json:"duration_seconds,omitempty"`
+
+	// Order Order of the step in the recipe
+	Order int `json:"order"`
+
+	// Title Short title of the step
+	Title string `json:"title"`
+}
+
 // Difficulty Difficulty level of the recipe
 type Difficulty string
+
+// Recipe Coffee brewing recipe
+type Recipe struct {
+	// AuthorId ID of the user who created the recipe
+	AuthorId string `json:"author_id"`
+
+	// Beans Coffee beans used for the recipe
+	Beans *string `json:"beans,omitempty"`
+
+	// BrewMethod Coffee brewing method
+	BrewMethod BrewMethod `json:"brew_method"`
+
+	// Description Detailed description of the recipe
+	Description string `json:"description"`
+
+	// Difficulty Difficulty level of the recipe
+	Difficulty Difficulty `json:"difficulty"`
+
+	// Id Unique recipe identifier
+	Id string `json:"id"`
+
+	// ImageUrl Optional image illustrating the recipe
+	ImageUrl *string `json:"image_url,omitempty"`
+
+	// RoastLevel Coffee roast level
+	RoastLevel *RoastLevel `json:"roast_level,omitempty"`
+
+	// Steps Ordered list of brewing steps
+	Steps []BrewStep `json:"steps"`
+
+	// Title Recipe title
+	Title string `json:"title"`
+}
 
 // RoastLevel Coffee roast level
 type RoastLevel string
@@ -117,12 +165,18 @@ type RoastLevel string
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/2yRz2rjMBCHX8XMWRgvC3vQcdtjc+m1BKPYI0tE0ghpnD8Ev3uZuGkLzsljz/j3fSPd",
-	"YKCYKWHiCvoGdXAYzb38X/C8Q3Y0ytuIdSg+s6cEGl7IWsTmUPDs09TEdUwBpjmC/oBECUHB6V8HCmzB",
-	"NLg+F6wVFBgs9KiFhhcpKIy9xEnI5d6mPprB+XtQpKPpMzHsFfA1I2ioXHyaYFHw6q31wxz4uhX96TUB",
-	"Txgasg07bAoOPuPWGE29Cg9HP0dQ4EwZn0LfyVR+k8gVas0cGPQj5+lxFfln9diSg5/YfaP74CfHv02+",
-	"vo+mHCVfHnsFaQ7BHAKC5jLjxnNZFPhkSRzZs8zBjkYMtaEUZNMTlrpKdm3X/pHVKGMy2YOGv23Xyg1m",
-	"w66CFtjyGQAA//95HVwCMgIAAA==",
+	"H4sIAAAAAAAC/5RVzW7bPBB8FWK/7yg4Lgr0oGObS4EGBRL0VAQCLa6kbShSWa7iGIHfvSAVyT9SnPQU",
+	"hqRnhrszqxcofdt5h04C5C8QygZbnZZfGbc3KI038T+DoWTqhLyDHL75qkJUG8YtuVq1w7UM0PUt5L/B",
+	"eYeQwdOXNWRQMbqyKTrGECADjezHdWTD57jw1hQRLoI8p2NftLpsKAG1/kEXnRe4z0B2HUIOQZhcDfss",
+	"Cb0T7OYy78jVFlUQ7JSvlDQHyR37ctDQse+QhTDMAM7xrlE0WTSKXBDuy7gdVOU5QUcaWNBnetbxZhGw",
+	"9M7MaeBnWmirxquj2qScnBp/mYHrrdUbi5AL9zixkROskSOdZ4O8wBG3z3HjmrGkDmEJSkgi06ysjWdR",
+	"6fAYcP72fQaMjz0xmuiKQdkIm52gHhrrN3+wlEh/TVVFZW9lt9CK6UxZfEI7Cplec2ZF1GEXjYSG+hYy",
+	"aDSbRTfdDgDvWX7iObWP7qXxXNBCZr5fjxr7gKy2jVcloxY0i204KNqgduFtQfE0QprJiBPUG2Y5gmbc",
+	"Fu0U8v8ZK8jhv6vDULh6nQhXR+Ngn30wJkfbs/7MY3LS7UtSjnyxz2Cp1r8cPfYjmSKDTqiiwXznvNTq",
+	"Goue7YVcpjuKrO2DxIS6+h8LzV4HKZJT33vdbbz6I93cZxCDFd5IMxplKUgs7WjL4XoGJNiGj7Q0Dc79",
+	"pFgz692F6A/pUGOCL+ed4ifhkIjl4J+a8MQG4+uXZsNRlZLISvdWIB/jvhiV1IRhXMwHhKVammlCFJbq",
+	"Ro4Hxuu+0fwQ8eOf+3cbHytCrvJR42tF4cYbtEF5Z+MLn5DDIHK9Wq8+pQHeodMdQQ6fV+tV/IJ2WpoA",
+	"eSTb/w0AAP//R/SmN7IHAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

@@ -21,10 +21,10 @@ func NewRepository(db *sql.DB) *Repository {
 	}
 }
 
-func (r *Repository) CreateRecipe(ctx context.Context, recipe Recipe) error {
+func (r *Repository) CreateRecipe(ctx context.Context, recipe models.Recipe) error {
 	query := r.psql.Insert("recipes").
 		Columns("id", "author_id", "title", "description", "image_url", "brew_method", "difficulty", "roast_level", "beans").
-		Values(recipe.ID, recipe.AuthorID, recipe.Title, recipe.Description, recipe.ImageURL, recipe.BrewMethod, recipe.Difficulty, recipe.RoastLevel, recipe.Beans)
+		Values(recipe.Id, recipe.AuthorId, recipe.Title, recipe.Description, recipe.ImageUrl, recipe.BrewMethod, recipe.Difficulty, recipe.RoastLevel, recipe.Beans)
 
 	_, err := query.RunWith(r.db).ExecContext(ctx)
 	if err != nil {
@@ -35,7 +35,7 @@ func (r *Repository) CreateRecipe(ctx context.Context, recipe Recipe) error {
 	for _, step := range recipe.Steps {
 		_, err := r.psql.Insert("brew_steps").
 			Columns("recipe_id", "step_order", "title", "description", "duration_seconds").
-			Values(recipe.ID, step.Order, step.Title, step.Description, step.DurationSeconds).
+			Values(recipe.Id, step.Order, step.Title, step.Description, step.DurationSeconds).
 			RunWith(r.db).ExecContext(ctx)
 		if err != nil {
 			return err
@@ -45,7 +45,7 @@ func (r *Repository) CreateRecipe(ctx context.Context, recipe Recipe) error {
 	return nil
 }
 
-func (r *Repository) ListRecipes(ctx context.Context, params ListRecipesParams) (pagination.PaginatedResult[Recipe], error) {
+func (r *Repository) ListRecipes(ctx context.Context, params ListRecipesParams) (pagination.PaginatedResult[models.Recipe], error) {
 	sb := r.psql.
 		Select("id", "author_id", "title", "description", "image_url",
 			"brew_method", "difficulty", "roast_level", "beans").
@@ -68,23 +68,23 @@ func (r *Repository) ListRecipes(ctx context.Context, params ListRecipesParams) 
 	sb = sb.Limit(params.Pagination.Limit()).Offset(params.Pagination.Offset())
 	rows, err := sb.RunWith(r.db).QueryContext(ctx)
 	if err != nil {
-		return pagination.PaginatedResult[Recipe]{}, err
+		return pagination.PaginatedResult[models.Recipe]{}, err
 	}
 	defer rows.Close()
 
-	recipes := make([]Recipe, 0)
+	recipes := make([]models.Recipe, 0)
 	recipeIDs := make([]string, 0)
 	for rows.Next() {
-		var rcp Recipe
+		var rcp models.Recipe
 		if err := rows.Scan(
-			&rcp.ID, &rcp.AuthorID, &rcp.Title, &rcp.Description,
-			&rcp.ImageURL, &rcp.BrewMethod, &rcp.Difficulty,
+			&rcp.Id, &rcp.AuthorId, &rcp.Title, &rcp.Description,
+			&rcp.ImageUrl, &rcp.BrewMethod, &rcp.Difficulty,
 			&rcp.RoastLevel, &rcp.Beans,
 		); err != nil {
-			return pagination.PaginatedResult[Recipe]{}, err
+			return pagination.PaginatedResult[models.Recipe]{}, err
 		}
 		recipes = append(recipes, rcp)
-		recipeIDs = append(recipeIDs, rcp.ID)
+		recipeIDs = append(recipeIDs, rcp.Id)
 	}
 
 	if len(recipes) == 0 {
@@ -99,22 +99,22 @@ func (r *Repository) ListRecipes(ctx context.Context, params ListRecipesParams) 
 		RunWith(r.db).
 		QueryContext(ctx)
 	if err != nil {
-		return pagination.PaginatedResult[Recipe]{}, err
+		return pagination.PaginatedResult[models.Recipe]{}, err
 	}
 	defer stepsRows.Close()
 
-	stepsMap := make(map[string][]BrewStep)
+	stepsMap := make(map[string][]models.BrewStep)
 	for stepsRows.Next() {
-		var step BrewStep
+		var step models.BrewStep
 		var recipeID string
 		if err := stepsRows.Scan(&recipeID, &step.Order, &step.Title, &step.Description, &step.DurationSeconds); err != nil {
-			return pagination.PaginatedResult[Recipe]{}, err
+			return pagination.PaginatedResult[models.Recipe]{}, err
 		}
 		stepsMap[recipeID] = append(stepsMap[recipeID], step)
 	}
 
 	for i := range recipes {
-		recipes[i].Steps = stepsMap[recipes[i].ID]
+		recipes[i].Steps = stepsMap[recipes[i].Id]
 	}
 
 	var total int64
@@ -126,7 +126,7 @@ func (r *Repository) ListRecipes(ctx context.Context, params ListRecipesParams) 
 		QueryRowContext(ctx).
 		Scan(&total)
 	if err != nil {
-		return pagination.PaginatedResult[Recipe]{}, err
+		return pagination.PaginatedResult[models.Recipe]{}, err
 	}
 
 	return pagination.NewResult(recipes, params.Pagination, total), nil
