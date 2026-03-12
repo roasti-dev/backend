@@ -45,10 +45,45 @@ func NewService(repo *Repository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) CreateRecipe(ctx context.Context, userID string, recipe models.Recipe) (models.Recipe, error) {
-	if recipe.Title == "" {
+func (s *Service) ListRecipes(
+	ctx context.Context, userID string, params models.ListRecipesParams,
+) (pagination.PaginatedResult[models.Recipe], error) {
+	return s.repo.ListRecipes(ctx, userID, params)
+}
+
+func ValidateCreateRecipe(req models.CreateRecipeRequest) error {
+	if strings.TrimSpace(req.Title) == "" {
+		return ErrInvalidTitle
+	}
+	if strings.TrimSpace(req.Description) == "" {
+		return ErrInvalidDescription
+	}
+	if req.BrewMethod == models.BrewMethodNone {
+		return ErrInvalidBrewMethod
+	}
+	if req.Difficulty == models.DifficultyNone {
+		return ErrInvalidDifficulty
+	}
+	return nil
+}
+
+func (s *Service) CreateRecipe(ctx context.Context, userID string, request models.CreateRecipeRequest) (models.Recipe, error) {
+	if request.Title == "" {
 		return models.Recipe{}, ErrInvalidTitle
 	}
+
+	recipe := models.Recipe{
+		Title:       request.Title,
+		Description: request.Description,
+		ImageUrl:    request.ImageUrl,
+		BrewMethod:  request.BrewMethod,
+		Difficulty:  request.Difficulty,
+		RoastLevel:  request.RoastLevel,
+		Beans:       request.Beans,
+		Public:      request.Public != nil && *request.Public,
+		Steps:       request.Steps,
+	}
+
 	recipe.Id = ids.NewID()
 	recipe.AuthorId = userID
 	if err := s.repo.CreateRecipe(ctx, recipe); err != nil {
@@ -57,51 +92,27 @@ func (s *Service) CreateRecipe(ctx context.Context, userID string, recipe models
 	return recipe, nil
 }
 
-type ListRecipesParams struct {
-	AuthorID   *string
-	BrewMethod *models.BrewMethod
-	Difficulty *models.Difficulty
-	Pagination pagination.Pagination
-}
-
-func (s *Service) ListRecipes(
-	ctx context.Context, userID string, params ListRecipesParams,
-) (pagination.PaginatedResult[models.Recipe], error) {
-	return s.repo.ListRecipes(ctx, params, userID)
-}
-
-type UpdateRecipeParams struct {
-	Title       *string            `json:"title,omitempty"`
-	Description *string            `json:"description,omitempty"`
-	ImageURL    *string            `json:"image_url,omitempty"`
-	BrewMethod  *models.BrewMethod `json:"brew_method,omitempty"`
-	Difficulty  *models.Difficulty `json:"difficulty,omitempty"`
-	RoastLevel  *models.RoastLevel `json:"roast_level,omitempty"`
-	Beans       *string            `json:"beans,omitempty"`
-	Public      *bool              `json:"public,omitempty"`
-}
-
-func (p UpdateRecipeParams) Validate() error {
-	if p.Title != nil && strings.TrimSpace(*p.Title) == "" {
+func ValidatePatchRecipe(req models.PatchRecipeRequest) error {
+	if req.Title != nil && strings.TrimSpace(*req.Title) == "" {
 		return ErrInvalidTitle
 	}
 
-	if p.Description != nil && strings.TrimSpace(*p.Description) == "" {
+	if req.Description != nil && strings.TrimSpace(*req.Description) == "" {
 		return ErrInvalidDescription
 	}
 
-	if p.BrewMethod != nil && *p.BrewMethod == models.BrewMethodNone {
+	if req.BrewMethod != nil && *req.BrewMethod == models.BrewMethodNone {
 		return ErrInvalidBrewMethod
 	}
 
-	if p.Difficulty != nil && *p.Difficulty == models.DifficultyNone {
+	if req.Difficulty != nil && *req.Difficulty == models.DifficultyNone {
 		return ErrInvalidDifficulty
 	}
 	return nil
 }
 
 func (s *Service) UpdateRecipe(
-	ctx context.Context, userID, recipeID string, params UpdateRecipeParams,
+	ctx context.Context, userID, recipeID string, requst models.PatchRecipeRequest,
 ) (models.Recipe, error) {
 	recipe, err := s.repo.GetRecipeByID(ctx, recipeID)
 	if err != nil {
@@ -111,14 +122,14 @@ func (s *Service) UpdateRecipe(
 		return models.Recipe{}, err
 	}
 
-	if err := params.Validate(); err != nil {
+	if err := ValidatePatchRecipe(requst); err != nil {
 		return models.Recipe{}, err
 	}
 
 	if recipe.AuthorId != userID {
 		return models.Recipe{}, ErrForbidden
 	}
-	return s.repo.UpdateRecipe(ctx, userID, recipeID, params)
+	return s.repo.UpdateRecipe(ctx, userID, recipeID, requst)
 }
 
 func (s *Service) DeleteRecioe(ctx context.Context, userID, recipeID string) error {

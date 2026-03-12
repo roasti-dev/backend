@@ -4,8 +4,6 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
-	"github.com/nikpivkin/roasti-app-backend/internal/pagination"
 	"github.com/nikpivkin/roasti-app-backend/internal/recipe"
 	"github.com/nikpivkin/roasti-app-backend/internal/requestctx"
 )
@@ -28,18 +26,7 @@ func (s *ServerHandler) GetApiV1Recipes(ctx context.Context, request GetApiV1Rec
 	s.logger.DebugContext(ctx, "list recipes request")
 
 	userID := requestctx.GetUserID(ctx)
-
-	params := recipe.ListRecipesParams{
-		Pagination: pagination.New(
-			getOrDefault(request.Params.Page, pagination.DefaultPage),
-			getOrDefault(request.Params.Limit, pagination.DefaultLimit),
-		),
-		AuthorID:   request.Params.AuthorId,
-		BrewMethod: request.Params.BrewMethod,
-		Difficulty: request.Params.Difficulty,
-	}
-
-	recipes, err := s.recipeService.ListRecipes(ctx, userID, params)
+	recipes, err := s.recipeService.ListRecipes(ctx, userID, *request.Params.ListRecipes)
 	if err != nil {
 		return GetApiV1Recipes200JSONResponse{}, err
 	}
@@ -57,24 +44,7 @@ func (s *ServerHandler) GetApiV1Recipes(ctx context.Context, request GetApiV1Rec
 
 func (s *ServerHandler) PostApiV1Recipes(ctx context.Context, request PostApiV1RecipesRequestObject) (PostApiV1RecipesResponseObject, error) {
 	userID := requestctx.GetUserID(ctx)
-
-	recipe := models.Recipe{
-		Title:       request.Body.Title,
-		Description: request.Body.Description,
-		ImageUrl:    request.Body.ImageUrl,
-		BrewMethod:  request.Body.BrewMethod,
-		Difficulty:  request.Body.Difficulty,
-		RoastLevel:  request.Body.RoastLevel,
-		Beans:       request.Body.Beans,
-		Public:      false,
-		Steps:       request.Body.Steps,
-	}
-
-	if request.Body.Public != nil {
-		recipe.Public = *request.Body.Public
-	}
-
-	created, err := s.recipeService.CreateRecipe(ctx, userID, recipe)
+	created, err := s.recipeService.CreateRecipe(ctx, userID, *request.Body)
 	if err != nil {
 		return PostApiV1Recipes201JSONResponse{}, err
 	}
@@ -83,19 +53,7 @@ func (s *ServerHandler) PostApiV1Recipes(ctx context.Context, request PostApiV1R
 
 func (s *ServerHandler) PatchApiV1RecipesRecipeId(ctx context.Context, request PatchApiV1RecipesRecipeIdRequestObject) (PatchApiV1RecipesRecipeIdResponseObject, error) {
 	userID := requestctx.GetUserID(ctx)
-
-	params := recipe.UpdateRecipeParams{
-		Title:       request.Body.Title,
-		Description: request.Body.Description,
-		ImageURL:    request.Body.ImageUrl,
-		BrewMethod:  request.Body.BrewMethod,
-		Difficulty:  request.Body.Difficulty,
-		RoastLevel:  request.Body.RoastLevel,
-		Beans:       request.Body.Beans,
-		Public:      request.Body.Public,
-	}
-
-	updated, err := s.recipeService.UpdateRecipe(ctx, userID, request.RecipeId, params)
+	updated, err := s.recipeService.UpdateRecipe(ctx, userID, request.RecipeId, *request.Body)
 	if err != nil {
 		return PatchApiV1RecipesRecipeId200JSONResponse{}, err
 	}
@@ -112,11 +70,4 @@ func (s *ServerHandler) DeleteApiV1RecipesRecipeId(ctx context.Context, request 
 
 func (s *ServerHandler) GetHealth(ctx context.Context, request GetHealthRequestObject) (GetHealthResponseObject, error) {
 	return GetHealth200TextResponse("OK"), nil
-}
-
-func getOrDefault[T any](ptr *T, def T) T {
-	if ptr != nil {
-		return *ptr
-	}
-	return def
 }

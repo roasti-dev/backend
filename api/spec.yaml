@@ -19,11 +19,7 @@ paths:
       summary: List recipes
       parameters:
         - $ref: '#/components/parameters/UserIDHeader'
-        - $ref: '#/components/parameters/AuthorIDParam'
-        - $ref: '#/components/parameters/BrewMethodParam'
-        - $ref: '#/components/parameters/DifficultyParam'
-        - $ref: '#/components/parameters/LimitParam'
-        - $ref: '#/components/parameters/PageParam'
+        - $ref: './models.yaml#/components/parameters/ListRecipesParams'
       responses:
         '200':
           description: Paginated list of recipes
@@ -45,7 +41,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateRecipeRequest'
+              $ref: './models.yaml#/components/schemas/CreateRecipeRequest'
       responses:
         '201':
           description: Recipe created
@@ -86,7 +82,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchRecipeRequest'
+              $ref: './models.yaml#/components/schemas/PatchRecipeRequest'
       responses:
         '200':
           description: Recipe updated
@@ -123,29 +119,6 @@ components:
         type: string
         default: test-user
       required: true
-    AuthorIDParam:
-      name: author_id
-      in: query
-      description: ID of the author
-      required: false
-      schema:
-        type: string
-
-    BrewMethodParam:
-      name: brew_method
-      in: query
-      description: Filter by brew method
-      required: false
-      schema:
-        $ref: './models.yaml#/components/schemas/BrewMethod'
-
-    DifficultyParam:
-      name: difficulty
-      in: query
-      description: Filter by difficulty
-      required: false
-      schema:
-        $ref: './models.yaml#/components/schemas/Difficulty'
 
     LimitParam:
       name: limit
@@ -200,65 +173,6 @@ components:
               type: array
               items:
                 $ref: './models.yaml#/components/schemas/Recipe'
-
-    CreateRecipeRequest:
-      type: object
-      additionalProperties: false
-      required:
-        - title
-        - description
-        - brew_method
-        - difficulty
-        - steps
-      properties:
-        title:
-          type: string
-        description:
-          type: string
-        image_url:
-          type: string
-          nullable: true
-          description: Optional image illustrating the recipe
-        brew_method:
-          $ref: './models.yaml#/components/schemas/BrewMethod'
-        difficulty:
-          $ref: './models.yaml#/components/schemas/Difficulty'
-        roast_level:
-          $ref: './models.yaml#/components/schemas/RoastLevel'
-        beans:
-          type: string
-        public:
-          type: boolean
-          default: false
-          description: Whether this recipe is publicly visible
-        steps:
-          type: array
-          items:
-            $ref: './models.yaml#/components/schemas/BrewStep'
-
-    PatchRecipeRequest:
-      type: object
-      properties:
-        title:
-          type: string
-        description:
-          type: string
-        image_url:
-          type: string
-          nullable: true
-        brew_method:
-          $ref: './models.yaml#/components/schemas/BrewMethod'
-        difficulty:
-          $ref: './models.yaml#/components/schemas/Difficulty'
-        roast_level:
-          $ref: './models.yaml#/components/schemas/RoastLevel'
-        beans:
-          type: string
-          nullable: true
-        public:
-          type: boolean
-          description: Whether this recipe is publicly visible
-      additionalProperties: false
 
     CreateRecipeResponse:
       $ref: './models.yaml#/components/schemas/Recipe'

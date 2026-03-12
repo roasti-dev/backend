@@ -23,29 +23,6 @@ import (
 	strictnethttp "github.com/oapi-codegen/runtime/strictmiddleware/nethttp"
 )
 
-// CreateRecipeRequest defines model for CreateRecipeRequest.
-type CreateRecipeRequest struct {
-	Beans *string `json:"beans,omitempty"`
-
-	// BrewMethod Coffee brewing method
-	BrewMethod  externalRef0.BrewMethod `json:"brew_method"`
-	Description string                  `json:"description"`
-
-	// Difficulty Difficulty level of the recipe
-	Difficulty externalRef0.Difficulty `json:"difficulty"`
-
-	// ImageUrl Optional image illustrating the recipe
-	ImageUrl *string `json:"image_url,omitempty"`
-
-	// Public Whether this recipe is publicly visible
-	Public *bool `json:"public,omitempty"`
-
-	// RoastLevel Coffee roast level
-	RoastLevel *externalRef0.RoastLevel `json:"roast_level,omitempty"`
-	Steps      []externalRef0.BrewStep  `json:"steps"`
-	Title      string                   `json:"title"`
-}
-
 // CreateRecipeResponse Coffee brewing recipe
 type CreateRecipeResponse = externalRef0.Recipe
 
@@ -78,35 +55,6 @@ type PaginatedResult struct {
 	TotalCount int64 `json:"total_count"`
 }
 
-// PatchRecipeRequest defines model for PatchRecipeRequest.
-type PatchRecipeRequest struct {
-	Beans *string `json:"beans,omitempty"`
-
-	// BrewMethod Coffee brewing method
-	BrewMethod  *externalRef0.BrewMethod `json:"brew_method,omitempty"`
-	Description *string                  `json:"description,omitempty"`
-
-	// Difficulty Difficulty level of the recipe
-	Difficulty *externalRef0.Difficulty `json:"difficulty,omitempty"`
-	ImageUrl   *string                  `json:"image_url,omitempty"`
-
-	// Public Whether this recipe is publicly visible
-	Public *bool `json:"public,omitempty"`
-
-	// RoastLevel Coffee roast level
-	RoastLevel *externalRef0.RoastLevel `json:"roast_level,omitempty"`
-	Title      *string                  `json:"title,omitempty"`
-}
-
-// AuthorIDParam defines model for AuthorIDParam.
-type AuthorIDParam = string
-
-// BrewMethodParam Coffee brewing method
-type BrewMethodParam = externalRef0.BrewMethod
-
-// DifficultyParam Difficulty level of the recipe
-type DifficultyParam = externalRef0.Difficulty
-
 // LimitParam defines model for LimitParam.
 type LimitParam = int
 
@@ -118,20 +66,7 @@ type UserIDHeader = string
 
 // GetApiV1RecipesParams defines parameters for GetApiV1Recipes.
 type GetApiV1RecipesParams struct {
-	// AuthorId ID of the author
-	AuthorId *AuthorIDParam `form:"author_id,omitempty" json:"author_id,omitempty"`
-
-	// BrewMethod Filter by brew method
-	BrewMethod *BrewMethodParam `form:"brew_method,omitempty" json:"brew_method,omitempty"`
-
-	// Difficulty Filter by difficulty
-	Difficulty *DifficultyParam `form:"difficulty,omitempty" json:"difficulty,omitempty"`
-
-	// Limit Maximum number of recipes to return
-	Limit *LimitParam `form:"limit,omitempty" json:"limit,omitempty"`
-
-	// Page Page of recipes
-	Page *PageParam `form:"page,omitempty" json:"page,omitempty"`
+	ListRecipes *externalRef0.ListRecipesParams `form:"listRecipes,omitempty" json:"listRecipes,omitempty"`
 
 	// XUserId User ID
 	XUserId UserIDHeader `json:"X-User-Id"`
@@ -156,10 +91,10 @@ type PatchApiV1RecipesRecipeIdParams struct {
 }
 
 // PostApiV1RecipesJSONRequestBody defines body for PostApiV1Recipes for application/json ContentType.
-type PostApiV1RecipesJSONRequestBody = CreateRecipeRequest
+type PostApiV1RecipesJSONRequestBody = externalRef0.CreateRecipeRequest
 
 // PatchApiV1RecipesRecipeIdJSONRequestBody defines body for PatchApiV1RecipesRecipeId for application/json ContentType.
-type PatchApiV1RecipesRecipeIdJSONRequestBody = PatchRecipeRequest
+type PatchApiV1RecipesRecipeIdJSONRequestBody = externalRef0.PatchRecipeRequest
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -197,43 +132,11 @@ func (siw *ServerInterfaceWrapper) GetApiV1Recipes(w http.ResponseWriter, r *htt
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetApiV1RecipesParams
 
-	// ------------- Optional query parameter "author_id" -------------
+	// ------------- Optional query parameter "listRecipes" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "author_id", r.URL.Query(), &params.AuthorId, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "listRecipes", r.URL.Query(), &params.ListRecipes, runtime.BindQueryParameterOptions{Type: "", Format: ""})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "author_id", Err: err})
-		return
-	}
-
-	// ------------- Optional query parameter "brew_method" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "brew_method", r.URL.Query(), &params.BrewMethod, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "brew_method", Err: err})
-		return
-	}
-
-	// ------------- Optional query parameter "difficulty" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "difficulty", r.URL.Query(), &params.Difficulty, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "difficulty", Err: err})
-		return
-	}
-
-	// ------------- Optional query parameter "limit" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
-		return
-	}
-
-	// ------------- Optional query parameter "page" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "page", r.URL.Query(), &params.Page, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "page", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "listRecipes", Err: err})
 		return
 	}
 
@@ -908,34 +811,34 @@ func (sh *strictHandler) GetHealth(w http.ResponseWriter, r *http.Request) {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"9Gnv3wx/BO70529wdLVa/RsAAP//oWq5tlkhAAA=",
+	"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",
+	"vMHRPqnX975xb8uy/DcAAP//v29eqCkhAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

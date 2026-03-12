@@ -4,7 +4,37 @@ info:
   title: Models only
   version: 0.0.1
 components:
+
+  parameters:
+    ListRecipesParams:
+      name: listRecipes
+      in: query
+      style: form
+      explode: true
+      schema:
+        allOf:
+          - $ref: '#/components/schemas/Pagination'
+          - type: object
+            properties:
+              authorId:
+                type: string
+                description: Filter by author
+              brewMethod:
+                $ref: '#/components/schemas/BrewMethod'
+              difficulty:
+                $ref: '#/components/schemas/Difficulty'
+
   schemas:
+    Pagination:
+      type: object
+      properties:
+        limit:
+          type: integer
+          default: 20
+        page:
+          type: integer
+          default: 1
+
     BrewMethod:
       type: string
       description: Coffee brewing method
@@ -109,6 +139,65 @@ components:
         - difficulty
         - steps
         - public
+
+    CreateRecipeRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - title
+        - description
+        - brew_method
+        - difficulty
+        - steps
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        image_url:
+          type: string
+          nullable: true
+          description: Optional image illustrating the recipe
+        brew_method:
+          $ref: '#/components/schemas/BrewMethod'
+        difficulty:
+          $ref: '#/components/schemas/Difficulty'
+        roast_level:
+          $ref: '#/components/schemas/RoastLevel'
+        beans:
+          type: string
+        public:
+          type: boolean
+          default: false
+          description: Whether this recipe is publicly visible
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/BrewStep'
+
+    PatchRecipeRequest:
+        type: object
+        properties:
+          title:
+            type: string
+          description:
+            type: string
+          image_url:
+            type: string
+            nullable: true
+          brew_method:
+            $ref: '#/components/schemas/BrewMethod'
+          difficulty:
+            $ref: '#/components/schemas/Difficulty'
+          roast_level:
+            $ref: '#/components/schemas/RoastLevel'
+          beans:
+            type: string
+            nullable: true
+          public:
+            type: boolean
+            description: Whether this recipe is publicly visible
+        additionalProperties: false
 
     ApiErrorResponse:
       type: object

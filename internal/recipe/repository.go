@@ -110,7 +110,7 @@ func (r *Repository) GetRecipeByID(ctx context.Context, recipeID string) (models
 	return recipe, nil
 }
 
-func (r *Repository) ListRecipes(ctx context.Context, params ListRecipesParams, currentUserID string) (pagination.PaginatedResult[models.Recipe], error) {
+func (r *Repository) ListRecipes(ctx context.Context, currentUserID string, params models.ListRecipesParams) (pagination.PaginatedResult[models.Recipe], error) {
 	sb := r.psql.
 		Select("id", "author_id", "title", "description", "image_url",
 			"brew_method", "difficulty", "roast_level", "beans", "public").
@@ -125,8 +125,8 @@ func (r *Repository) ListRecipes(ctx context.Context, params ListRecipesParams, 
 		conds["difficulty"] = params.Difficulty
 	}
 
-	if params.AuthorID != nil {
-		authorID := *params.AuthorID
+	if params.AuthorId != nil {
+		authorID := *params.AuthorId
 		conds["author_id"] = authorID
 
 		if authorID != currentUserID {
@@ -140,7 +140,9 @@ func (r *Repository) ListRecipes(ctx context.Context, params ListRecipesParams, 
 		sb = sb.Where(conds)
 	}
 
-	sb = sb.Limit(params.Pagination.Limit()).Offset(params.Pagination.Offset())
+	pag := params.Pagination()
+
+	sb = sb.Limit(uint64(*params.Limit)).Offset(pag.Offset())
 	rows, err := sb.RunWith(r.db).QueryContext(ctx)
 	if err != nil {
 		return pagination.PaginatedResult[models.Recipe]{}, err
@@ -163,7 +165,7 @@ func (r *Repository) ListRecipes(ctx context.Context, params ListRecipesParams, 
 	}
 
 	if len(recipes) == 0 {
-		return pagination.NewResult(recipes, params.Pagination, 0), nil
+		return pagination.NewResult(recipes, pag, 0), nil
 	}
 
 	stepsRows, err := r.psql.
@@ -204,35 +206,35 @@ func (r *Repository) ListRecipes(ctx context.Context, params ListRecipesParams, 
 		return pagination.PaginatedResult[models.Recipe]{}, err
 	}
 
-	return pagination.NewResult(recipes, params.Pagination, total), nil
+	return pagination.NewResult(recipes, pag, total), nil
 }
 
-func (r *Repository) UpdateRecipe(ctx context.Context, userID, recipeID string, params UpdateRecipeParams) (models.Recipe, error) {
+func (r *Repository) UpdateRecipe(ctx context.Context, userID, recipeID string, request models.PatchRecipeRequest) (models.Recipe, error) {
 	update := r.psql.Update("recipes").Where(sq.Eq{"id": recipeID})
 
-	if params.Title != nil {
-		update = update.Set("title", *params.Title)
+	if request.Title != nil {
+		update = update.Set("title", *request.Title)
 	}
-	if params.Description != nil {
-		update = update.Set("description", *params.Description)
+	if request.Description != nil {
+		update = update.Set("description", *request.Description)
 	}
-	if params.ImageURL != nil {
-		update = update.Set("image_url", *params.ImageURL)
+	if request.ImageUrl != nil {
+		update = update.Set("image_url", *request.ImageUrl)
 	}
-	if params.BrewMethod != nil {
-		update = update.Set("brew_method", *params.BrewMethod)
+	if request.BrewMethod != nil {
+		update = update.Set("brew_method", *request.BrewMethod)
 	}
-	if params.Difficulty != nil {
-		update = update.Set("difficulty", *params.Difficulty)
+	if request.Difficulty != nil {
+		update = update.Set("difficulty", *request.Difficulty)
 	}
-	if params.RoastLevel != nil {
-		update = update.Set("roast_level", *params.RoastLevel)
+	if request.RoastLevel != nil {
+		update = update.Set("roast_level", *request.RoastLevel)
 	}
-	if params.Beans != nil {
-		update = update.Set("beans", *params.Beans)
+	if request.Beans != nil {
+		update = update.Set("beans", *request.Beans)
 	}
-	if params.Public != nil {
-		update = update.Set("public", *params.Public)
+	if request.Public != nil {
+		update = update.Set("public", *request.Public)
 	}
 
 	// // если нет изменений, возвращаем текущий рецепт

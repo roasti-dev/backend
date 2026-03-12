@@ -129,8 +129,57 @@ type BrewStep struct {
 	Title string `json:"title"`
 }
 
+// CreateRecipeRequest defines model for CreateRecipeRequest.
+type CreateRecipeRequest struct {
+	Beans *string `json:"beans,omitempty"`
+
+	// BrewMethod Coffee brewing method
+	BrewMethod  BrewMethod `json:"brew_method"`
+	Description string     `json:"description"`
+
+	// Difficulty Difficulty level of the recipe
+	Difficulty Difficulty `json:"difficulty"`
+
+	// ImageUrl Optional image illustrating the recipe
+	ImageUrl *string `json:"image_url,omitempty"`
+
+	// Public Whether this recipe is publicly visible
+	Public *bool `json:"public,omitempty"`
+
+	// RoastLevel Coffee roast level
+	RoastLevel *RoastLevel `json:"roast_level,omitempty"`
+	Steps      []BrewStep  `json:"steps"`
+	Title      string      `json:"title"`
+}
+
 // Difficulty Difficulty level of the recipe
 type Difficulty string
+
+// Pagination defines model for Pagination.
+type Pagination struct {
+	Limit *int `json:"limit,omitempty"`
+	Page  *int `json:"page,omitempty"`
+}
+
+// PatchRecipeRequest defines model for PatchRecipeRequest.
+type PatchRecipeRequest struct {
+	Beans *string `json:"beans,omitempty"`
+
+	// BrewMethod Coffee brewing method
+	BrewMethod  *BrewMethod `json:"brew_method,omitempty"`
+	Description *string     `json:"description,omitempty"`
+
+	// Difficulty Difficulty level of the recipe
+	Difficulty *Difficulty `json:"difficulty,omitempty"`
+	ImageUrl   *string     `json:"image_url,omitempty"`
+
+	// Public Whether this recipe is publicly visible
+	Public *bool `json:"public,omitempty"`
+
+	// RoastLevel Coffee roast level
+	RoastLevel *RoastLevel `json:"roast_level,omitempty"`
+	Title      *string     `json:"title,omitempty"`
+}
 
 // Recipe Coffee brewing recipe
 type Recipe struct {
@@ -171,22 +220,40 @@ type Recipe struct {
 // RoastLevel Coffee roast level
 type RoastLevel string
 
+// ListRecipesParams defines model for ListRecipesParams.
+type ListRecipesParams struct {
+	// AuthorId Filter by author
+	AuthorId *string `json:"authorId,omitempty"`
+
+	// BrewMethod Coffee brewing method
+	BrewMethod *BrewMethod `json:"brewMethod,omitempty"`
+
+	// Difficulty Difficulty level of the recipe
+	Difficulty *Difficulty `json:"difficulty,omitempty"`
+	Limit      *int        `json:"limit,omitempty"`
+	Page       *int        `json:"page,omitempty"`
+}
+
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

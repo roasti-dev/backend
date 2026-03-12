@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
-	"github.com/nikpivkin/roasti-app-backend/internal/pagination"
 	"github.com/nikpivkin/roasti-app-backend/internal/recipe"
 
 	_ "embed"
@@ -18,11 +18,12 @@ const seedUserID = "test-user"
 var recipesData []byte
 
 func seedRecipes(ctx context.Context, recipeService *recipe.Service) error {
-	recipes, err := recipeService.ListRecipes(ctx, seedUserID, recipe.ListRecipesParams{
-		Pagination: pagination.New(1, 1),
+	recipes, err := recipeService.ListRecipes(ctx, seedUserID, models.ListRecipesParams{
+		Page:  new(1),
+		Limit: new(1),
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("list recipes: %w", err)
 	}
 
 	if recipes.TotalCount > 0 {
@@ -30,19 +31,19 @@ func seedRecipes(ctx context.Context, recipeService *recipe.Service) error {
 	}
 
 	var seed struct {
-		Recipes []models.Recipe `yaml:"recipes"`
+		Req []models.CreateRecipeRequest `json:"recipes"`
 	}
 
 	dec := json.NewDecoder(bytes.NewReader(recipesData))
 	dec.DisallowUnknownFields()
 
 	if err := dec.Decode(&seed); err != nil {
-		return err
+		return fmt.Errorf("decode recipes: %w", err)
 	}
 
-	for _, recipe := range seed.Recipes {
-		if _, err := recipeService.CreateRecipe(ctx, seedUserID, recipe); err != nil {
-			return err
+	for _, req := range seed.Req {
+		if _, err := recipeService.CreateRecipe(ctx, seedUserID, req); err != nil {
+			return fmt.Errorf("create recipe: %w", err)
 		}
 	}
 
