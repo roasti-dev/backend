@@ -119,15 +119,15 @@ func ValidatePatchRecipe(req models.PatchRecipeRequest) error {
 func (s *Service) UpdateRecipe(
 	ctx context.Context, userID, recipeID string, requst models.PatchRecipeRequest,
 ) (models.Recipe, error) {
+	if err := ValidatePatchRecipe(requst); err != nil {
+		return models.Recipe{}, err
+	}
+
 	recipe, err := s.repo.GetRecipeByID(ctx, recipeID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return models.Recipe{}, ErrNotFound
 		}
-		return models.Recipe{}, err
-	}
-
-	if err := ValidatePatchRecipe(requst); err != nil {
 		return models.Recipe{}, err
 	}
 
@@ -138,5 +138,17 @@ func (s *Service) UpdateRecipe(
 }
 
 func (s *Service) DeleteRecioe(ctx context.Context, userID, recipeID string) error {
+	recipe, err := s.repo.GetRecipeByID(ctx, recipeID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
+		return err
+	}
+
+	if recipe.AuthorId != userID {
+		return ErrForbidden
+	}
+
 	return s.repo.DeleteRecipe(ctx, userID, recipeID)
 }
