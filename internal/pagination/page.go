@@ -8,6 +8,9 @@ type Page[T any] struct {
 }
 
 func NewPage[T any](items []T, p Pagination, totalCount int) Page[T] {
+	if len(items) == 0 {
+		items = []T{}
+	}
 	return Page[T]{
 		Items:      items,
 		Page:       p.Page(),
