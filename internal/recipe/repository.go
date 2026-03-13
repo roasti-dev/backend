@@ -134,7 +134,7 @@ func (r *Repository) ListRecipes(
 	sb = applyListRecipesFilter(sb, params, currentUserID)
 	sb = applyPagination(sb, pag)
 
-	rows, err := sb.RunWith(r.db).QueryContext(ctx)
+	rows, err := sb.OrderBy("created_at ASC", "id ASC").RunWith(r.db).QueryContext(ctx)
 	if err != nil {
 		return pagination.Page[models.Recipe]{}, err
 	}
