@@ -137,7 +137,7 @@ func (s *Service) UpdateRecipe(
 	return s.repo.UpdateRecipe(ctx, userID, recipeID, requst)
 }
 
-func (s *Service) DeleteRecioe(ctx context.Context, userID, recipeID string) error {
+func (s *Service) DeleteRecipe(ctx context.Context, userID, recipeID string) error {
 	recipe, err := s.repo.GetRecipeByID(ctx, recipeID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

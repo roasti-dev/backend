@@ -62,7 +62,7 @@ func (s *ServerHandler) PatchApiV1RecipesRecipeId(ctx context.Context, request P
 
 func (s *ServerHandler) DeleteApiV1RecipesRecipeId(ctx context.Context, request DeleteApiV1RecipesRecipeIdRequestObject) (DeleteApiV1RecipesRecipeIdResponseObject, error) {
 	userID := requestctx.GetUserID(ctx)
-	if err := s.recipeService.DeleteRecioe(ctx, userID, request.RecipeId); err != nil {
+	if err := s.recipeService.DeleteRecipe(ctx, userID, request.RecipeId); err != nil {
 		return DeleteApiV1RecipesRecipeId204Response{}, err
 	}
 	return DeleteApiV1RecipesRecipeId204Response{}, nil
