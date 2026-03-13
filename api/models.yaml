@@ -14,6 +14,7 @@ components:
       schema:
         allOf:
           - $ref: '#/components/schemas/Pagination'
+          # - $ref: '#/components/schemas/SortOrder'
           - type: object
             properties:
               authorId:
@@ -23,6 +24,18 @@ components:
                 $ref: '#/components/schemas/BrewMethod'
               difficulty:
                 $ref: '#/components/schemas/Difficulty'
+              sort_field:
+                type: string
+                enum: 
+                  - created_at
+                  - title
+                description: "Field to sort by, e.g. created_at, title, difficulty"
+              sort_direction:
+                type: string
+                enum:
+                  - asc
+                  - desc
+                description: "Sort direction"
 
   schemas:
     Pagination:
@@ -34,6 +47,22 @@ components:
         page:
           type: integer
           default: 1
+
+    # SortOrder:
+    #   type: object
+    #   properties:
+    #     sort_field:
+    #       type: string
+    #       description: "Field to sort by, e.g. created_at, title, difficulty"
+    #     sort_direction:
+    #       type: string
+    #       enum:
+    #         - asc
+    #         - desc
+    #       description: "Sort direction"
+    #   required:
+    #     - sort_field
+    #     - sort_direction
 
     BrewMethod:
       type: string

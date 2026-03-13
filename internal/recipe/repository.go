@@ -4,6 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"slices"
+	"strings"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -34,6 +37,11 @@ var (
 		"public",
 		"created_at",
 		"updated_at",
+	}
+
+	recipeSortableColumns = []string{
+		"created_at",
+		"title",
 	}
 
 	brewStepsColumns = []string{
@@ -133,8 +141,9 @@ func (r *Repository) ListRecipes(
 		From(recipesTable)
 	sb = applyListRecipesFilter(sb, params, currentUserID)
 	sb = applyPagination(sb, pag)
+	sb = applySort(sb, params.SortField, params.SortDirection, recipeSortableColumns)
 
-	rows, err := sb.OrderBy("created_at ASC", "id ASC").RunWith(r.db).QueryContext(ctx)
+	rows, err := sb.RunWith(r.db).QueryContext(ctx)
 	if err != nil {
 		return pagination.Page[models.Recipe]{}, err
 	}
@@ -202,6 +211,23 @@ func applyListRecipesFilter(
 	}
 
 	return sb
+}
+
+func applySort(sb sq.SelectBuilder, sortField, sortDirection *string, allowedFields []string) sq.SelectBuilder {
+	sort := "created_at"
+	if sortField != nil && slices.Contains(allowedFields, *sortField) {
+		sort = *sortField
+	}
+
+	dir := "DESC"
+	if sortDirection != nil {
+		d := strings.ToUpper(*sortDirection)
+		if d == "ASC" || d == "DESC" {
+			dir = d
+		}
+	}
+
+	return sb.OrderBy(fmt.Sprintf("%s %s, id %s", sort, dir, dir))
 }
 
 func applyPagination(sb sq.SelectBuilder, pag pagination.Pagination) sq.SelectBuilder {
