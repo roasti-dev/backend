@@ -17,6 +17,7 @@ import (
 	oapimiddleware "github.com/oapi-codegen/nethttp-middleware"
 
 	"github.com/nikpivkin/roasti-app-backend/docs"
+	"github.com/nikpivkin/roasti-app-backend/internal/api/apierr"
 	"github.com/nikpivkin/roasti-app-backend/internal/db"
 	"github.com/nikpivkin/roasti-app-backend/internal/handlers"
 	"github.com/nikpivkin/roasti-app-backend/internal/log"
@@ -79,7 +80,7 @@ func run() error {
 				slog.Any("error", err),
 			)
 
-			if apiErr, ok := err.(*recipe.ApiError); ok {
+			if apiErr, ok := err.(*apierr.ApiError); ok {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(apiErr.Status)
 				_ = json.NewEncoder(w).Encode(map[string]string{"error": apiErr.Message})

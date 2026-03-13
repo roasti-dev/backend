@@ -4,37 +4,21 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"strings"
 
+	"github.com/nikpivkin/roasti-app-backend/internal/api/apierr"
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
 	"github.com/nikpivkin/roasti-app-backend/internal/ids"
 	"github.com/nikpivkin/roasti-app-backend/internal/pagination"
 )
 
-type ApiError struct {
-	Status  int
-	Message string
-}
-
-func (e *ApiError) Error() string {
-	return fmt.Sprintf("%d: %s", e.Status, e.Message)
-}
-
-func NewApiError(status int, msg string) *ApiError {
-	return &ApiError{
-		Status:  status,
-		Message: msg,
-	}
-}
-
 var (
-	ErrForbidden          = NewApiError(403, "forbidden")
-	ErrNotFound           = NewApiError(404, "recipe not found")
-	ErrInvalidTitle       = NewApiError(400, "title cannot be empty")
-	ErrInvalidDescription = NewApiError(400, "description cannot be empty")
-	ErrInvalidBrewMethod  = NewApiError(400, "invalid brew method")
-	ErrInvalidDifficulty  = NewApiError(400, "invalid difficulty")
+	ErrForbidden          = apierr.NewApiError(403, "forbidden")
+	ErrNotFound           = apierr.NewApiError(404, "recipe not found")
+	ErrInvalidTitle       = apierr.NewApiError(400, "title cannot be empty")
+	ErrInvalidDescription = apierr.NewApiError(400, "description cannot be empty")
+	ErrInvalidBrewMethod  = apierr.NewApiError(400, "invalid brew method")
+	ErrInvalidDifficulty  = apierr.NewApiError(400, "invalid difficulty")
 )
 
 type Service struct {
