@@ -1,26 +1,10 @@
-package api
+package handlers
 
 import (
 	"context"
-	"log/slog"
 
-	"github.com/nikpivkin/roasti-app-backend/internal/recipe"
 	"github.com/nikpivkin/roasti-app-backend/internal/requestctx"
 )
-
-var _ StrictServerInterface = (*ServerHandler)(nil)
-
-type ServerHandler struct {
-	logger        *slog.Logger
-	recipeService *recipe.Service
-}
-
-func NewServerHandler(recipeService *recipe.Service) *ServerHandler {
-	return &ServerHandler{
-		logger:        slog.Default(),
-		recipeService: recipeService,
-	}
-}
 
 func (s *ServerHandler) GetApiV1Recipes(ctx context.Context, request GetApiV1RecipesRequestObject) (GetApiV1RecipesResponseObject, error) {
 	s.logger.DebugContext(ctx, "list recipes request")
@@ -66,8 +50,4 @@ func (s *ServerHandler) DeleteApiV1RecipesRecipeId(ctx context.Context, request 
 		return DeleteApiV1RecipesRecipeId204Response{}, err
 	}
 	return DeleteApiV1RecipesRecipeId204Response{}, nil
-}
-
-func (s *ServerHandler) GetHealth(ctx context.Context, request GetHealthRequestObject) (GetHealthResponseObject, error) {
-	return GetHealth200TextResponse("OK"), nil
 }

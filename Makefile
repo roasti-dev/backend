@@ -22,7 +22,7 @@ OAPI_SPEC := api/spec.yaml
 OAPI_CONFIG := api/spec-config.yaml
 OAPI_MODELS_CONFIG := api/models-config.yaml
 OAPI_MODELS := api/models.yaml
-OAPI_OUT := internal/api/server.gen.go
+OAPI_OUT := internal/handlers/server.gen.go
 OAPI_MODELS_OUT := internal/api/models/models.gen.go
 
 $(OAPI_MODELS_OUT): $(OAPI_MODELS) $(OAPI_MODELS_CONFIG)

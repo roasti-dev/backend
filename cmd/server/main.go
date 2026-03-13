@@ -17,8 +17,8 @@ import (
 	oapimiddleware "github.com/oapi-codegen/nethttp-middleware"
 
 	"github.com/nikpivkin/roasti-app-backend/docs"
-	"github.com/nikpivkin/roasti-app-backend/internal/api"
 	"github.com/nikpivkin/roasti-app-backend/internal/db"
+	"github.com/nikpivkin/roasti-app-backend/internal/handlers"
 	"github.com/nikpivkin/roasti-app-backend/internal/log"
 	"github.com/nikpivkin/roasti-app-backend/internal/middleware"
 	"github.com/nikpivkin/roasti-app-backend/internal/recipe"
@@ -67,13 +67,13 @@ func run() error {
 		return err
 	}
 
-	swagger, err := api.GetSwagger()
+	swagger, err := handlers.GetSwagger()
 	if err != nil {
 		return err
 	}
 
-	strictHandler := api.NewServerHandler(recipeService)
-	handler := api.NewStrictHandlerWithOptions(strictHandler, nil, api.StrictHTTPServerOptions{
+	strictHandler := handlers.NewServerHandler(recipeService)
+	handler := handlers.NewStrictHandlerWithOptions(strictHandler, nil, handlers.StrictHTTPServerOptions{
 		ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
 			slog.ErrorContext(r.Context(), "API handler error",
 				slog.Any("error", err),
@@ -95,7 +95,7 @@ func run() error {
 	router.Handle("/docs/", serveSwaggerStatic(docs.SwaggerHTML))
 	router.Handle("/docs", http.RedirectHandler("/docs/", http.StatusMovedPermanently))
 
-	api.HandlerWithOptions(handler, api.StdHTTPServerOptions{
+	handlers.HandlerWithOptions(handler, handlers.StdHTTPServerOptions{
 		BaseRouter: router,
 	})
 
