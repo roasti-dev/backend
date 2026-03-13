@@ -47,7 +47,7 @@ func NewService(repo *Repository) *Service {
 
 func (s *Service) ListRecipes(
 	ctx context.Context, userID string, params models.ListRecipesParams,
-) (pagination.PaginatedResult[models.Recipe], error) {
+) (pagination.Page[models.Recipe], error) {
 	return s.repo.ListRecipes(ctx, userID, params)
 }
 
