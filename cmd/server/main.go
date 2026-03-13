@@ -76,14 +76,14 @@ func run() error {
 	strictHandler := handlers.NewServerHandler(recipeService)
 	handler := handlers.NewStrictHandlerWithOptions(strictHandler, nil, handlers.StrictHTTPServerOptions{
 		ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
-			slog.ErrorContext(r.Context(), "API handler error",
-				slog.Any("error", err),
-			)
+			slog.ErrorContext(r.Context(), "API handler error", log.Err(err))
 
-			if apiErr, ok := err.(*apierr.ApiError); ok {
+			if apiErr, ok := errors.AsType[*apierr.ApiError](err); ok {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(apiErr.Status)
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": apiErr.Message})
+				if err := json.NewEncoder(w).Encode(map[string]string{"error": apiErr.Message}); err != nil {
+					slog.WarnContext(r.Context(), "Encode Api error", log.Err(err))
+				}
 				return
 			}
 

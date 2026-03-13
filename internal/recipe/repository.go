@@ -10,6 +10,7 @@ import (
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
+
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
 	"github.com/nikpivkin/roasti-app-backend/internal/pagination"
 )
@@ -271,35 +272,6 @@ func scanRecipe(s scanner) (models.Recipe, error) {
 	return recipe, err
 }
 
-func (r *Repository) getBrewStepsByRecipeIDs(
-	ctx context.Context,
-	recipeIDs []string,
-) (map[string][]models.BrewStep, error) {
-	stepsRows, err := r.psql.
-		Select(brewStepsColumns...).
-		From(brewStepsTable).
-		Where(sq.Eq{"recipe_id": recipeIDs}).
-		OrderBy("step_order ASC").
-		RunWith(r.db).
-		QueryContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer stepsRows.Close()
-
-	stepsMap := make(map[string][]models.BrewStep)
-	for stepsRows.Next() {
-		var step models.BrewStep
-		var recipeID string
-		if err := stepsRows.Scan(&recipeID, &step.Order, &step.Title, &step.Description, &step.DurationSeconds); err != nil {
-			return nil, err
-		}
-		stepsMap[recipeID] = append(stepsMap[recipeID], step)
-	}
-
-	return stepsMap, nil
-}
-
 func (r *Repository) UpdateRecipe(ctx context.Context, userID, recipeID string, request models.PatchRecipeRequest) (models.Recipe, error) {
 	update := r.psql.Update(recipesTable).Where(sq.Eq{"id": recipeID})
 
@@ -344,4 +316,33 @@ func (r *Repository) DeleteRecipe(ctx context.Context, userID, recipeID string) 
 	})
 	_, err := query.RunWith(r.db).ExecContext(ctx)
 	return err
+}
+
+func (r *Repository) getBrewStepsByRecipeIDs(
+	ctx context.Context,
+	recipeIDs []string,
+) (map[string][]models.BrewStep, error) {
+	stepsRows, err := r.psql.
+		Select(brewStepsColumns...).
+		From(brewStepsTable).
+		Where(sq.Eq{"recipe_id": recipeIDs}).
+		OrderBy("step_order ASC").
+		RunWith(r.db).
+		QueryContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer stepsRows.Close()
+
+	stepsMap := make(map[string][]models.BrewStep)
+	for stepsRows.Next() {
+		var step models.BrewStep
+		var recipeID string
+		if err := stepsRows.Scan(&recipeID, &step.Order, &step.Title, &step.Description, &step.DurationSeconds); err != nil {
+			return nil, err
+		}
+		stepsMap[recipeID] = append(stepsMap[recipeID], step)
+	}
+
+	return stepsMap, nil
 }

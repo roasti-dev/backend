@@ -1,0 +1,44 @@
+version: "2"
+
+linters:
+  default: none
+  enable:
+    - gocritic
+    - sloglint
+    - sqlclosecheck
+    - embeddedstructfieldcheck
+    - errcheck
+    - errname
+    - errorlint
+    - exhaustive
+    - exptostd
+    - funcorder
+    - godot
+
+  settings:
+    embeddedstructfieldcheck:
+      forbid-mutex: true
+
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
+      exclude-functions:
+        - (net/http.ResponseWriter).Write
+        - (*database/sql.Rows).Close
+
+    funcorder:
+      constructor: true
+      struct-method: true
+
+formatters:
+  enable:
+    - gci
+
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(github.com/nikpivkin/)
+        - blank
+        - dot

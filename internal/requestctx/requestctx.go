@@ -10,7 +10,7 @@ var (
 	userIDKey    = userIdKey{}
 )
 
-// GetRequestID returns the requestID from the context, if available
+// GetRequestID returns the requestID from the context, if available.
 func GetRequestID(ctx context.Context) string {
 	if v, ok := ctx.Value(requestIDKey).(string); ok {
 		return v
@@ -18,7 +18,7 @@ func GetRequestID(ctx context.Context) string {
 	return ""
 }
 
-// GetUserID returns the userID from the context, if available
+// GetUserID returns the userID from the context, if available.
 func GetUserID(ctx context.Context) string {
 	if v, ok := ctx.Value(userIDKey).(string); ok {
 		return v
@@ -26,12 +26,12 @@ func GetUserID(ctx context.Context) string {
 	return ""
 }
 
-// WithRequestID puts requestID in context
+// WithRequestID puts requestID in context.
 func WithRequestID(ctx context.Context, id string) context.Context {
 	return context.WithValue(ctx, requestIDKey, id)
 }
 
-// WithRequestID puts userID in context
+// WithRequestID puts userID in context.
 func WithUserID(ctx context.Context, id string) context.Context {
 	return context.WithValue(ctx, userIDKey, id)
 }

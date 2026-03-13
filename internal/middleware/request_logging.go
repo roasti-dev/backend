@@ -8,6 +8,7 @@ import (
 
 type responseWriter struct {
 	http.ResponseWriter
+
 	status int
 	size   int
 }

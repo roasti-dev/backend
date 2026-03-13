@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+
 	"github.com/nikpivkin/roasti-app-backend/internal/requestctx"
 )
 

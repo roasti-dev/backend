@@ -64,4 +64,7 @@ endif
 		sudo systemctl status $(BACKEND_SERVICE) --no-pager \
 	'
 
-.PHONY: build start deploy
+lint:
+	golangci-lint run
+
+.PHONY: build build-debian start deploy lint

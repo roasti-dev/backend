@@ -2,6 +2,4 @@ package ids
 
 import "github.com/google/uuid"
 
-var NewID = func() string {
-	return uuid.NewString()
-}
+var NewID = uuid.NewString
