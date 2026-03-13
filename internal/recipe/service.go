@@ -89,7 +89,12 @@ func (s *Service) CreateRecipe(ctx context.Context, userID string, request model
 	if err := s.repo.CreateRecipe(ctx, recipe); err != nil {
 		return recipe, nil
 	}
-	return recipe, nil
+
+	created, err := s.repo.GetRecipeByID(ctx, recipe.Id)
+	if err != nil {
+		return models.Recipe{}, err
+	}
+	return created, nil
 }
 
 func ValidatePatchRecipe(req models.PatchRecipeRequest) error {

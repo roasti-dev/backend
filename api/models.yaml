@@ -125,6 +125,15 @@ components:
         public:
           type: boolean
           description: Indicates whether the recipe is publicly visible.
+        created_at:
+          type: string
+          format: date-time
+          description: "Timestamp when the recipe was created"
+
+        updated_at:
+          type: string
+          format: date-time
+          description: "Timestamp when the recipe was last updated"
         steps:
           type: array
           description: Ordered list of brewing steps

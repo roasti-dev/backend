@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
@@ -31,6 +32,8 @@ var (
 		"roast_level",
 		"beans",
 		"public",
+		"created_at",
+		"updated_at",
 	}
 
 	brewStepsColumns = []string{
@@ -68,6 +71,8 @@ func (r *Repository) CreateRecipe(ctx context.Context, recipe models.Recipe) err
 			recipe.RoastLevel,
 			recipe.Beans,
 			recipe.Public,
+			time.Now().UTC(),
+			time.Now().UTC(),
 		)
 
 	_, err := query.RunWith(r.db).ExecContext(ctx)
@@ -233,6 +238,8 @@ func scanRecipe(s scanner) (models.Recipe, error) {
 		&recipe.RoastLevel,
 		&recipe.Beans,
 		&recipe.Public,
+		&recipe.CreatedAt,
+		&recipe.UpdatedAt,
 	)
 
 	return recipe, err
@@ -294,6 +301,8 @@ func (r *Repository) UpdateRecipe(ctx context.Context, userID, recipeID string, 
 	if request.Public != nil {
 		update = update.Set("public", *request.Public)
 	}
+
+	update.Set("updated_at", time.Now().UTC())
 
 	if _, err := update.RunWith(r.db).ExecContext(ctx); err != nil {
 		return models.Recipe{}, err
