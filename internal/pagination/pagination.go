@@ -12,14 +12,13 @@ const (
 )
 
 type Pagination struct {
-	page   uint64
-	limit  uint64
-	offset uint64
+	page  uint64
+	limit uint64
 }
 
 func (p Pagination) Page() uint64   { return p.page }
 func (p Pagination) Limit() uint64  { return p.limit }
-func (p Pagination) Offset() uint64 { return p.offset }
+func (p Pagination) Offset() uint64 { return uint64((p.page - 1) * p.limit) }
 
 func New(page, limit int) Pagination {
 	if page < 1 {
@@ -29,9 +28,8 @@ func New(page, limit int) Pagination {
 		limit = DefaultLimit
 	}
 	return Pagination{
-		page:   uint64(page),
-		limit:  uint64(limit),
-		offset: uint64((page - 1) * limit),
+		page:  uint64(page),
+		limit: uint64(limit),
 	}
 }
 
