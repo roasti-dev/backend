@@ -26,7 +26,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedRecipes'
+                $ref: '#/components/schemas/RecipePage'
         '400':
           description: Bad request
         '500':
@@ -139,7 +139,7 @@ components:
         default: 1
 
   schemas:
-    PaginatedResult:
+    Page:
       type: object
       description: Generic paginated response
       properties:
@@ -149,24 +149,24 @@ components:
           description: List of items on this page
         page:
           type: integer
-          format: uint64
+          format: int
           description: Current page number
         limit:
           type: integer
-          format: uint64
+          format: int
           description: Maximum number of items per page
         total_count:
           type: integer
-          format: int64
+          format: int
           description: Total number of items available
       required:
         - items
         - page
         - limit
         - total_count
-    PaginatedRecipes:
+    RecipePage:
       allOf:
-        - $ref: '#/components/schemas/PaginatedResult'
+        - $ref: '#/components/schemas/Page'
         - type: object
           properties:
             items:

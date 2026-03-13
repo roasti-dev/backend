@@ -1,13 +1,13 @@
 package pagination
 
 type Page[T any] struct {
-	Items      []T    `json:"items"`
-	Page       uint64 `json:"page"`
-	Limit      uint64 `json:"limit"`
-	TotalCount int64  `json:"total_count,omitempty"`
+	Items      []T `json:"items"`
+	Page       int `json:"page"`
+	Limit      int `json:"limit"`
+	TotalCount int `json:"total_count,omitempty"`
 }
 
-func NewPage[T any](items []T, p Pagination, totalCount int64) Page[T] {
+func NewPage[T any](items []T, p Pagination, totalCount int) Page[T] {
 	return Page[T]{
 		Items:      items,
 		Page:       p.Page(),
