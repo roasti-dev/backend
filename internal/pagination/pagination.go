@@ -1,10 +1,5 @@
 package pagination
 
-import (
-	"net/http"
-	"strconv"
-)
-
 const (
 	DefaultPage  = 1
 	DefaultLimit = 20
@@ -31,23 +26,4 @@ func New(page, limit int) Pagination {
 		page:  page,
 		limit: limit,
 	}
-}
-
-func FromRequest(r *http.Request) Pagination {
-	q := r.URL.Query()
-
-	var page int
-	if p := q.Get("page"); p != "" {
-		if v, err := strconv.Atoi(p); err == nil && v > 0 {
-			page = v
-		}
-	}
-
-	var limit int
-	if l := q.Get("limit"); l != "" {
-		if v, err := strconv.Atoi(l); err == nil && v > 0 {
-			limit = v
-		}
-	}
-	return New(page, limit)
 }

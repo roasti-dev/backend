@@ -25,6 +25,7 @@ import (
 	"github.com/nikpivkin/roasti-app-backend/internal/recipe"
 	"github.com/nikpivkin/roasti-app-backend/internal/seed"
 	"github.com/nikpivkin/roasti-app-backend/internal/server"
+	"github.com/nikpivkin/roasti-app-backend/internal/uploads"
 
 	_ "embed"
 )
@@ -59,8 +60,9 @@ func run() error {
 		return fmt.Errorf("init schema: %w", err)
 	}
 
-	recipeRepo := recipe.NewRepository(database)
-	recipeService := recipe.NewService(recipeRepo)
+	uploader := uploads.NewService("./uploads")
+	recipeRepo := recipe.NewRepository(database, slog.Default())
+	recipeService := recipe.NewService(recipeRepo, uploader)
 
 	if err := seed.Run(ctx, seed.Services{
 		RecipeService: recipeService,
@@ -73,22 +75,9 @@ func run() error {
 		return err
 	}
 
-	strictHandler := handlers.NewServerHandler(recipeService)
+	strictHandler := handlers.NewServerHandler(recipeService, uploader)
 	handler := handlers.NewStrictHandlerWithOptions(strictHandler, nil, handlers.StrictHTTPServerOptions{
-		ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
-			slog.ErrorContext(r.Context(), "API handler error", log.Err(err))
-
-			if apiErr, ok := errors.AsType[*apierr.ApiError](err); ok {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(apiErr.Status)
-				if err := json.NewEncoder(w).Encode(map[string]string{"error": apiErr.Message}); err != nil {
-					slog.WarnContext(r.Context(), "Encode Api error", log.Err(err))
-				}
-				return
-			}
-
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		},
+		ResponseErrorHandlerFunc: responseErrorHandler,
 	})
 
 	router := http.NewServeMux()
@@ -143,6 +132,22 @@ func run() error {
 
 	slog.Info("Server stopped")
 	return nil
+}
+
+func responseErrorHandler(w http.ResponseWriter, r *http.Request, err error) {
+	slog.ErrorContext(r.Context(), "API handler error", log.Err(err))
+
+	if apiErr, ok := errors.AsType[*apierr.ApiError](err); ok {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(apiErr.Status)
+
+		if err := json.NewEncoder(w).Encode(map[string]string{"error": apiErr.Message}); err != nil {
+			slog.WarnContext(r.Context(), "Encode Api error", log.Err(err))
+		}
+		return
+	}
+
+	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }
 
 func serveSwaggerStatic(data []byte) http.HandlerFunc {

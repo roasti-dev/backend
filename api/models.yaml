@@ -4,7 +4,6 @@ info:
   title: Models only
   version: 0.0.1
 components:
-
   parameters:
     ListRecipesParams:
       name: listRecipes
@@ -13,7 +12,7 @@ components:
       explode: true
       schema:
         allOf:
-          - $ref: '#/components/schemas/Pagination'
+          - $ref: "#/components/schemas/Pagination"
           # - $ref: '#/components/schemas/SortOrder'
           - type: object
             properties:
@@ -21,12 +20,12 @@ components:
                 type: string
                 description: Filter by author
               brewMethod:
-                $ref: '#/components/schemas/BrewMethod'
+                $ref: "#/components/schemas/BrewMethod"
               difficulty:
-                $ref: '#/components/schemas/Difficulty'
+                $ref: "#/components/schemas/Difficulty"
               sort_field:
                 type: string
-                enum: 
+                enum:
                   - created_at
                   - title
                 description: "Field to sort by, e.g. created_at, title, difficulty"
@@ -68,7 +67,6 @@ components:
       type: string
       description: Coffee brewing method
       enum:
-        - none
         - v60
         - french_press
         - aeropress
@@ -81,7 +79,6 @@ components:
       type: string
       description: Difficulty level of the recipe
       enum:
-        - none
         - easy
         - medium
         - hard
@@ -90,10 +87,8 @@ components:
       type: string
       nullable: true
       description: Coffee roast level
-      default: none
       enum:
-        - none
-        - ligth
+        - light
         - medium_light
         - medium
         - medium_dark
@@ -101,6 +96,38 @@ components:
 
     BrewStep:
       type: object
+      description: Single step of the brewing process
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Unique step identifier
+        order:
+          type: integer
+          description: Order of the step in the recipe
+        title:
+          type: string
+          description: Short title of the step
+        description:
+          type: string
+          description: Detailed instructions for the step
+        duration_seconds:
+          type: integer
+          nullable: true
+          description: Optional duration of the step in seconds
+        image_id:
+          type: string
+          nullable: true
+          description: ID of the uploaded image. Can be resolved via the image upload endpoint.
+      required:
+        - id
+        - order
+        - title
+        - description
+
+    BrewStepPayload:
+      type: object
+      additionalProperties: false
       description: Single step of the brewing process
       properties:
         order:
@@ -116,6 +143,10 @@ components:
           type: integer
           nullable: true
           description: Optional duration of the step in seconds
+        image_id:
+          type: string
+          nullable: true
+          description: ID of the uploaded image. Can be resolved via the image upload endpoint.
       required:
         - order
         - title
@@ -137,16 +168,16 @@ components:
         description:
           type: string
           description: Detailed description of the recipe
-        image_url:
+        image_id:
           type: string
           nullable: true
-          description: Optional image illustrating the recipe
+          description: ID of the uploaded image. Can be resolved via the image upload endpoint.
         brew_method:
-          $ref: '#/components/schemas/BrewMethod'
+          $ref: "#/components/schemas/BrewMethod"
         difficulty:
-          $ref: '#/components/schemas/Difficulty'
+          $ref: "#/components/schemas/Difficulty"
         roast_level:
-          $ref: '#/components/schemas/RoastLevel'
+          $ref: "#/components/schemas/RoastLevel"
         beans:
           type: string
           nullable: true
@@ -167,7 +198,7 @@ components:
           type: array
           description: Ordered list of brewing steps
           items:
-            $ref: '#/components/schemas/BrewStep'
+            $ref: "#/components/schemas/BrewStep"
       required:
         - id
         - author_id
@@ -178,7 +209,7 @@ components:
         - steps
         - public
 
-    CreateRecipeRequest:
+    RecipePayload:
       type: object
       additionalProperties: false
       required:
@@ -190,52 +221,63 @@ components:
       properties:
         title:
           type: string
+          description: Recipe title
         description:
           type: string
-        image_url:
+          description: Detailed description of the recipe
+        image_id:
           type: string
           nullable: true
-          description: Optional image illustrating the recipe
+          description: ID of the uploaded image. Can be resolved via the image upload endpoint.
         brew_method:
-          $ref: '#/components/schemas/BrewMethod'
+          $ref: "#/components/schemas/BrewMethod"
         difficulty:
-          $ref: '#/components/schemas/Difficulty'
+          $ref: "#/components/schemas/Difficulty"
         roast_level:
-          $ref: '#/components/schemas/RoastLevel'
+          $ref: "#/components/schemas/RoastLevel"
         beans:
           type: string
+          nullable: true
+          description: Coffee beans used for the recipe
         public:
           type: boolean
           default: false
-          description: Whether this recipe is publicly visible
+          description: Indicates whether the recipe is publicly visible
         steps:
           type: array
+          description: Ordered list of brewing steps
           items:
-            $ref: '#/components/schemas/BrewStep'
+            $ref: "#/components/schemas/BrewStepPayload"
+
+    CreateRecipeRequest:
+      $ref: "#/components/schemas/RecipePayload"
+
+    UpdateRecipeRequest:
+      $ref: "#/components/schemas/RecipePayload"
 
     PatchRecipeRequest:
-        type: object
-        properties:
-          title:
-            type: string
-          description:
-            type: string
-          image_url:
-            type: string
-            nullable: true
-          brew_method:
-            $ref: '#/components/schemas/BrewMethod'
-          difficulty:
-            $ref: '#/components/schemas/Difficulty'
-          roast_level:
-            $ref: '#/components/schemas/RoastLevel'
-          beans:
-            type: string
-            nullable: true
-          public:
-            type: boolean
-            description: Whether this recipe is publicly visible
-        additionalProperties: false
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        image_id:
+          type: string
+          nullable: true
+        brew_method:
+          $ref: "#/components/schemas/BrewMethod"
+        difficulty:
+          $ref: "#/components/schemas/Difficulty"
+        roast_level:
+          $ref: "#/components/schemas/RoastLevel"
+        beans:
+          type: string
+          nullable: true
+        public:
+          type: boolean
+          description: Whether this recipe is publicly visible
+      additionalProperties: false
 
     ApiErrorResponse:
       type: object
@@ -245,3 +287,13 @@ components:
           description: Human-readable error message
       required:
         - error
+
+    Image:
+      type: object
+      description: Uploaded image
+      properties:
+        id:
+          type: string
+          description: Unique image identifier
+      required:
+        - id

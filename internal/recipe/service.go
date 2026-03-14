@@ -4,29 +4,40 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"strings"
+	"log/slog"
+	"net/http"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/apierr"
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
 	"github.com/nikpivkin/roasti-app-backend/internal/ids"
 	"github.com/nikpivkin/roasti-app-backend/internal/pagination"
+	"github.com/nikpivkin/roasti-app-backend/internal/uploads"
 )
 
 var (
-	ErrForbidden          = apierr.NewApiError(403, "forbidden")
-	ErrNotFound           = apierr.NewApiError(404, "recipe not found")
-	ErrInvalidTitle       = apierr.NewApiError(400, "title cannot be empty")
-	ErrInvalidDescription = apierr.NewApiError(400, "description cannot be empty")
-	ErrInvalidBrewMethod  = apierr.NewApiError(400, "invalid brew method")
-	ErrInvalidDifficulty  = apierr.NewApiError(400, "invalid difficulty")
+	ErrForbidden              = apierr.NewApiError(http.StatusForbidden, "forbidden")
+	ErrNotFound               = apierr.NewApiError(http.StatusNotFound, "recipe not found")
+	ErrInvalidTitle           = apierr.NewApiError(http.StatusBadRequest, "title cannot be empty")
+	ErrInvalidDescription     = apierr.NewApiError(http.StatusBadRequest, "description cannot be empty")
+	ErrInvalidBrewMethod      = apierr.NewApiError(http.StatusBadRequest, "invalid brew method")
+	ErrInvalidDifficulty      = apierr.NewApiError(http.StatusBadRequest, "invalid difficulty")
+	ErrInvalidRoastLevel      = apierr.NewApiError(http.StatusBadRequest, "invalid roast level")
+	ErrInvalidStepTitle       = apierr.NewApiError(http.StatusBadRequest, "step title cannot be empty")
+	ErrInvalidStepDescription = apierr.NewApiError(http.StatusBadRequest, "step description cannot be empty")
 )
 
 type Service struct {
-	repo *Repository
+	logger   *slog.Logger
+	repo     *Repository
+	uploader *uploads.Service
 }
 
-func NewService(repo *Repository) *Service {
-	return &Service{repo: repo}
+func NewService(repo *Repository, uploader *uploads.Service) *Service {
+	return &Service{
+		logger:   slog.Default(),
+		repo:     repo,
+		uploader: uploader,
+	}
 }
 
 func (s *Service) ListRecipes(
@@ -35,42 +46,16 @@ func (s *Service) ListRecipes(
 	return s.repo.ListRecipes(ctx, userID, params)
 }
 
-func ValidateCreateRecipe(req models.CreateRecipeRequest) error {
-	if strings.TrimSpace(req.Title) == "" {
-		return ErrInvalidTitle
-	}
-	if strings.TrimSpace(req.Description) == "" {
-		return ErrInvalidDescription
-	}
-	if req.BrewMethod == models.BrewMethodNone {
-		return ErrInvalidBrewMethod
-	}
-	if req.Difficulty == models.DifficultyNone {
-		return ErrInvalidDifficulty
-	}
-	return nil
-}
-
 func (s *Service) CreateRecipe(ctx context.Context, userID string, request models.CreateRecipeRequest) (models.Recipe, error) {
-	if request.Title == "" {
-		return models.Recipe{}, ErrInvalidTitle
+	if err := validateRecipePayload(request); err != nil {
+		return models.Recipe{}, err
 	}
 
-	recipe := models.Recipe{
-		Title:       request.Title,
-		Description: request.Description,
-		ImageUrl:    request.ImageUrl,
-		BrewMethod:  request.BrewMethod,
-		Difficulty:  request.Difficulty,
-		RoastLevel:  request.RoastLevel,
-		Beans:       request.Beans,
-		Public:      request.Public != nil && *request.Public,
-		Steps:       request.Steps,
-	}
+	recipe := recipePayloadToModel(request)
 
 	recipe.Id = ids.NewID()
 	recipe.AuthorId = userID
-	if err := s.repo.CreateRecipe(ctx, recipe); err != nil {
+	if err := s.repo.UpsertRecipe(ctx, recipe); err != nil {
 		return recipe, nil
 	}
 
@@ -78,32 +63,51 @@ func (s *Service) CreateRecipe(ctx context.Context, userID string, request model
 	if err != nil {
 		return models.Recipe{}, err
 	}
+	s.confirmRecipeImages(ctx, created)
 	return created, nil
 }
 
-func ValidatePatchRecipe(req models.PatchRecipeRequest) error {
-	if req.Title != nil && strings.TrimSpace(*req.Title) == "" {
-		return ErrInvalidTitle
+func (s *Service) UpdateRecipe(
+	ctx context.Context, userID, recipeID string, request models.UpdateRecipeRequest,
+) (models.Recipe, error) {
+	if err := validateRecipePayload(request); err != nil {
+		return models.Recipe{}, err
 	}
 
-	if req.Description != nil && strings.TrimSpace(*req.Description) == "" {
-		return ErrInvalidDescription
+	existing, err := s.repo.GetRecipeByID(ctx, recipeID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return models.Recipe{}, ErrNotFound
+		}
+		return models.Recipe{}, err
 	}
 
-	if req.BrewMethod != nil && *req.BrewMethod == models.BrewMethodNone {
-		return ErrInvalidBrewMethod
+	if existing.AuthorId != userID {
+		return models.Recipe{}, ErrForbidden
 	}
 
-	if req.Difficulty != nil && *req.Difficulty == models.DifficultyNone {
-		return ErrInvalidDifficulty
+	recipe := recipePayloadToModel(request)
+	recipe.Id = recipeID
+	recipe.AuthorId = existing.AuthorId
+	recipe.CreatedAt = existing.CreatedAt
+
+	if err := s.repo.UpsertRecipe(ctx, recipe); err != nil {
+		return models.Recipe{}, err
 	}
-	return nil
+
+	updated, err := s.repo.GetRecipeByID(ctx, recipe.Id)
+	if err != nil {
+		return models.Recipe{}, err
+	}
+
+	s.confirmRecipeImages(ctx, updated)
+	return updated, nil
 }
 
-func (s *Service) UpdateRecipe(
+func (s *Service) PatchRecipe(
 	ctx context.Context, userID, recipeID string, requst models.PatchRecipeRequest,
 ) (models.Recipe, error) {
-	if err := ValidatePatchRecipe(requst); err != nil {
+	if err := validatePatchRecipe(requst); err != nil {
 		return models.Recipe{}, err
 	}
 
@@ -118,7 +122,7 @@ func (s *Service) UpdateRecipe(
 	if recipe.AuthorId != userID {
 		return models.Recipe{}, ErrForbidden
 	}
-	return s.repo.UpdateRecipe(ctx, userID, recipeID, requst)
+	return s.repo.PatchRecipe(ctx, userID, recipeID, requst)
 }
 
 func (s *Service) DeleteRecipe(ctx context.Context, userID, recipeID string) error {
@@ -135,4 +139,58 @@ func (s *Service) DeleteRecipe(ctx context.Context, userID, recipeID string) err
 	}
 
 	return s.repo.DeleteRecipe(ctx, userID, recipeID)
+}
+
+func (s *Service) confirmRecipeImages(ctx context.Context, recipe models.Recipe) {
+	if recipe.ImageId != nil {
+		if err := s.uploader.Confirm(*recipe.ImageId); err != nil {
+			s.logger.WarnContext(ctx, "failed to confirm recipe image",
+				slog.String("recipe_id", recipe.Id),
+				slog.String("image_id", *recipe.ImageId),
+			)
+		}
+	}
+
+	for _, step := range recipe.Steps {
+		if step.ImageId != nil {
+			if err := s.uploader.Confirm(*step.ImageId); err != nil {
+				s.logger.WarnContext(ctx, "failed to confirm step image",
+					slog.Int64("step_id", step.Id),
+					slog.String("image_id", *step.ImageId),
+				)
+			}
+		}
+	}
+}
+
+func recipePayloadToModel(payload models.RecipePayload) models.Recipe {
+	return models.Recipe{
+		Title:       payload.Title,
+		Description: payload.Description,
+		ImageId:     payload.ImageId,
+		BrewMethod:  payload.BrewMethod,
+		Difficulty:  payload.Difficulty,
+		RoastLevel:  payload.RoastLevel,
+		Beans:       payload.Beans,
+		Public:      payload.Public != nil && *payload.Public,
+		Steps:       mapSlice(payload.Steps, brewStepPayloadToModel),
+	}
+}
+
+func brewStepPayloadToModel(payload models.BrewStepPayload) models.BrewStep {
+	return models.BrewStep{
+		Title:           payload.Title,
+		Description:     payload.Description,
+		ImageId:         payload.ImageId,
+		Order:           payload.Order,
+		DurationSeconds: payload.DurationSeconds,
+	}
+}
+
+func mapSlice[T, U any](slice []T, f func(T) U) []U {
+	result := make([]U, len(slice))
+	for i, v := range slice {
+		result[i] = f(v)
+	}
+	return result
 }

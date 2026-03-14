@@ -18,34 +18,31 @@ import (
 
 // Defines values for BrewMethod.
 const (
-	BrewMethodAeropress       BrewMethod = "aeropress"
-	BrewMethodChemex          BrewMethod = "chemex"
-	BrewMethodColdBrew        BrewMethod = "cold_brew"
-	BrewMethodExpressoMachine BrewMethod = "expresso_machine"
-	BrewMethodFrenchPress     BrewMethod = "french_press"
-	BrewMethodMokaPot         BrewMethod = "moka_pot"
-	BrewMethodNone            BrewMethod = "none"
-	BrewMethodV60             BrewMethod = "v60"
+	Aeropress       BrewMethod = "aeropress"
+	Chemex          BrewMethod = "chemex"
+	ColdBrew        BrewMethod = "cold_brew"
+	ExpressoMachine BrewMethod = "expresso_machine"
+	FrenchPress     BrewMethod = "french_press"
+	MokaPot         BrewMethod = "moka_pot"
+	V60             BrewMethod = "v60"
 )
 
 // Valid indicates whether the value is a known member of the BrewMethod enum.
 func (e BrewMethod) Valid() bool {
 	switch e {
-	case BrewMethodAeropress:
+	case Aeropress:
 		return true
-	case BrewMethodChemex:
+	case Chemex:
 		return true
-	case BrewMethodColdBrew:
+	case ColdBrew:
 		return true
-	case BrewMethodExpressoMachine:
+	case ExpressoMachine:
 		return true
-	case BrewMethodFrenchPress:
+	case FrenchPress:
 		return true
-	case BrewMethodMokaPot:
+	case MokaPot:
 		return true
-	case BrewMethodNone:
-		return true
-	case BrewMethodV60:
+	case V60:
 		return true
 	default:
 		return false
@@ -57,7 +54,6 @@ const (
 	DifficultyEasy   Difficulty = "easy"
 	DifficultyHard   Difficulty = "hard"
 	DifficultyMedium Difficulty = "medium"
-	DifficultyNone   Difficulty = "none"
 )
 
 // Valid indicates whether the value is a known member of the Difficulty enum.
@@ -69,8 +65,6 @@ func (e Difficulty) Valid() bool {
 		return true
 	case DifficultyMedium:
 		return true
-	case DifficultyNone:
-		return true
 	default:
 		return false
 	}
@@ -78,28 +72,25 @@ func (e Difficulty) Valid() bool {
 
 // Defines values for RoastLevel.
 const (
-	Dark        RoastLevel = "dark"
-	Ligth       RoastLevel = "ligth"
-	Medium      RoastLevel = "medium"
-	MediumDark  RoastLevel = "medium_dark"
-	MediumLight RoastLevel = "medium_light"
-	None        RoastLevel = "none"
+	RoastLevelDark        RoastLevel = "dark"
+	RoastLevelLight       RoastLevel = "light"
+	RoastLevelMedium      RoastLevel = "medium"
+	RoastLevelMediumDark  RoastLevel = "medium_dark"
+	RoastLevelMediumLight RoastLevel = "medium_light"
 )
 
 // Valid indicates whether the value is a known member of the RoastLevel enum.
 func (e RoastLevel) Valid() bool {
 	switch e {
-	case Dark:
+	case RoastLevelDark:
 		return true
-	case Ligth:
+	case RoastLevelLight:
 		return true
-	case Medium:
+	case RoastLevelMedium:
 		return true
-	case MediumDark:
+	case RoastLevelMediumDark:
 		return true
-	case MediumLight:
-		return true
-	case None:
+	case RoastLevelMediumLight:
 		return true
 	default:
 		return false
@@ -123,6 +114,30 @@ type BrewStep struct {
 	// DurationSeconds Optional duration of the step in seconds
 	DurationSeconds *int `json:"duration_seconds,omitempty"`
 
+	// Id Unique step identifier
+	Id int64 `json:"id"`
+
+	// ImageId ID of the uploaded image. Can be resolved via the image upload endpoint.
+	ImageId *string `json:"image_id,omitempty"`
+
+	// Order Order of the step in the recipe
+	Order int `json:"order"`
+
+	// Title Short title of the step
+	Title string `json:"title"`
+}
+
+// BrewStepPayload Single step of the brewing process
+type BrewStepPayload struct {
+	// Description Detailed instructions for the step
+	Description string `json:"description"`
+
+	// DurationSeconds Optional duration of the step in seconds
+	DurationSeconds *int `json:"duration_seconds,omitempty"`
+
+	// ImageId ID of the uploaded image. Can be resolved via the image upload endpoint.
+	ImageId *string `json:"image_id,omitempty"`
+
 	// Order Order of the step in the recipe
 	Order int `json:"order"`
 
@@ -131,30 +146,16 @@ type BrewStep struct {
 }
 
 // CreateRecipeRequest defines model for CreateRecipeRequest.
-type CreateRecipeRequest struct {
-	Beans *string `json:"beans,omitempty"`
-
-	// BrewMethod Coffee brewing method
-	BrewMethod  BrewMethod `json:"brew_method"`
-	Description string     `json:"description"`
-
-	// Difficulty Difficulty level of the recipe
-	Difficulty Difficulty `json:"difficulty"`
-
-	// ImageUrl Optional image illustrating the recipe
-	ImageUrl *string `json:"image_url,omitempty"`
-
-	// Public Whether this recipe is publicly visible
-	Public *bool `json:"public,omitempty"`
-
-	// RoastLevel Coffee roast level
-	RoastLevel *RoastLevel `json:"roast_level,omitempty"`
-	Steps      []BrewStep  `json:"steps"`
-	Title      string      `json:"title"`
-}
+type CreateRecipeRequest = RecipePayload
 
 // Difficulty Difficulty level of the recipe
 type Difficulty string
+
+// Image Uploaded image
+type Image struct {
+	// Id Unique image identifier
+	Id string `json:"id"`
+}
 
 // Pagination defines model for Pagination.
 type Pagination struct {
@@ -172,7 +173,7 @@ type PatchRecipeRequest struct {
 
 	// Difficulty Difficulty level of the recipe
 	Difficulty *Difficulty `json:"difficulty,omitempty"`
-	ImageUrl   *string     `json:"image_url,omitempty"`
+	ImageId    *string     `json:"image_id,omitempty"`
 
 	// Public Whether this recipe is publicly visible
 	Public *bool `json:"public,omitempty"`
@@ -205,8 +206,8 @@ type Recipe struct {
 	// Id Unique recipe identifier
 	Id string `json:"id"`
 
-	// ImageUrl Optional image illustrating the recipe
-	ImageUrl *string `json:"image_url,omitempty"`
+	// ImageId ID of the uploaded image. Can be resolved via the image upload endpoint.
+	ImageId *string `json:"image_id,omitempty"`
 
 	// Public Indicates whether the recipe is publicly visible.
 	Public bool `json:"public"`
@@ -224,8 +225,41 @@ type Recipe struct {
 	UpdatedAt *time.Time `json:"updated_at,omitempty"`
 }
 
+// RecipePayload defines model for RecipePayload.
+type RecipePayload struct {
+	// Beans Coffee beans used for the recipe
+	Beans *string `json:"beans,omitempty"`
+
+	// BrewMethod Coffee brewing method
+	BrewMethod BrewMethod `json:"brew_method"`
+
+	// Description Detailed description of the recipe
+	Description string `json:"description"`
+
+	// Difficulty Difficulty level of the recipe
+	Difficulty Difficulty `json:"difficulty"`
+
+	// ImageId ID of the uploaded image. Can be resolved via the image upload endpoint.
+	ImageId *string `json:"image_id,omitempty"`
+
+	// Public Indicates whether the recipe is publicly visible
+	Public *bool `json:"public,omitempty"`
+
+	// RoastLevel Coffee roast level
+	RoastLevel *RoastLevel `json:"roast_level,omitempty"`
+
+	// Steps Ordered list of brewing steps
+	Steps []BrewStepPayload `json:"steps"`
+
+	// Title Recipe title
+	Title string `json:"title"`
+}
+
 // RoastLevel Coffee roast level
 type RoastLevel string
+
+// UpdateRecipeRequest defines model for UpdateRecipeRequest.
+type UpdateRecipeRequest = RecipePayload
 
 // ListRecipesParams defines model for ListRecipesParams.
 type ListRecipesParams struct {
@@ -250,25 +284,27 @@ type ListRecipesParams struct {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"AAD//82WmsvrHAAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

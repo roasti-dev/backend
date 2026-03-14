@@ -68,8 +68,49 @@ paths:
         '400':
           description: Bad request
 
-    patch:
+    put:
       summary: Update recipe
+      parameters:
+        - $ref: '#/components/parameters/UserIDHeader'
+        - name: recipe_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './models.yaml#/components/schemas/UpdateRecipeRequest'
+      responses:
+        '200':
+          description: Recipe updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateRecipeResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: './models.yaml#/components/schemas/ApiErrorResponse'
+        '403':
+          description: Not allowed (not author)
+          content:
+            application/json:
+              schema:
+                $ref: './models.yaml#/components/schemas/ApiErrorResponse'
+        '404':
+          description: Recipe not found
+          content:
+            application/json:
+              schema:
+                $ref: './models.yaml#/components/schemas/ApiErrorResponse'
+
+    patch:
+      summary: Partially update recipe
       parameters:
         - $ref: '#/components/parameters/UserIDHeader'
         - name: recipe_id
@@ -108,6 +149,60 @@ paths:
             application/json:
               schema:
                 $ref: './models.yaml#/components/schemas/ApiErrorResponse'
+
+  /api/v1/uploads/images/{image_id}:
+      get:
+        summary: Get image by ID
+        parameters:
+          - $ref: '#/components/parameters/UserIDHeader'
+          - name: image_id
+            in: path
+            required: true
+            schema:
+              type: string
+        responses:
+          '200':
+            description: Image file
+            content:
+              image/*:
+                schema:
+                  type: string
+                  format: binary
+          '404':
+            description: Image not found
+          '500':
+            description: Internal server error
+
+  /api/v1/uploads/images:
+      post:
+        summary: Upload an image
+        parameters:
+          - $ref: '#/components/parameters/UserIDHeader'
+        requestBody:
+          required: true
+          content:
+            multipart/form-data:
+              schema:
+                type: object
+                properties:
+                  file:
+                    type: string
+                    format: binary
+                required:
+                  - file
+        responses:
+          '201':
+            description: Image uploaded successfully
+            content:
+              application/json:
+                schema:
+                  $ref: './models.yaml#/components/schemas/Image'
+          '400':
+            description: Bad request
+          '413':
+            description: File too large
+          '500':
+            description: Internal server error
 
 components:
   parameters:
@@ -175,5 +270,8 @@ components:
                 $ref: './models.yaml#/components/schemas/Recipe'
 
     CreateRecipeResponse:
+      $ref: './models.yaml#/components/schemas/Recipe'
+
+    UpdateRecipeResponse:
       $ref: './models.yaml#/components/schemas/Recipe'
 

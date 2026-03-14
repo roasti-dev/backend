@@ -23,8 +23,12 @@ linters:
       check-type-assertions: true
       check-blank: true
       exclude-functions:
+        - (*os.File).Close
+        - (*mime/multipart.Part).Close
+        - mime.ParseMediaType
         - (net/http.ResponseWriter).Write
         - (*database/sql.Rows).Close
+        - (*database/sql.Tx).Rollback
 
     funcorder:
       constructor: true

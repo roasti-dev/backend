@@ -12,6 +12,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"path"
@@ -21,6 +23,7 @@ import (
 	externalRef0 "github.com/nikpivkin/roasti-app-backend/internal/api/models"
 	"github.com/oapi-codegen/runtime"
 	strictnethttp "github.com/oapi-codegen/runtime/strictmiddleware/nethttp"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 // Defines values for GetApiV1RecipesParamsListRecipesSortDirection.
@@ -91,6 +94,9 @@ type RecipePage struct {
 	TotalCount int `json:"total_count"`
 }
 
+// UpdateRecipeResponse Coffee brewing recipe
+type UpdateRecipeResponse = externalRef0.Recipe
+
 // LimitParam defines model for LimitParam.
 type LimitParam = int
 
@@ -132,11 +138,40 @@ type PatchApiV1RecipesRecipeIdParams struct {
 	XUserId UserIDHeader `json:"X-User-Id"`
 }
 
+// PutApiV1RecipesRecipeIdParams defines parameters for PutApiV1RecipesRecipeId.
+type PutApiV1RecipesRecipeIdParams struct {
+	// XUserId User ID
+	XUserId UserIDHeader `json:"X-User-Id"`
+}
+
+// PostApiV1UploadsImagesMultipartBody defines parameters for PostApiV1UploadsImages.
+type PostApiV1UploadsImagesMultipartBody struct {
+	File openapi_types.File `json:"file"`
+}
+
+// PostApiV1UploadsImagesParams defines parameters for PostApiV1UploadsImages.
+type PostApiV1UploadsImagesParams struct {
+	// XUserId User ID
+	XUserId UserIDHeader `json:"X-User-Id"`
+}
+
+// GetApiV1UploadsImagesImageIdParams defines parameters for GetApiV1UploadsImagesImageId.
+type GetApiV1UploadsImagesImageIdParams struct {
+	// XUserId User ID
+	XUserId UserIDHeader `json:"X-User-Id"`
+}
+
 // PostApiV1RecipesJSONRequestBody defines body for PostApiV1Recipes for application/json ContentType.
 type PostApiV1RecipesJSONRequestBody = externalRef0.CreateRecipeRequest
 
 // PatchApiV1RecipesRecipeIdJSONRequestBody defines body for PatchApiV1RecipesRecipeId for application/json ContentType.
 type PatchApiV1RecipesRecipeIdJSONRequestBody = externalRef0.PatchRecipeRequest
+
+// PutApiV1RecipesRecipeIdJSONRequestBody defines body for PutApiV1RecipesRecipeId for application/json ContentType.
+type PutApiV1RecipesRecipeIdJSONRequestBody = externalRef0.UpdateRecipeRequest
+
+// PostApiV1UploadsImagesMultipartRequestBody defines body for PostApiV1UploadsImages for multipart/form-data ContentType.
+type PostApiV1UploadsImagesMultipartRequestBody PostApiV1UploadsImagesMultipartBody
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -149,9 +184,18 @@ type ServerInterface interface {
 	// Delete recipe
 	// (DELETE /api/v1/recipes/{recipe_id})
 	DeleteApiV1RecipesRecipeId(w http.ResponseWriter, r *http.Request, recipeId string, params DeleteApiV1RecipesRecipeIdParams)
-	// Update recipe
+	// Partially update recipe
 	// (PATCH /api/v1/recipes/{recipe_id})
 	PatchApiV1RecipesRecipeId(w http.ResponseWriter, r *http.Request, recipeId string, params PatchApiV1RecipesRecipeIdParams)
+	// Update recipe
+	// (PUT /api/v1/recipes/{recipe_id})
+	PutApiV1RecipesRecipeId(w http.ResponseWriter, r *http.Request, recipeId string, params PutApiV1RecipesRecipeIdParams)
+	// Upload an image
+	// (POST /api/v1/uploads/images)
+	PostApiV1UploadsImages(w http.ResponseWriter, r *http.Request, params PostApiV1UploadsImagesParams)
+	// Get image by ID
+	// (GET /api/v1/uploads/images/{image_id})
+	GetApiV1UploadsImagesImageId(w http.ResponseWriter, r *http.Request, imageId string, params GetApiV1UploadsImagesImageIdParams)
 
 	// (GET /health)
 	GetHealth(w http.ResponseWriter, r *http.Request)
@@ -368,6 +412,156 @@ func (siw *ServerInterfaceWrapper) PatchApiV1RecipesRecipeId(w http.ResponseWrit
 	handler.ServeHTTP(w, r)
 }
 
+// PutApiV1RecipesRecipeId operation middleware
+func (siw *ServerInterfaceWrapper) PutApiV1RecipesRecipeId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "recipe_id" -------------
+	var recipeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "recipe_id", r.PathValue("recipe_id"), &recipeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "recipe_id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PutApiV1RecipesRecipeIdParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-User-Id" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-User-Id")]; found {
+		var XUserId UserIDHeader
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-User-Id", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-User-Id", valueList[0], &XUserId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-User-Id", Err: err})
+			return
+		}
+
+		params.XUserId = XUserId
+
+	} else {
+		err := fmt.Errorf("Header parameter X-User-Id is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-User-Id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PutApiV1RecipesRecipeId(w, r, recipeId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostApiV1UploadsImages operation middleware
+func (siw *ServerInterfaceWrapper) PostApiV1UploadsImages(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PostApiV1UploadsImagesParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-User-Id" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-User-Id")]; found {
+		var XUserId UserIDHeader
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-User-Id", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-User-Id", valueList[0], &XUserId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-User-Id", Err: err})
+			return
+		}
+
+		params.XUserId = XUserId
+
+	} else {
+		err := fmt.Errorf("Header parameter X-User-Id is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-User-Id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostApiV1UploadsImages(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetApiV1UploadsImagesImageId operation middleware
+func (siw *ServerInterfaceWrapper) GetApiV1UploadsImagesImageId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "image_id" -------------
+	var imageId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "image_id", r.PathValue("image_id"), &imageId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "image_id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetApiV1UploadsImagesImageIdParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-User-Id" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-User-Id")]; found {
+		var XUserId UserIDHeader
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-User-Id", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-User-Id", valueList[0], &XUserId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-User-Id", Err: err})
+			return
+		}
+
+		params.XUserId = XUserId
+
+	} else {
+		err := fmt.Errorf("Header parameter X-User-Id is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-User-Id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetApiV1UploadsImagesImageId(w, r, imageId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetHealth operation middleware
 func (siw *ServerInterfaceWrapper) GetHealth(w http.ResponseWriter, r *http.Request) {
 
@@ -506,6 +700,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/recipes", wrapper.PostApiV1Recipes)
 	m.HandleFunc("DELETE "+options.BaseURL+"/api/v1/recipes/{recipe_id}", wrapper.DeleteApiV1RecipesRecipeId)
 	m.HandleFunc("PATCH "+options.BaseURL+"/api/v1/recipes/{recipe_id}", wrapper.PatchApiV1RecipesRecipeId)
+	m.HandleFunc("PUT "+options.BaseURL+"/api/v1/recipes/{recipe_id}", wrapper.PutApiV1RecipesRecipeId)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/uploads/images", wrapper.PostApiV1UploadsImages)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/uploads/images/{image_id}", wrapper.GetApiV1UploadsImagesImageId)
 	m.HandleFunc("GET "+options.BaseURL+"/health", wrapper.GetHealth)
 
 	return m
@@ -641,6 +838,139 @@ func (response PatchApiV1RecipesRecipeId404JSONResponse) VisitPatchApiV1RecipesR
 	return json.NewEncoder(w).Encode(response)
 }
 
+type PutApiV1RecipesRecipeIdRequestObject struct {
+	RecipeId string `json:"recipe_id"`
+	Params   PutApiV1RecipesRecipeIdParams
+	Body     *PutApiV1RecipesRecipeIdJSONRequestBody
+}
+
+type PutApiV1RecipesRecipeIdResponseObject interface {
+	VisitPutApiV1RecipesRecipeIdResponse(w http.ResponseWriter) error
+}
+
+type PutApiV1RecipesRecipeId200JSONResponse UpdateRecipeResponse
+
+func (response PutApiV1RecipesRecipeId200JSONResponse) VisitPutApiV1RecipesRecipeIdResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PutApiV1RecipesRecipeId400JSONResponse externalRef0.ApiErrorResponse
+
+func (response PutApiV1RecipesRecipeId400JSONResponse) VisitPutApiV1RecipesRecipeIdResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PutApiV1RecipesRecipeId403JSONResponse externalRef0.ApiErrorResponse
+
+func (response PutApiV1RecipesRecipeId403JSONResponse) VisitPutApiV1RecipesRecipeIdResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PutApiV1RecipesRecipeId404JSONResponse externalRef0.ApiErrorResponse
+
+func (response PutApiV1RecipesRecipeId404JSONResponse) VisitPutApiV1RecipesRecipeIdResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostApiV1UploadsImagesRequestObject struct {
+	Params PostApiV1UploadsImagesParams
+	Body   *multipart.Reader
+}
+
+type PostApiV1UploadsImagesResponseObject interface {
+	VisitPostApiV1UploadsImagesResponse(w http.ResponseWriter) error
+}
+
+type PostApiV1UploadsImages201JSONResponse externalRef0.Image
+
+func (response PostApiV1UploadsImages201JSONResponse) VisitPostApiV1UploadsImagesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostApiV1UploadsImages400Response struct {
+}
+
+func (response PostApiV1UploadsImages400Response) VisitPostApiV1UploadsImagesResponse(w http.ResponseWriter) error {
+	w.WriteHeader(400)
+	return nil
+}
+
+type PostApiV1UploadsImages413Response struct {
+}
+
+func (response PostApiV1UploadsImages413Response) VisitPostApiV1UploadsImagesResponse(w http.ResponseWriter) error {
+	w.WriteHeader(413)
+	return nil
+}
+
+type PostApiV1UploadsImages500Response struct {
+}
+
+func (response PostApiV1UploadsImages500Response) VisitPostApiV1UploadsImagesResponse(w http.ResponseWriter) error {
+	w.WriteHeader(500)
+	return nil
+}
+
+type GetApiV1UploadsImagesImageIdRequestObject struct {
+	ImageId string `json:"image_id"`
+	Params  GetApiV1UploadsImagesImageIdParams
+}
+
+type GetApiV1UploadsImagesImageIdResponseObject interface {
+	VisitGetApiV1UploadsImagesImageIdResponse(w http.ResponseWriter) error
+}
+
+type GetApiV1UploadsImagesImageId200ImageResponse struct {
+	Body          io.Reader
+	ContentType   string
+	ContentLength int64
+}
+
+func (response GetApiV1UploadsImagesImageId200ImageResponse) VisitGetApiV1UploadsImagesImageIdResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", response.ContentType)
+	if response.ContentLength != 0 {
+		w.Header().Set("Content-Length", fmt.Sprint(response.ContentLength))
+	}
+	w.WriteHeader(200)
+
+	if closer, ok := response.Body.(io.ReadCloser); ok {
+		defer closer.Close()
+	}
+	_, err := io.Copy(w, response.Body)
+	return err
+}
+
+type GetApiV1UploadsImagesImageId404Response struct {
+}
+
+func (response GetApiV1UploadsImagesImageId404Response) VisitGetApiV1UploadsImagesImageIdResponse(w http.ResponseWriter) error {
+	w.WriteHeader(404)
+	return nil
+}
+
+type GetApiV1UploadsImagesImageId500Response struct {
+}
+
+func (response GetApiV1UploadsImagesImageId500Response) VisitGetApiV1UploadsImagesImageIdResponse(w http.ResponseWriter) error {
+	w.WriteHeader(500)
+	return nil
+}
+
 type GetHealthRequestObject struct {
 }
 
@@ -669,9 +999,18 @@ type StrictServerInterface interface {
 	// Delete recipe
 	// (DELETE /api/v1/recipes/{recipe_id})
 	DeleteApiV1RecipesRecipeId(ctx context.Context, request DeleteApiV1RecipesRecipeIdRequestObject) (DeleteApiV1RecipesRecipeIdResponseObject, error)
-	// Update recipe
+	// Partially update recipe
 	// (PATCH /api/v1/recipes/{recipe_id})
 	PatchApiV1RecipesRecipeId(ctx context.Context, request PatchApiV1RecipesRecipeIdRequestObject) (PatchApiV1RecipesRecipeIdResponseObject, error)
+	// Update recipe
+	// (PUT /api/v1/recipes/{recipe_id})
+	PutApiV1RecipesRecipeId(ctx context.Context, request PutApiV1RecipesRecipeIdRequestObject) (PutApiV1RecipesRecipeIdResponseObject, error)
+	// Upload an image
+	// (POST /api/v1/uploads/images)
+	PostApiV1UploadsImages(ctx context.Context, request PostApiV1UploadsImagesRequestObject) (PostApiV1UploadsImagesResponseObject, error)
+	// Get image by ID
+	// (GET /api/v1/uploads/images/{image_id})
+	GetApiV1UploadsImagesImageId(ctx context.Context, request GetApiV1UploadsImagesImageIdRequestObject) (GetApiV1UploadsImagesImageIdResponseObject, error)
 
 	// (GET /health)
 	GetHealth(ctx context.Context, request GetHealthRequestObject) (GetHealthResponseObject, error)
@@ -826,6 +1165,100 @@ func (sh *strictHandler) PatchApiV1RecipesRecipeId(w http.ResponseWriter, r *htt
 	}
 }
 
+// PutApiV1RecipesRecipeId operation middleware
+func (sh *strictHandler) PutApiV1RecipesRecipeId(w http.ResponseWriter, r *http.Request, recipeId string, params PutApiV1RecipesRecipeIdParams) {
+	var request PutApiV1RecipesRecipeIdRequestObject
+
+	request.RecipeId = recipeId
+	request.Params = params
+
+	var body PutApiV1RecipesRecipeIdJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PutApiV1RecipesRecipeId(ctx, request.(PutApiV1RecipesRecipeIdRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PutApiV1RecipesRecipeId")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PutApiV1RecipesRecipeIdResponseObject); ok {
+		if err := validResponse.VisitPutApiV1RecipesRecipeIdResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PostApiV1UploadsImages operation middleware
+func (sh *strictHandler) PostApiV1UploadsImages(w http.ResponseWriter, r *http.Request, params PostApiV1UploadsImagesParams) {
+	var request PostApiV1UploadsImagesRequestObject
+
+	request.Params = params
+
+	if reader, err := r.MultipartReader(); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode multipart body: %w", err))
+		return
+	} else {
+		request.Body = reader
+	}
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PostApiV1UploadsImages(ctx, request.(PostApiV1UploadsImagesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostApiV1UploadsImages")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PostApiV1UploadsImagesResponseObject); ok {
+		if err := validResponse.VisitPostApiV1UploadsImagesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetApiV1UploadsImagesImageId operation middleware
+func (sh *strictHandler) GetApiV1UploadsImagesImageId(w http.ResponseWriter, r *http.Request, imageId string, params GetApiV1UploadsImagesImageIdParams) {
+	var request GetApiV1UploadsImagesImageIdRequestObject
+
+	request.ImageId = imageId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetApiV1UploadsImagesImageId(ctx, request.(GetApiV1UploadsImagesImageIdRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetApiV1UploadsImagesImageId")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetApiV1UploadsImagesImageIdResponseObject); ok {
+		if err := validResponse.VisitGetApiV1UploadsImagesImageIdResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // GetHealth operation middleware
 func (sh *strictHandler) GetHealth(w http.ResponseWriter, r *http.Request) {
 	var request GetHealthRequestObject
@@ -853,36 +1286,41 @@ func (sh *strictHandler) GetHealth(w http.ResponseWriter, r *http.Request) {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"rarqtwAAAP//VVTDYIsjAAA=",
+	"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",
+	"XXz48RSrfPjRPa2q6t8BAAD//+IE91KJNQAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log/slog"
 	"slices"
 	"strings"
 	"time"
@@ -30,7 +31,7 @@ var (
 		"author_id",
 		"title",
 		"description",
-		"image_url",
+		"image_id",
 		"brew_method",
 		"difficulty",
 		"roast_level",
@@ -46,27 +47,107 @@ var (
 	}
 
 	brewStepsColumns = []string{
+		"id",
 		"recipe_id",
 		"step_order",
 		"title",
 		"description",
 		"duration_seconds",
+		"image_id",
 	}
 )
 
-type Repository struct {
-	db   *sql.DB
-	psql sq.StatementBuilderType
+var (
+	_ sq.StdSqlCtx = (*loggingRunner)(nil)
+)
+
+type loggingRunner struct {
+	db     sq.StdSqlCtx
+	logger *slog.Logger
 }
 
-func NewRepository(db *sql.DB) *Repository {
+func newLoggingRunner(db sq.StdSqlCtx, logger *slog.Logger) *loggingRunner {
+	return &loggingRunner{db: db, logger: logger}
+}
+
+// для транзакции
+func (l *loggingRunner) BeginTx(ctx context.Context, opts *sql.TxOptions) (*loggingRunner, error) {
+	db, ok := l.db.(*sql.DB)
+	if !ok {
+		return nil, fmt.Errorf("not a *sql.DB")
+	}
+	tx, err := db.BeginTx(ctx, opts)
+	if err != nil {
+		return nil, fmt.Errorf("begin tx: %w", err)
+	}
+	return newLoggingRunner(tx, l.logger), nil
+}
+
+func (l *loggingRunner) Rollback() error {
+	tx, ok := l.db.(*sql.Tx)
+	if !ok {
+		return fmt.Errorf("not a *sql.Tx")
+	}
+	return tx.Rollback()
+}
+
+func (l *loggingRunner) Commit() error {
+	tx, ok := l.db.(*sql.Tx)
+	if !ok {
+		return fmt.Errorf("not a *sql.Tx")
+	}
+	return tx.Commit()
+}
+
+func (l *loggingRunner) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
+	l.logger.DebugContext(ctx, "exec", slog.String("query", query), slog.Any("args", args))
+	return l.db.ExecContext(ctx, query, args...)
+}
+
+func (l *loggingRunner) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
+	l.logger.DebugContext(ctx, "query", slog.String("query", query), slog.Any("args", args))
+	return l.db.QueryContext(ctx, query, args...)
+}
+
+func (l *loggingRunner) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
+	l.logger.DebugContext(ctx, "queryRow", slog.String("query", query), slog.Any("args", args))
+	return l.db.QueryRowContext(ctx, query, args...)
+}
+
+func (l *loggingRunner) Exec(query string, args ...any) (sql.Result, error) {
+	return l.db.Exec(query, args...)
+}
+
+func (l *loggingRunner) Query(query string, args ...any) (*sql.Rows, error) {
+	return l.db.Query(query, args...)
+}
+
+func (l *loggingRunner) QueryRow(query string, args ...any) *sql.Row {
+	return l.db.QueryRow(query, args...)
+}
+
+type Repository struct {
+	runner *loggingRunner
+	psql   sq.StatementBuilderType
+}
+
+func NewRepository(db *sql.DB, logger *slog.Logger) *Repository {
+	runner := newLoggingRunner(db, logger)
 	return &Repository{
-		db:   db,
-		psql: sq.StatementBuilder.PlaceholderFormat(sq.Dollar),
+		runner: runner,
+		psql:   sq.StatementBuilder.PlaceholderFormat(sq.Dollar).RunWith(sq.WrapStdSqlCtx(runner)),
 	}
 }
 
-func (r *Repository) CreateRecipe(ctx context.Context, recipe models.Recipe) error {
+func (r *Repository) UpsertRecipe(ctx context.Context, recipe models.Recipe) error {
+	tx, err := r.runner.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	now := time.Now().UTC()
+
 	query := r.psql.Insert(recipesTable).
 		Columns(recipeColumns...).
 		Values(
@@ -74,33 +155,50 @@ func (r *Repository) CreateRecipe(ctx context.Context, recipe models.Recipe) err
 			recipe.AuthorId,
 			recipe.Title,
 			recipe.Description,
-			recipe.ImageUrl,
+			recipe.ImageId,
 			recipe.BrewMethod,
 			recipe.Difficulty,
 			recipe.RoastLevel,
 			recipe.Beans,
 			recipe.Public,
-			time.Now().UTC(),
-			time.Now().UTC(),
-		)
+			now,
+			now,
+		).
+		Suffix("ON CONFLICT (id) DO UPDATE SET " +
+			"title = EXCLUDED.title, " +
+			"description = EXCLUDED.description, " +
+			"image_id = EXCLUDED.image_id, " +
+			"brew_method = EXCLUDED.brew_method, " +
+			"difficulty = EXCLUDED.difficulty, " +
+			"roast_level = EXCLUDED.roast_level, " +
+			"beans = EXCLUDED.beans, " +
+			"public = EXCLUDED.public, " +
+			"updated_at = EXCLUDED.updated_at")
 
-	_, err := query.RunWith(r.db).ExecContext(ctx)
-	if err != nil {
-		return err
+	if _, err := query.RunWith(tx).ExecContext(ctx); err != nil {
+		return fmt.Errorf("upsert recipe: %w", err)
 	}
 
 	// brew steps
-	for _, step := range recipe.Steps {
-		_, err := r.psql.Insert(brewStepsTable).
-			Columns(brewStepsColumns...).
-			Values(recipe.Id, step.Order, step.Title, step.Description, step.DurationSeconds).
-			RunWith(r.db).ExecContext(ctx)
-		if err != nil {
-			return err
+
+	_, err = r.psql.Delete(brewStepsTable).
+		Where("recipe_id = ?", recipe.Id).
+		RunWith(tx).ExecContext(ctx)
+	if err != nil {
+		return fmt.Errorf("delete steps: %w", err)
+	}
+
+	if len(recipe.Steps) > 0 {
+		q := r.psql.Insert(brewStepsTable).Columns(brewStepsColumns...)
+		for _, step := range recipe.Steps {
+			q = q.Values(nil, recipe.Id, step.Order, step.Title, step.Description, step.DurationSeconds, step.ImageId)
+		}
+		if _, err = q.RunWith(tx).ExecContext(ctx); err != nil {
+			return fmt.Errorf("insert steps: %w", err)
 		}
 	}
 
-	return nil
+	return tx.Commit()
 }
 
 func (r *Repository) GetRecipeByID(ctx context.Context, recipeID string) (models.Recipe, error) {
@@ -110,7 +208,7 @@ func (r *Repository) GetRecipeByID(ctx context.Context, recipeID string) (models
 		Where(sq.Eq{"id": recipeID}).
 		Limit(1)
 
-	row := sb.RunWith(r.db).QueryRowContext(ctx)
+	row := sb.RunWith(r.runner).QueryRowContext(ctx)
 
 	recipe, err := scanRecipe(row)
 	if err != nil {
@@ -144,7 +242,7 @@ func (r *Repository) ListRecipes(
 	sb = applyPagination(sb, pag)
 	sb = applySort(sb, params.SortField, params.SortDirection, recipeSortableColumns)
 
-	rows, err := sb.RunWith(r.db).QueryContext(ctx)
+	rows, err := sb.RunWith(r.runner).QueryContext(ctx)
 	if err != nil {
 		return pagination.Page[models.Recipe]{}, err
 	}
@@ -175,7 +273,7 @@ func (r *Repository) ListRecipes(
 
 	var total int
 	if err := countBuilder.
-		RunWith(r.db).
+		RunWith(r.runner).
 		QueryRowContext(ctx).
 		Scan(&total); err != nil {
 		return pagination.Page[models.Recipe]{}, err
@@ -190,13 +288,13 @@ func applyListRecipesFilter(
 ) sq.SelectBuilder {
 
 	// brew method
-	if params.BrewMethod != nil && *params.BrewMethod != models.BrewMethodNone {
-		sb = sb.Where(sq.Eq{"brew_method": params.BrewMethod})
+	if params.BrewMethod != nil {
+		sb = sb.Where(sq.Eq{"brew_method": *params.BrewMethod})
 	}
 
 	// difficulty
-	if params.Difficulty != nil && *params.Difficulty != models.DifficultyNone {
-		sb = sb.Where(sq.Eq{"difficulty": params.Difficulty})
+	if params.Difficulty != nil {
+		sb = sb.Where(sq.Eq{"difficulty": *params.Difficulty})
 	}
 
 	// author filter
@@ -259,7 +357,7 @@ func scanRecipe(s scanner) (models.Recipe, error) {
 		&recipe.AuthorId,
 		&recipe.Title,
 		&recipe.Description,
-		&recipe.ImageUrl,
+		&recipe.ImageId,
 		&recipe.BrewMethod,
 		&recipe.Difficulty,
 		&recipe.RoastLevel,
@@ -272,7 +370,7 @@ func scanRecipe(s scanner) (models.Recipe, error) {
 	return recipe, err
 }
 
-func (r *Repository) UpdateRecipe(ctx context.Context, userID, recipeID string, request models.PatchRecipeRequest) (models.Recipe, error) {
+func (r *Repository) PatchRecipe(ctx context.Context, userID, recipeID string, request models.PatchRecipeRequest) (models.Recipe, error) {
 	update := r.psql.Update(recipesTable).Where(sq.Eq{"id": recipeID})
 
 	if request.Title != nil {
@@ -281,8 +379,8 @@ func (r *Repository) UpdateRecipe(ctx context.Context, userID, recipeID string, 
 	if request.Description != nil {
 		update = update.Set("description", *request.Description)
 	}
-	if request.ImageUrl != nil {
-		update = update.Set("image_url", *request.ImageUrl)
+	if request.ImageId != nil {
+		update = update.Set("image_id", *request.ImageId)
 	}
 	if request.BrewMethod != nil {
 		update = update.Set("brew_method", *request.BrewMethod)
@@ -302,7 +400,7 @@ func (r *Repository) UpdateRecipe(ctx context.Context, userID, recipeID string, 
 
 	update.Set("updated_at", time.Now().UTC())
 
-	if _, err := update.RunWith(r.db).ExecContext(ctx); err != nil {
+	if _, err := update.RunWith(r.runner).ExecContext(ctx); err != nil {
 		return models.Recipe{}, err
 	}
 
@@ -314,7 +412,7 @@ func (r *Repository) DeleteRecipe(ctx context.Context, userID, recipeID string) 
 		sq.Eq{"author_id": userID},
 		sq.Eq{"id": recipeID},
 	})
-	_, err := query.RunWith(r.db).ExecContext(ctx)
+	_, err := query.RunWith(r.runner).ExecContext(ctx)
 	return err
 }
 
@@ -327,7 +425,7 @@ func (r *Repository) getBrewStepsByRecipeIDs(
 		From(brewStepsTable).
 		Where(sq.Eq{"recipe_id": recipeIDs}).
 		OrderBy("step_order ASC").
-		RunWith(r.db).
+		RunWith(r.runner).
 		QueryContext(ctx)
 	if err != nil {
 		return nil, err
@@ -338,7 +436,9 @@ func (r *Repository) getBrewStepsByRecipeIDs(
 	for stepsRows.Next() {
 		var step models.BrewStep
 		var recipeID string
-		if err := stepsRows.Scan(&recipeID, &step.Order, &step.Title, &step.Description, &step.DurationSeconds); err != nil {
+		if err := stepsRows.Scan(
+			&step.Id, &recipeID, &step.Order, &step.Title, &step.Description, &step.DurationSeconds, &step.ImageId,
+		); err != nil {
 			return nil, err
 		}
 		stepsMap[recipeID] = append(stepsMap[recipeID], step)
