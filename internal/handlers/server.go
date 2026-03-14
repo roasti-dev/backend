@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"log/slog"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/recipe"
@@ -22,8 +21,4 @@ func NewServerHandler(recipeService *recipe.Service, uploader *uploads.Service) 
 		recipeService:  recipeService,
 		uploadsService: uploader,
 	}
-}
-
-func (s *ServerHandler) GetHealth(ctx context.Context, request GetHealthRequestObject) (GetHealthResponseObject, error) {
-	return GetHealth200TextResponse("OK"), nil
 }

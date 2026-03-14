@@ -1,8 +1,9 @@
 package handlers
 
-import "net/http"
+import (
+	"context"
+)
 
-func Health(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK"))
+func (s *ServerHandler) GetHealth(ctx context.Context, request GetHealthRequestObject) (GetHealthResponseObject, error) {
+	return GetHealth200TextResponse("OK"), nil
 }
