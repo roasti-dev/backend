@@ -5,25 +5,11 @@ import (
 	"database/sql"
 	"errors"
 	"log/slog"
-	"net/http"
 
-	"github.com/nikpivkin/roasti-app-backend/internal/api/apierr"
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
 	"github.com/nikpivkin/roasti-app-backend/internal/ids"
 	"github.com/nikpivkin/roasti-app-backend/internal/pagination"
 	"github.com/nikpivkin/roasti-app-backend/internal/uploads"
-)
-
-var (
-	ErrForbidden              = apierr.NewApiError(http.StatusForbidden, "forbidden")
-	ErrNotFound               = apierr.NewApiError(http.StatusNotFound, "recipe not found")
-	ErrInvalidTitle           = apierr.NewApiError(http.StatusBadRequest, "title cannot be empty")
-	ErrInvalidDescription     = apierr.NewApiError(http.StatusBadRequest, "description cannot be empty")
-	ErrInvalidBrewMethod      = apierr.NewApiError(http.StatusBadRequest, "invalid brew method")
-	ErrInvalidDifficulty      = apierr.NewApiError(http.StatusBadRequest, "invalid difficulty")
-	ErrInvalidRoastLevel      = apierr.NewApiError(http.StatusBadRequest, "invalid roast level")
-	ErrInvalidStepTitle       = apierr.NewApiError(http.StatusBadRequest, "step title cannot be empty")
-	ErrInvalidStepDescription = apierr.NewApiError(http.StatusBadRequest, "step description cannot be empty")
 )
 
 type Service struct {

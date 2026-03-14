@@ -2,30 +2,18 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
-	"github.com/getkin/kin-openapi/openapi3"
-	oapimiddleware "github.com/oapi-codegen/nethttp-middleware"
-
-	"github.com/nikpivkin/roasti-app-backend/docs"
-	"github.com/nikpivkin/roasti-app-backend/internal/api/apierr"
-	"github.com/nikpivkin/roasti-app-backend/internal/db"
-	"github.com/nikpivkin/roasti-app-backend/internal/handlers"
+	"github.com/nikpivkin/roasti-app-backend/internal/app"
 	"github.com/nikpivkin/roasti-app-backend/internal/log"
-	"github.com/nikpivkin/roasti-app-backend/internal/middleware"
-	"github.com/nikpivkin/roasti-app-backend/internal/recipe"
-	"github.com/nikpivkin/roasti-app-backend/internal/seed"
 	"github.com/nikpivkin/roasti-app-backend/internal/server"
-	"github.com/nikpivkin/roasti-app-backend/internal/uploads"
 
 	_ "embed"
 )
@@ -45,67 +33,27 @@ const (
 )
 
 func run() error {
+
 	logger := log.InitLogger(appVersion)
 	slog.SetDefault(logger)
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	database, err := db.NewSQLite("data.db")
+	a, err := app.New(app.Config{
+		DBPath:      "data.db",
+		UploadsPath: "./uploads",
+		AppVersion:  appVersion,
+	}, logger)
 	if err != nil {
-		return fmt.Errorf("create db: %w", err)
+		return fmt.Errorf("create app: %w", err)
 	}
 
-	if err := db.InitSchema(database); err != nil {
-		return fmt.Errorf("init schema: %w", err)
-	}
+	s := server.New(serverAddr, a.Handler())
 
-	uploader := uploads.NewService("./uploads")
-	recipeRepo := recipe.NewRepository(database, slog.Default())
-	recipeService := recipe.NewService(recipeRepo, uploader)
-
-	if err := seed.Run(ctx, seed.Services{
-		RecipeService: recipeService,
-	}); err != nil {
+	if err := a.Seed(ctx); err != nil {
 		return err
 	}
-
-	swagger, err := handlers.GetSwagger()
-	if err != nil {
-		return err
-	}
-
-	strictHandler := handlers.NewServerHandler(recipeService, uploader)
-	handler := handlers.NewStrictHandlerWithOptions(strictHandler, nil, handlers.StrictHTTPServerOptions{
-		ResponseErrorHandlerFunc: responseErrorHandler,
-	})
-
-	router := http.NewServeMux()
-	router.HandleFunc("/openapi.json", serveOpenAPIJSON(swagger))
-	router.Handle("/docs/", serveSwaggerStatic(docs.SwaggerHTML))
-	router.Handle("/docs", http.RedirectHandler("/docs/", http.StatusMovedPermanently))
-
-	handlers.HandlerWithOptions(handler, handlers.StdHTTPServerOptions{
-		BaseRouter: router,
-	})
-
-	apiHandler := middleware.Chain(
-		router,
-		oapimiddleware.OapiRequestValidator(swagger),
-		middleware.RequestLogging(slog.Default()),
-		middleware.RequestID,
-		middleware.UserID,
-	)
-
-	finalHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasPrefix(r.URL.Path, "/api/") {
-			apiHandler.ServeHTTP(w, r)
-		} else {
-			router.ServeHTTP(w, r)
-		}
-	})
-
-	s := server.New(serverAddr, finalHandler)
 
 	errCh := make(chan error, 1)
 	go func() {
@@ -132,36 +80,5 @@ func run() error {
 
 	slog.Info("Server stopped")
 	return nil
-}
 
-func responseErrorHandler(w http.ResponseWriter, r *http.Request, err error) {
-	slog.ErrorContext(r.Context(), "API handler error", log.Err(err))
-
-	if apiErr, ok := errors.AsType[*apierr.ApiError](err); ok {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(apiErr.Status)
-
-		if err := json.NewEncoder(w).Encode(map[string]string{"error": apiErr.Message}); err != nil {
-			slog.WarnContext(r.Context(), "Encode Api error", log.Err(err))
-		}
-		return
-	}
-
-	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-}
-
-func serveSwaggerStatic(data []byte) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html")
-		w.Write(data)
-	}
-}
-
-func serveOpenAPIJSON(doc *openapi3.T) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(doc); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-	}
 }

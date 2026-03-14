@@ -1,0 +1,6 @@
+package: client
+generate:
+  client: true
+  models: true
+import-mapping:
+  './models.yaml': 'github.com/nikpivkin/roasti-app-backend/internal/api/models'

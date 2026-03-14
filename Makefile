@@ -24,6 +24,8 @@ OAPI_MODELS_CONFIG := api/models-config.yaml
 OAPI_MODELS := api/models.yaml
 OAPI_OUT := internal/handlers/server.gen.go
 OAPI_MODELS_OUT := internal/api/models/models.gen.go
+OAPI_CLIENT_CONFIG := api/client-config.yaml
+OAPI_CLIENT_OUT := tests/client/client.gen.go
 
 $(OAPI_MODELS_OUT): $(OAPI_MODELS) $(OAPI_MODELS_CONFIG)
 	$(GO) tool oapi-codegen -config $(OAPI_MODELS_CONFIG) -o $(OAPI_MODELS_OUT) $(OAPI_MODELS)
@@ -31,9 +33,10 @@ $(OAPI_MODELS_OUT): $(OAPI_MODELS) $(OAPI_MODELS_CONFIG)
 $(OAPI_OUT): $(OAPI_SPEC) $(OAPI_CONFIG) $(OAPI_MODELS_OUT)
 	$(GO) tool oapi-codegen -config $(OAPI_CONFIG) -o $(OAPI_OUT) $(OAPI_SPEC)
 
-oapi-gen: $(OAPI_MODELS_OUT) $(OAPI_OUT)
+$(OAPI_CLIENT_OUT): $(OAPI_SPEC) $(OAPI_CLIENT_CONFIG) $(OAPI_CLIENT_OUT)
+	$(GO) tool oapi-codegen -config $(OAPI_CLIENT_CONFIG) -o $(OAPI_CLIENT_OUT) $(OAPI_SPEC)
 
-oapi: $(OAPI_OUT)
+oapi: $(OAPI_MODELS_OUT) $(OAPI_OUT) $(OAPI_CLIENT_OUT)
 
 build:
 	$(GO) build -o app ./cmd/server
@@ -67,4 +70,10 @@ endif
 lint:
 	golangci-lint run
 
-.PHONY: build build-debian start deploy lint
+test:
+	go test -v -coverprofile=coverage.out -coverpkg=./internal/... ./...
+
+cover:
+	go tool cover -html=coverage.out
+
+.PHONY: build build-debian start deploy lint test

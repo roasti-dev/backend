@@ -1,5 +1,6 @@
-app
 app-debian
+
+coverage.out
 
 *.db
 

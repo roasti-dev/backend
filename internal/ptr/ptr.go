@@ -14,3 +14,7 @@ func FromPtr[T any](p *T) T {
 	var zero T
 	return zero
 }
+
+func ToPtr[T any](v T) *T {
+	return &v
+}

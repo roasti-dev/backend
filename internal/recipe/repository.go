@@ -70,7 +70,6 @@ func newLoggingRunner(db sq.StdSqlCtx, logger *slog.Logger) *loggingRunner {
 	return &loggingRunner{db: db, logger: logger}
 }
 
-// для транзакции
 func (l *loggingRunner) BeginTx(ctx context.Context, opts *sql.TxOptions) (*loggingRunner, error) {
 	db, ok := l.db.(*sql.DB)
 	if !ok {
@@ -144,7 +143,7 @@ func (r *Repository) UpsertRecipe(ctx context.Context, recipe models.Recipe) err
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
-	defer tx.Rollback()
+	defer tx.Rollback() //nolint:errcheck
 
 	now := time.Now().UTC()
 

@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"bytes"
 	"log/slog"
 	"net/http"
 	"time"
@@ -11,6 +12,7 @@ type responseWriter struct {
 
 	status int
 	size   int
+	body   bytes.Buffer
 }
 
 func (w *responseWriter) WriteHeader(status int) {
@@ -19,6 +21,9 @@ func (w *responseWriter) WriteHeader(status int) {
 }
 
 func (w *responseWriter) Write(b []byte) (int, error) {
+	if w.status >= 400 {
+		w.body.Write(b)
+	}
 	n, err := w.ResponseWriter.Write(b)
 	w.size += n
 	return n, err
@@ -58,6 +63,13 @@ func RequestLogging(logger *slog.Logger) func(http.Handler) http.Handler {
 				level = slog.LevelError
 			} else if rw.status >= 400 {
 				level = slog.LevelWarn
+			}
+
+			if rw.status >= 400 {
+				logger.ErrorContext(r.Context(), "request failed",
+					slog.Int("status", rw.status),
+					slog.String("error_body", rw.body.String()),
+				)
 			}
 
 			logger.LogAttrs(r.Context(), level, "request finished",
