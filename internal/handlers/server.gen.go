@@ -106,6 +106,12 @@ type PageParam = int
 // UserIDHeader defines model for UserIDHeader.
 type UserIDHeader = string
 
+// PostApiV1AuthLogoutParams defines parameters for PostApiV1AuthLogout.
+type PostApiV1AuthLogoutParams struct {
+	// XUserId User ID
+	XUserId UserIDHeader `json:"X-User-Id"`
+}
+
 // GetApiV1RecipesParams defines parameters for GetApiV1Recipes.
 type GetApiV1RecipesParams struct {
 	ListRecipes *externalRef0.ListRecipesParams `form:"listRecipes,omitempty" json:"listRecipes,omitempty"`
@@ -161,6 +167,15 @@ type GetApiV1UploadsImagesImageIdParams struct {
 	XUserId UserIDHeader `json:"X-User-Id"`
 }
 
+// PostApiV1AuthLoginJSONRequestBody defines body for PostApiV1AuthLogin for application/json ContentType.
+type PostApiV1AuthLoginJSONRequestBody = externalRef0.LoginRequest
+
+// PostApiV1AuthRefreshJSONRequestBody defines body for PostApiV1AuthRefresh for application/json ContentType.
+type PostApiV1AuthRefreshJSONRequestBody = externalRef0.RefreshRequest
+
+// PostApiV1AuthRegisterJSONRequestBody defines body for PostApiV1AuthRegister for application/json ContentType.
+type PostApiV1AuthRegisterJSONRequestBody = externalRef0.RegisterRequest
+
 // PostApiV1RecipesJSONRequestBody defines body for PostApiV1Recipes for application/json ContentType.
 type PostApiV1RecipesJSONRequestBody = externalRef0.CreateRecipeRequest
 
@@ -175,6 +190,18 @@ type PostApiV1UploadsImagesMultipartRequestBody PostApiV1UploadsImagesMultipartB
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// Login with username and password
+	// (POST /api/v1/auth/login)
+	PostApiV1AuthLogin(w http.ResponseWriter, r *http.Request)
+	// Logout user
+	// (POST /api/v1/auth/logout)
+	PostApiV1AuthLogout(w http.ResponseWriter, r *http.Request, params PostApiV1AuthLogoutParams)
+	// Refresh access token
+	// (POST /api/v1/auth/refresh)
+	PostApiV1AuthRefresh(w http.ResponseWriter, r *http.Request)
+	// Register a new user
+	// (POST /api/v1/auth/register)
+	PostApiV1AuthRegister(w http.ResponseWriter, r *http.Request)
 	// List recipes
 	// (GET /api/v1/recipes)
 	GetApiV1Recipes(w http.ResponseWriter, r *http.Request, params GetApiV1RecipesParams)
@@ -209,6 +236,92 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// PostApiV1AuthLogin operation middleware
+func (siw *ServerInterfaceWrapper) PostApiV1AuthLogin(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostApiV1AuthLogin(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostApiV1AuthLogout operation middleware
+func (siw *ServerInterfaceWrapper) PostApiV1AuthLogout(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PostApiV1AuthLogoutParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-User-Id" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-User-Id")]; found {
+		var XUserId UserIDHeader
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-User-Id", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-User-Id", valueList[0], &XUserId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-User-Id", Err: err})
+			return
+		}
+
+		params.XUserId = XUserId
+
+	} else {
+		err := fmt.Errorf("Header parameter X-User-Id is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-User-Id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostApiV1AuthLogout(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostApiV1AuthRefresh operation middleware
+func (siw *ServerInterfaceWrapper) PostApiV1AuthRefresh(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostApiV1AuthRefresh(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostApiV1AuthRegister operation middleware
+func (siw *ServerInterfaceWrapper) PostApiV1AuthRegister(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostApiV1AuthRegister(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
 
 // GetApiV1Recipes operation middleware
 func (siw *ServerInterfaceWrapper) GetApiV1Recipes(w http.ResponseWriter, r *http.Request) {
@@ -696,6 +809,10 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 		ErrorHandlerFunc:   options.ErrorHandlerFunc,
 	}
 
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/auth/login", wrapper.PostApiV1AuthLogin)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/auth/logout", wrapper.PostApiV1AuthLogout)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/auth/refresh", wrapper.PostApiV1AuthRefresh)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/auth/register", wrapper.PostApiV1AuthRegister)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/recipes", wrapper.GetApiV1Recipes)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/recipes", wrapper.PostApiV1Recipes)
 	m.HandleFunc("DELETE "+options.BaseURL+"/api/v1/recipes/{recipe_id}", wrapper.DeleteApiV1RecipesRecipeId)
@@ -706,6 +823,167 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/health", wrapper.GetHealth)
 
 	return m
+}
+
+type PostApiV1AuthLoginRequestObject struct {
+	Body *PostApiV1AuthLoginJSONRequestBody
+}
+
+type PostApiV1AuthLoginResponseObject interface {
+	VisitPostApiV1AuthLoginResponse(w http.ResponseWriter) error
+}
+
+type PostApiV1AuthLogin200JSONResponse externalRef0.AuthResponse
+
+func (response PostApiV1AuthLogin200JSONResponse) VisitPostApiV1AuthLoginResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostApiV1AuthLogin400JSONResponse externalRef0.ApiErrorResponse
+
+func (response PostApiV1AuthLogin400JSONResponse) VisitPostApiV1AuthLoginResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostApiV1AuthLogin401JSONResponse externalRef0.ApiErrorResponse
+
+func (response PostApiV1AuthLogin401JSONResponse) VisitPostApiV1AuthLoginResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostApiV1AuthLogin500Response struct {
+}
+
+func (response PostApiV1AuthLogin500Response) VisitPostApiV1AuthLoginResponse(w http.ResponseWriter) error {
+	w.WriteHeader(500)
+	return nil
+}
+
+type PostApiV1AuthLogoutRequestObject struct {
+	Params PostApiV1AuthLogoutParams
+}
+
+type PostApiV1AuthLogoutResponseObject interface {
+	VisitPostApiV1AuthLogoutResponse(w http.ResponseWriter) error
+}
+
+type PostApiV1AuthLogout204Response struct {
+}
+
+func (response PostApiV1AuthLogout204Response) VisitPostApiV1AuthLogoutResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type PostApiV1AuthLogout401Response struct {
+}
+
+func (response PostApiV1AuthLogout401Response) VisitPostApiV1AuthLogoutResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
+type PostApiV1AuthLogout500Response struct {
+}
+
+func (response PostApiV1AuthLogout500Response) VisitPostApiV1AuthLogoutResponse(w http.ResponseWriter) error {
+	w.WriteHeader(500)
+	return nil
+}
+
+type PostApiV1AuthRefreshRequestObject struct {
+	Body *PostApiV1AuthRefreshJSONRequestBody
+}
+
+type PostApiV1AuthRefreshResponseObject interface {
+	VisitPostApiV1AuthRefreshResponse(w http.ResponseWriter) error
+}
+
+type PostApiV1AuthRefresh200JSONResponse externalRef0.AuthResponse
+
+func (response PostApiV1AuthRefresh200JSONResponse) VisitPostApiV1AuthRefreshResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostApiV1AuthRefresh401JSONResponse externalRef0.ApiErrorResponse
+
+func (response PostApiV1AuthRefresh401JSONResponse) VisitPostApiV1AuthRefreshResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostApiV1AuthRefresh500Response struct {
+}
+
+func (response PostApiV1AuthRefresh500Response) VisitPostApiV1AuthRefreshResponse(w http.ResponseWriter) error {
+	w.WriteHeader(500)
+	return nil
+}
+
+type PostApiV1AuthRegisterRequestObject struct {
+	Body *PostApiV1AuthRegisterJSONRequestBody
+}
+
+type PostApiV1AuthRegisterResponseObject interface {
+	VisitPostApiV1AuthRegisterResponse(w http.ResponseWriter) error
+}
+
+type PostApiV1AuthRegister201JSONResponse externalRef0.AuthResponse
+
+func (response PostApiV1AuthRegister201JSONResponse) VisitPostApiV1AuthRegisterResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostApiV1AuthRegister400JSONResponse externalRef0.ApiErrorResponse
+
+func (response PostApiV1AuthRegister400JSONResponse) VisitPostApiV1AuthRegisterResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostApiV1AuthRegister409JSONResponse externalRef0.ApiErrorResponse
+
+func (response PostApiV1AuthRegister409JSONResponse) VisitPostApiV1AuthRegisterResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostApiV1AuthRegister422JSONResponse externalRef0.ApiErrorResponse
+
+func (response PostApiV1AuthRegister422JSONResponse) VisitPostApiV1AuthRegisterResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostApiV1AuthRegister500Response struct {
+}
+
+func (response PostApiV1AuthRegister500Response) VisitPostApiV1AuthRegisterResponse(w http.ResponseWriter) error {
+	w.WriteHeader(500)
+	return nil
 }
 
 type GetApiV1RecipesRequestObject struct {
@@ -990,6 +1268,18 @@ func (response GetHealth200TextResponse) VisitGetHealthResponse(w http.ResponseW
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
+	// Login with username and password
+	// (POST /api/v1/auth/login)
+	PostApiV1AuthLogin(ctx context.Context, request PostApiV1AuthLoginRequestObject) (PostApiV1AuthLoginResponseObject, error)
+	// Logout user
+	// (POST /api/v1/auth/logout)
+	PostApiV1AuthLogout(ctx context.Context, request PostApiV1AuthLogoutRequestObject) (PostApiV1AuthLogoutResponseObject, error)
+	// Refresh access token
+	// (POST /api/v1/auth/refresh)
+	PostApiV1AuthRefresh(ctx context.Context, request PostApiV1AuthRefreshRequestObject) (PostApiV1AuthRefreshResponseObject, error)
+	// Register a new user
+	// (POST /api/v1/auth/register)
+	PostApiV1AuthRegister(ctx context.Context, request PostApiV1AuthRegisterRequestObject) (PostApiV1AuthRegisterResponseObject, error)
 	// List recipes
 	// (GET /api/v1/recipes)
 	GetApiV1Recipes(ctx context.Context, request GetApiV1RecipesRequestObject) (GetApiV1RecipesResponseObject, error)
@@ -1043,6 +1333,125 @@ type strictHandler struct {
 	ssi         StrictServerInterface
 	middlewares []StrictMiddlewareFunc
 	options     StrictHTTPServerOptions
+}
+
+// PostApiV1AuthLogin operation middleware
+func (sh *strictHandler) PostApiV1AuthLogin(w http.ResponseWriter, r *http.Request) {
+	var request PostApiV1AuthLoginRequestObject
+
+	var body PostApiV1AuthLoginJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PostApiV1AuthLogin(ctx, request.(PostApiV1AuthLoginRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostApiV1AuthLogin")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PostApiV1AuthLoginResponseObject); ok {
+		if err := validResponse.VisitPostApiV1AuthLoginResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PostApiV1AuthLogout operation middleware
+func (sh *strictHandler) PostApiV1AuthLogout(w http.ResponseWriter, r *http.Request, params PostApiV1AuthLogoutParams) {
+	var request PostApiV1AuthLogoutRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PostApiV1AuthLogout(ctx, request.(PostApiV1AuthLogoutRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostApiV1AuthLogout")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PostApiV1AuthLogoutResponseObject); ok {
+		if err := validResponse.VisitPostApiV1AuthLogoutResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PostApiV1AuthRefresh operation middleware
+func (sh *strictHandler) PostApiV1AuthRefresh(w http.ResponseWriter, r *http.Request) {
+	var request PostApiV1AuthRefreshRequestObject
+
+	var body PostApiV1AuthRefreshJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PostApiV1AuthRefresh(ctx, request.(PostApiV1AuthRefreshRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostApiV1AuthRefresh")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PostApiV1AuthRefreshResponseObject); ok {
+		if err := validResponse.VisitPostApiV1AuthRefreshResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PostApiV1AuthRegister operation middleware
+func (sh *strictHandler) PostApiV1AuthRegister(w http.ResponseWriter, r *http.Request) {
+	var request PostApiV1AuthRegisterRequestObject
+
+	var body PostApiV1AuthRegisterJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PostApiV1AuthRegister(ctx, request.(PostApiV1AuthRegisterRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostApiV1AuthRegister")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PostApiV1AuthRegisterResponseObject); ok {
+		if err := validResponse.VisitPostApiV1AuthRegisterResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
 // GetApiV1Recipes operation middleware
@@ -1286,42 +1695,51 @@ func (sh *strictHandler) GetHealth(w http.ResponseWriter, r *http.Request) {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"RwAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
