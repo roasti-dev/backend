@@ -3,6 +3,9 @@ openapi: 3.0.0
 info:
   version: 0.0.1
   title: Roasti App
+
+security:
+  - BearerAuth: []
 tags:
   - name: recipes
     description: Coffee brewing recipes management
@@ -10,6 +13,8 @@ tags:
     description: Image upload and retrieval
   - name: auth
     description: User registration, authentication and token management
+  - name: public
+    description: Endpoints that do not require authentication
 paths:
   /health:
     get:
@@ -26,7 +31,6 @@ paths:
       tags: [recipes]
       summary: List recipes
       parameters:
-        - $ref: "#/components/parameters/UserIDHeader"
         - $ref: "./models.yaml#/components/parameters/ListRecipesParams"
       responses:
         "200":
@@ -43,8 +47,6 @@ paths:
     post:
       tags: [recipes]
       summary: Create recipe
-      parameters:
-        - $ref: "#/components/parameters/UserIDHeader"
       requestBody:
         required: true
         content:
@@ -66,7 +68,6 @@ paths:
       tags: [recipes]
       summary: Delete recipe
       parameters:
-        - $ref: "#/components/parameters/UserIDHeader"
         - in: path
           name: recipe_id
           required: true
@@ -82,7 +83,6 @@ paths:
       tags: [recipes]
       summary: Update recipe
       parameters:
-        - $ref: "#/components/parameters/UserIDHeader"
         - name: recipe_id
           in: path
           required: true
@@ -124,7 +124,6 @@ paths:
       tags: [recipes]
       summary: Partially update recipe
       parameters:
-        - $ref: "#/components/parameters/UserIDHeader"
         - name: recipe_id
           in: path
           required: true
@@ -167,7 +166,6 @@ paths:
       tags: [uploads]
       summary: Get image by ID
       parameters:
-        - $ref: "#/components/parameters/UserIDHeader"
         - name: image_id
           in: path
           required: true
@@ -190,8 +188,6 @@ paths:
     post:
       tags: [uploads]
       summary: Upload an image
-      parameters:
-        - $ref: "#/components/parameters/UserIDHeader"
       requestBody:
         required: true
         content:
@@ -221,7 +217,8 @@ paths:
   /api/v1/auth/register:
     post:
       summary: Register a new user
-      tags: [auth]
+      security: []
+      tags: [auth, public]
       requestBody:
         required: true
         content:
@@ -259,7 +256,8 @@ paths:
   /api/v1/auth/login:
     post:
       summary: Login with username and password
-      tags: [auth]
+      security: []
+      tags: [auth, public]
       requestBody:
         required: true
         content:
@@ -291,7 +289,8 @@ paths:
   /api/v1/auth/refresh:
     post:
       summary: Refresh access token
-      tags: [auth]
+      security: []
+      tags: [auth, public]
       requestBody:
         required: true
         content:
@@ -304,7 +303,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "./models.yaml#/components/schemas/AuthResponse"
+                $ref: "./models.yaml#/components/schemas/TokensResponse"
         "401":
           description: Invalid or expired refresh token
           content:
@@ -318,8 +317,6 @@ paths:
     post:
       summary: Logout user
       tags: [auth]
-      parameters:
-        - $ref: '#/components/parameters/UserIDHeader'
       responses:
         "204":
           description: Logged out successfully
@@ -329,16 +326,11 @@ paths:
           description: Internal server error
 
 components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
   parameters:
-    UserIDHeader:
-      name: X-User-Id
-      in: header
-      description: User ID
-      schema:
-        type: string
-        default: test-user
-      required: true
-
     LimitParam:
       name: limit
       in: query

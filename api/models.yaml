@@ -312,11 +312,11 @@ components:
           description: User email address
         username:
           type: string
-          description: Unique username
+          description: Unique username. Must be 6-16 characters, letters, numbers and underscores only.
         password:
           type: string
           format: password
-          description: User password
+          description: User password. Must be 8-32 characters.
         bio:
           type: string
           nullable: true
@@ -335,10 +335,12 @@ components:
       properties:
         username:
           type: string
+          minLength: 1
           description: Unique username
         password:
           type: string
           format: password
+          minLength: 1
           description: User password
 
     RefreshRequest:
@@ -365,7 +367,28 @@ components:
           type: string
           description: Short-lived token for authenticating requests
         user:
-          $ref: "#/components/schemas/UserProfile"
+          $ref: "#/components/schemas/UserResponse"
+
+    UserResponse:
+      type: object
+      required:
+        - id
+        - username
+      properties:
+        id:
+          type: string
+          description: Unique user identifier
+        username:
+          type: string
+          description: Unique username
+        bio:
+          type: string
+          nullable: true
+          description: Short user biography
+        avatar_id:
+          type: string
+          nullable: true
+          description: ID of the uploaded avatar image. Can be resolved via the image upload endpoint.
 
     UserProfile:
       type: object
@@ -387,3 +410,16 @@ components:
           type: string
           nullable: true
           description: ID of the uploaded avatar image. Can be resolved via the image upload endpoint.
+
+    TokensResponse:
+      type: object
+      required:
+        - access_token
+        - refresh_token
+      properties:
+        access_token:
+          type: string
+          description: Short-lived token for authenticating requests
+        refresh_token:
+          type: string
+          description: Token used to obtain a new access token

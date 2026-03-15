@@ -28,20 +28,18 @@ func (h *contextHandler) Handle(ctx context.Context, r slog.Record) error {
 	return h.Handler.Handle(ctx, r)
 }
 
-func InitLogger(appVersion string) *slog.Logger {
-	var handler slog.Handler
+func InitLogger(appVersion, env string) *slog.Logger {
 	debug := os.Getenv("DEBUG") != ""
+	logLevel := slog.LevelInfo
 	if debug {
-		handler = slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-			AddSource: false,
-			Level:     slog.LevelDebug,
-		})
-	} else {
-		handler = slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-			AddSource: false,
-			Level:     slog.LevelInfo,
-		})
+		logLevel = slog.LevelDebug
 	}
-	handler = handler.WithAttrs([]slog.Attr{slog.String("appVer", appVersion)})
+	handler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		AddSource: false,
+		Level:     logLevel,
+	}).WithAttrs([]slog.Attr{
+		slog.String("appVer", appVersion),
+		slog.String("env", env),
+	})
 	return slog.New(&contextHandler{handler})
 }

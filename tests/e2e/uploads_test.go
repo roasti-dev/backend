@@ -43,7 +43,7 @@ func createMultipart(t *testing.T, data []byte) ([]byte, string) {
 func uploadImage(t *testing.T, c *client.ClientWithResponses, data []byte) string {
 	t.Helper()
 	body, contentType := createMultipart(t, data)
-	resp, err := c.PostApiV1UploadsImagesWithBodyWithResponse(t.Context(), nil, contentType, bytes.NewReader(body))
+	resp, err := c.PostApiV1UploadsImagesWithBodyWithResponse(t.Context(), contentType, bytes.NewReader(body))
 	require.NoError(t, err)
 	require.Equal(t, 201, resp.StatusCode())
 	return resp.JSON201.Id
@@ -53,29 +53,29 @@ func TestUploadImage(t *testing.T) {
 	srv := setupTestServer(t)
 
 	t.Run("happy path", func(t *testing.T) {
-		c := newTestClient(t, srv, "user-1")
+		c := newAuthenticatedTestClient(t, srv)
 		body, contentType := createMultipart(t, generateTestImage(t))
 
-		resp, err := c.PostApiV1UploadsImagesWithBodyWithResponse(t.Context(), nil, contentType, bytes.NewReader(body))
+		resp, err := c.PostApiV1UploadsImagesWithBodyWithResponse(t.Context(), contentType, bytes.NewReader(body))
 		require.NoError(t, err)
 		assert.Equal(t, 201, resp.StatusCode())
 		assert.NotEmpty(t, resp.JSON201.Id)
 	})
 
 	t.Run("empty file", func(t *testing.T) {
-		c := newTestClient(t, srv, "user-1")
+		c := newAuthenticatedTestClient(t, srv)
 		body, contentType := createMultipart(t, []byte{})
 
-		resp, err := c.PostApiV1UploadsImagesWithBodyWithResponse(t.Context(), nil, contentType, bytes.NewReader(body))
+		resp, err := c.PostApiV1UploadsImagesWithBodyWithResponse(t.Context(), contentType, bytes.NewReader(body))
 		require.NoError(t, err)
 		assert.Equal(t, 415, resp.StatusCode())
 	})
 
 	t.Run("unsupported mime type", func(t *testing.T) {
-		c := newTestClient(t, srv, "user-1")
+		c := newAuthenticatedTestClient(t, srv)
 		body, contentType := createMultipart(t, []byte("not an image"))
 
-		resp, err := c.PostApiV1UploadsImagesWithBodyWithResponse(t.Context(), nil, contentType, bytes.NewReader(body))
+		resp, err := c.PostApiV1UploadsImagesWithBodyWithResponse(t.Context(), contentType, bytes.NewReader(body))
 		require.NoError(t, err)
 		assert.Equal(t, 415, resp.StatusCode())
 	})
@@ -85,18 +85,18 @@ func TestGetImage(t *testing.T) {
 	srv := setupTestServer(t)
 
 	t.Run("happy path", func(t *testing.T) {
-		c := newTestClient(t, srv, "user-1")
+		c := newAuthenticatedTestClient(t, srv)
 		imageID := uploadImage(t, c, generateTestImage(t))
 
-		resp, err := c.GetApiV1UploadsImagesImageIdWithResponse(t.Context(), imageID, nil)
+		resp, err := c.GetApiV1UploadsImagesImageIdWithResponse(t.Context(), imageID)
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode())
 		assert.Equal(t, "image/png", resp.HTTPResponse.Header.Get("Content-Type"))
 	})
 
 	t.Run("not found", func(t *testing.T) {
-		c := newTestClient(t, srv, "user-1")
-		resp, err := c.GetApiV1UploadsImagesImageIdWithResponse(t.Context(), "non-existent-id", nil)
+		c := newAuthenticatedTestClient(t, srv)
+		resp, err := c.GetApiV1UploadsImagesImageIdWithResponse(t.Context(), "non-existent-id")
 		require.NoError(t, err)
 		assert.Equal(t, 404, resp.StatusCode())
 	})

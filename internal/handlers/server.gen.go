@@ -26,6 +26,10 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+const (
+	BearerAuthScopes = "BearerAuth.Scopes"
+)
+
 // Defines values for GetApiV1RecipesParamsListRecipesSortDirection.
 const (
 	Asc  GetApiV1RecipesParamsListRecipesSortDirection = "asc"
@@ -103,21 +107,9 @@ type LimitParam = int
 // PageParam defines model for PageParam.
 type PageParam = int
 
-// UserIDHeader defines model for UserIDHeader.
-type UserIDHeader = string
-
-// PostApiV1AuthLogoutParams defines parameters for PostApiV1AuthLogout.
-type PostApiV1AuthLogoutParams struct {
-	// XUserId User ID
-	XUserId UserIDHeader `json:"X-User-Id"`
-}
-
 // GetApiV1RecipesParams defines parameters for GetApiV1Recipes.
 type GetApiV1RecipesParams struct {
 	ListRecipes *externalRef0.ListRecipesParams `form:"listRecipes,omitempty" json:"listRecipes,omitempty"`
-
-	// XUserId User ID
-	XUserId UserIDHeader `json:"X-User-Id"`
 }
 
 // GetApiV1RecipesParamsListRecipesSortDirection defines parameters for GetApiV1Recipes.
@@ -126,45 +118,9 @@ type GetApiV1RecipesParamsListRecipesSortDirection string
 // GetApiV1RecipesParamsListRecipesSortField defines parameters for GetApiV1Recipes.
 type GetApiV1RecipesParamsListRecipesSortField string
 
-// PostApiV1RecipesParams defines parameters for PostApiV1Recipes.
-type PostApiV1RecipesParams struct {
-	// XUserId User ID
-	XUserId UserIDHeader `json:"X-User-Id"`
-}
-
-// DeleteApiV1RecipesRecipeIdParams defines parameters for DeleteApiV1RecipesRecipeId.
-type DeleteApiV1RecipesRecipeIdParams struct {
-	// XUserId User ID
-	XUserId UserIDHeader `json:"X-User-Id"`
-}
-
-// PatchApiV1RecipesRecipeIdParams defines parameters for PatchApiV1RecipesRecipeId.
-type PatchApiV1RecipesRecipeIdParams struct {
-	// XUserId User ID
-	XUserId UserIDHeader `json:"X-User-Id"`
-}
-
-// PutApiV1RecipesRecipeIdParams defines parameters for PutApiV1RecipesRecipeId.
-type PutApiV1RecipesRecipeIdParams struct {
-	// XUserId User ID
-	XUserId UserIDHeader `json:"X-User-Id"`
-}
-
 // PostApiV1UploadsImagesMultipartBody defines parameters for PostApiV1UploadsImages.
 type PostApiV1UploadsImagesMultipartBody struct {
 	File openapi_types.File `json:"file"`
-}
-
-// PostApiV1UploadsImagesParams defines parameters for PostApiV1UploadsImages.
-type PostApiV1UploadsImagesParams struct {
-	// XUserId User ID
-	XUserId UserIDHeader `json:"X-User-Id"`
-}
-
-// GetApiV1UploadsImagesImageIdParams defines parameters for GetApiV1UploadsImagesImageId.
-type GetApiV1UploadsImagesImageIdParams struct {
-	// XUserId User ID
-	XUserId UserIDHeader `json:"X-User-Id"`
 }
 
 // PostApiV1AuthLoginJSONRequestBody defines body for PostApiV1AuthLogin for application/json ContentType.
@@ -195,7 +151,7 @@ type ServerInterface interface {
 	PostApiV1AuthLogin(w http.ResponseWriter, r *http.Request)
 	// Logout user
 	// (POST /api/v1/auth/logout)
-	PostApiV1AuthLogout(w http.ResponseWriter, r *http.Request, params PostApiV1AuthLogoutParams)
+	PostApiV1AuthLogout(w http.ResponseWriter, r *http.Request)
 	// Refresh access token
 	// (POST /api/v1/auth/refresh)
 	PostApiV1AuthRefresh(w http.ResponseWriter, r *http.Request)
@@ -207,22 +163,22 @@ type ServerInterface interface {
 	GetApiV1Recipes(w http.ResponseWriter, r *http.Request, params GetApiV1RecipesParams)
 	// Create recipe
 	// (POST /api/v1/recipes)
-	PostApiV1Recipes(w http.ResponseWriter, r *http.Request, params PostApiV1RecipesParams)
+	PostApiV1Recipes(w http.ResponseWriter, r *http.Request)
 	// Delete recipe
 	// (DELETE /api/v1/recipes/{recipe_id})
-	DeleteApiV1RecipesRecipeId(w http.ResponseWriter, r *http.Request, recipeId string, params DeleteApiV1RecipesRecipeIdParams)
+	DeleteApiV1RecipesRecipeId(w http.ResponseWriter, r *http.Request, recipeId string)
 	// Partially update recipe
 	// (PATCH /api/v1/recipes/{recipe_id})
-	PatchApiV1RecipesRecipeId(w http.ResponseWriter, r *http.Request, recipeId string, params PatchApiV1RecipesRecipeIdParams)
+	PatchApiV1RecipesRecipeId(w http.ResponseWriter, r *http.Request, recipeId string)
 	// Update recipe
 	// (PUT /api/v1/recipes/{recipe_id})
-	PutApiV1RecipesRecipeId(w http.ResponseWriter, r *http.Request, recipeId string, params PutApiV1RecipesRecipeIdParams)
+	PutApiV1RecipesRecipeId(w http.ResponseWriter, r *http.Request, recipeId string)
 	// Upload an image
 	// (POST /api/v1/uploads/images)
-	PostApiV1UploadsImages(w http.ResponseWriter, r *http.Request, params PostApiV1UploadsImagesParams)
+	PostApiV1UploadsImages(w http.ResponseWriter, r *http.Request)
 	// Get image by ID
 	// (GET /api/v1/uploads/images/{image_id})
-	GetApiV1UploadsImagesImageId(w http.ResponseWriter, r *http.Request, imageId string, params GetApiV1UploadsImagesImageIdParams)
+	GetApiV1UploadsImagesImageId(w http.ResponseWriter, r *http.Request, imageId string)
 
 	// (GET /health)
 	GetHealth(w http.ResponseWriter, r *http.Request)
@@ -254,38 +210,14 @@ func (siw *ServerInterfaceWrapper) PostApiV1AuthLogin(w http.ResponseWriter, r *
 // PostApiV1AuthLogout operation middleware
 func (siw *ServerInterfaceWrapper) PostApiV1AuthLogout(w http.ResponseWriter, r *http.Request) {
 
-	var err error
+	ctx := r.Context()
 
-	// Parameter object where we will unmarshal all parameters from the context
-	var params PostApiV1AuthLogoutParams
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
 
-	headers := r.Header
-
-	// ------------- Required header parameter "X-User-Id" -------------
-	if valueList, found := headers[http.CanonicalHeaderKey("X-User-Id")]; found {
-		var XUserId UserIDHeader
-		n := len(valueList)
-		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-User-Id", Count: n})
-			return
-		}
-
-		err = runtime.BindStyledParameterWithOptions("simple", "X-User-Id", valueList[0], &XUserId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-User-Id", Err: err})
-			return
-		}
-
-		params.XUserId = XUserId
-
-	} else {
-		err := fmt.Errorf("Header parameter X-User-Id is required, but not found")
-		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-User-Id", Err: err})
-		return
-	}
+	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PostApiV1AuthLogout(w, r, params)
+		siw.Handler.PostApiV1AuthLogout(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -328,6 +260,12 @@ func (siw *ServerInterfaceWrapper) GetApiV1Recipes(w http.ResponseWriter, r *htt
 
 	var err error
 
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetApiV1RecipesParams
 
@@ -336,31 +274,6 @@ func (siw *ServerInterfaceWrapper) GetApiV1Recipes(w http.ResponseWriter, r *htt
 	err = runtime.BindQueryParameterWithOptions("form", true, false, "listRecipes", r.URL.Query(), &params.ListRecipes, runtime.BindQueryParameterOptions{Type: "", Format: ""})
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "listRecipes", Err: err})
-		return
-	}
-
-	headers := r.Header
-
-	// ------------- Required header parameter "X-User-Id" -------------
-	if valueList, found := headers[http.CanonicalHeaderKey("X-User-Id")]; found {
-		var XUserId UserIDHeader
-		n := len(valueList)
-		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-User-Id", Count: n})
-			return
-		}
-
-		err = runtime.BindStyledParameterWithOptions("simple", "X-User-Id", valueList[0], &XUserId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-User-Id", Err: err})
-			return
-		}
-
-		params.XUserId = XUserId
-
-	} else {
-		err := fmt.Errorf("Header parameter X-User-Id is required, but not found")
-		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-User-Id", Err: err})
 		return
 	}
 
@@ -378,38 +291,14 @@ func (siw *ServerInterfaceWrapper) GetApiV1Recipes(w http.ResponseWriter, r *htt
 // PostApiV1Recipes operation middleware
 func (siw *ServerInterfaceWrapper) PostApiV1Recipes(w http.ResponseWriter, r *http.Request) {
 
-	var err error
+	ctx := r.Context()
 
-	// Parameter object where we will unmarshal all parameters from the context
-	var params PostApiV1RecipesParams
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
 
-	headers := r.Header
-
-	// ------------- Required header parameter "X-User-Id" -------------
-	if valueList, found := headers[http.CanonicalHeaderKey("X-User-Id")]; found {
-		var XUserId UserIDHeader
-		n := len(valueList)
-		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-User-Id", Count: n})
-			return
-		}
-
-		err = runtime.BindStyledParameterWithOptions("simple", "X-User-Id", valueList[0], &XUserId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-User-Id", Err: err})
-			return
-		}
-
-		params.XUserId = XUserId
-
-	} else {
-		err := fmt.Errorf("Header parameter X-User-Id is required, but not found")
-		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-User-Id", Err: err})
-		return
-	}
+	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PostApiV1Recipes(w, r, params)
+		siw.Handler.PostApiV1Recipes(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -433,36 +322,14 @@ func (siw *ServerInterfaceWrapper) DeleteApiV1RecipesRecipeId(w http.ResponseWri
 		return
 	}
 
-	// Parameter object where we will unmarshal all parameters from the context
-	var params DeleteApiV1RecipesRecipeIdParams
+	ctx := r.Context()
 
-	headers := r.Header
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
 
-	// ------------- Required header parameter "X-User-Id" -------------
-	if valueList, found := headers[http.CanonicalHeaderKey("X-User-Id")]; found {
-		var XUserId UserIDHeader
-		n := len(valueList)
-		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-User-Id", Count: n})
-			return
-		}
-
-		err = runtime.BindStyledParameterWithOptions("simple", "X-User-Id", valueList[0], &XUserId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-User-Id", Err: err})
-			return
-		}
-
-		params.XUserId = XUserId
-
-	} else {
-		err := fmt.Errorf("Header parameter X-User-Id is required, but not found")
-		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-User-Id", Err: err})
-		return
-	}
+	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteApiV1RecipesRecipeId(w, r, recipeId, params)
+		siw.Handler.DeleteApiV1RecipesRecipeId(w, r, recipeId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -486,36 +353,14 @@ func (siw *ServerInterfaceWrapper) PatchApiV1RecipesRecipeId(w http.ResponseWrit
 		return
 	}
 
-	// Parameter object where we will unmarshal all parameters from the context
-	var params PatchApiV1RecipesRecipeIdParams
+	ctx := r.Context()
 
-	headers := r.Header
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
 
-	// ------------- Required header parameter "X-User-Id" -------------
-	if valueList, found := headers[http.CanonicalHeaderKey("X-User-Id")]; found {
-		var XUserId UserIDHeader
-		n := len(valueList)
-		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-User-Id", Count: n})
-			return
-		}
-
-		err = runtime.BindStyledParameterWithOptions("simple", "X-User-Id", valueList[0], &XUserId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-User-Id", Err: err})
-			return
-		}
-
-		params.XUserId = XUserId
-
-	} else {
-		err := fmt.Errorf("Header parameter X-User-Id is required, but not found")
-		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-User-Id", Err: err})
-		return
-	}
+	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PatchApiV1RecipesRecipeId(w, r, recipeId, params)
+		siw.Handler.PatchApiV1RecipesRecipeId(w, r, recipeId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -539,36 +384,14 @@ func (siw *ServerInterfaceWrapper) PutApiV1RecipesRecipeId(w http.ResponseWriter
 		return
 	}
 
-	// Parameter object where we will unmarshal all parameters from the context
-	var params PutApiV1RecipesRecipeIdParams
+	ctx := r.Context()
 
-	headers := r.Header
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
 
-	// ------------- Required header parameter "X-User-Id" -------------
-	if valueList, found := headers[http.CanonicalHeaderKey("X-User-Id")]; found {
-		var XUserId UserIDHeader
-		n := len(valueList)
-		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-User-Id", Count: n})
-			return
-		}
-
-		err = runtime.BindStyledParameterWithOptions("simple", "X-User-Id", valueList[0], &XUserId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-User-Id", Err: err})
-			return
-		}
-
-		params.XUserId = XUserId
-
-	} else {
-		err := fmt.Errorf("Header parameter X-User-Id is required, but not found")
-		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-User-Id", Err: err})
-		return
-	}
+	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PutApiV1RecipesRecipeId(w, r, recipeId, params)
+		siw.Handler.PutApiV1RecipesRecipeId(w, r, recipeId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -581,38 +404,14 @@ func (siw *ServerInterfaceWrapper) PutApiV1RecipesRecipeId(w http.ResponseWriter
 // PostApiV1UploadsImages operation middleware
 func (siw *ServerInterfaceWrapper) PostApiV1UploadsImages(w http.ResponseWriter, r *http.Request) {
 
-	var err error
+	ctx := r.Context()
 
-	// Parameter object where we will unmarshal all parameters from the context
-	var params PostApiV1UploadsImagesParams
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
 
-	headers := r.Header
-
-	// ------------- Required header parameter "X-User-Id" -------------
-	if valueList, found := headers[http.CanonicalHeaderKey("X-User-Id")]; found {
-		var XUserId UserIDHeader
-		n := len(valueList)
-		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-User-Id", Count: n})
-			return
-		}
-
-		err = runtime.BindStyledParameterWithOptions("simple", "X-User-Id", valueList[0], &XUserId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-User-Id", Err: err})
-			return
-		}
-
-		params.XUserId = XUserId
-
-	} else {
-		err := fmt.Errorf("Header parameter X-User-Id is required, but not found")
-		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-User-Id", Err: err})
-		return
-	}
+	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PostApiV1UploadsImages(w, r, params)
+		siw.Handler.PostApiV1UploadsImages(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -636,36 +435,14 @@ func (siw *ServerInterfaceWrapper) GetApiV1UploadsImagesImageId(w http.ResponseW
 		return
 	}
 
-	// Parameter object where we will unmarshal all parameters from the context
-	var params GetApiV1UploadsImagesImageIdParams
+	ctx := r.Context()
 
-	headers := r.Header
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
 
-	// ------------- Required header parameter "X-User-Id" -------------
-	if valueList, found := headers[http.CanonicalHeaderKey("X-User-Id")]; found {
-		var XUserId UserIDHeader
-		n := len(valueList)
-		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-User-Id", Count: n})
-			return
-		}
-
-		err = runtime.BindStyledParameterWithOptions("simple", "X-User-Id", valueList[0], &XUserId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-User-Id", Err: err})
-			return
-		}
-
-		params.XUserId = XUserId
-
-	} else {
-		err := fmt.Errorf("Header parameter X-User-Id is required, but not found")
-		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-User-Id", Err: err})
-		return
-	}
+	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetApiV1UploadsImagesImageId(w, r, imageId, params)
+		siw.Handler.GetApiV1UploadsImagesImageId(w, r, imageId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -677,6 +454,12 @@ func (siw *ServerInterfaceWrapper) GetApiV1UploadsImagesImageId(w http.ResponseW
 
 // GetHealth operation middleware
 func (siw *ServerInterfaceWrapper) GetHealth(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetHealth(w, r)
@@ -869,7 +652,6 @@ func (response PostApiV1AuthLogin500Response) VisitPostApiV1AuthLoginResponse(w 
 }
 
 type PostApiV1AuthLogoutRequestObject struct {
-	Params PostApiV1AuthLogoutParams
 }
 
 type PostApiV1AuthLogoutResponseObject interface {
@@ -908,7 +690,7 @@ type PostApiV1AuthRefreshResponseObject interface {
 	VisitPostApiV1AuthRefreshResponse(w http.ResponseWriter) error
 }
 
-type PostApiV1AuthRefresh200JSONResponse externalRef0.AuthResponse
+type PostApiV1AuthRefresh200JSONResponse externalRef0.TokensResponse
 
 func (response PostApiV1AuthRefresh200JSONResponse) VisitPostApiV1AuthRefreshResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -1020,8 +802,7 @@ func (response GetApiV1Recipes500Response) VisitGetApiV1RecipesResponse(w http.R
 }
 
 type PostApiV1RecipesRequestObject struct {
-	Params PostApiV1RecipesParams
-	Body   *PostApiV1RecipesJSONRequestBody
+	Body *PostApiV1RecipesJSONRequestBody
 }
 
 type PostApiV1RecipesResponseObject interface {
@@ -1047,7 +828,6 @@ func (response PostApiV1Recipes400Response) VisitPostApiV1RecipesResponse(w http
 
 type DeleteApiV1RecipesRecipeIdRequestObject struct {
 	RecipeId string `json:"recipe_id"`
-	Params   DeleteApiV1RecipesRecipeIdParams
 }
 
 type DeleteApiV1RecipesRecipeIdResponseObject interface {
@@ -1072,7 +852,6 @@ func (response DeleteApiV1RecipesRecipeId400Response) VisitDeleteApiV1RecipesRec
 
 type PatchApiV1RecipesRecipeIdRequestObject struct {
 	RecipeId string `json:"recipe_id"`
-	Params   PatchApiV1RecipesRecipeIdParams
 	Body     *PatchApiV1RecipesRecipeIdJSONRequestBody
 }
 
@@ -1118,7 +897,6 @@ func (response PatchApiV1RecipesRecipeId404JSONResponse) VisitPatchApiV1RecipesR
 
 type PutApiV1RecipesRecipeIdRequestObject struct {
 	RecipeId string `json:"recipe_id"`
-	Params   PutApiV1RecipesRecipeIdParams
 	Body     *PutApiV1RecipesRecipeIdJSONRequestBody
 }
 
@@ -1163,8 +941,7 @@ func (response PutApiV1RecipesRecipeId404JSONResponse) VisitPutApiV1RecipesRecip
 }
 
 type PostApiV1UploadsImagesRequestObject struct {
-	Params PostApiV1UploadsImagesParams
-	Body   *multipart.Reader
+	Body *multipart.Reader
 }
 
 type PostApiV1UploadsImagesResponseObject interface {
@@ -1206,7 +983,6 @@ func (response PostApiV1UploadsImages500Response) VisitPostApiV1UploadsImagesRes
 
 type GetApiV1UploadsImagesImageIdRequestObject struct {
 	ImageId string `json:"image_id"`
-	Params  GetApiV1UploadsImagesImageIdParams
 }
 
 type GetApiV1UploadsImagesImageIdResponseObject interface {
@@ -1367,10 +1143,8 @@ func (sh *strictHandler) PostApiV1AuthLogin(w http.ResponseWriter, r *http.Reque
 }
 
 // PostApiV1AuthLogout operation middleware
-func (sh *strictHandler) PostApiV1AuthLogout(w http.ResponseWriter, r *http.Request, params PostApiV1AuthLogoutParams) {
+func (sh *strictHandler) PostApiV1AuthLogout(w http.ResponseWriter, r *http.Request) {
 	var request PostApiV1AuthLogoutRequestObject
-
-	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.PostApiV1AuthLogout(ctx, request.(PostApiV1AuthLogoutRequestObject))
@@ -1481,10 +1255,8 @@ func (sh *strictHandler) GetApiV1Recipes(w http.ResponseWriter, r *http.Request,
 }
 
 // PostApiV1Recipes operation middleware
-func (sh *strictHandler) PostApiV1Recipes(w http.ResponseWriter, r *http.Request, params PostApiV1RecipesParams) {
+func (sh *strictHandler) PostApiV1Recipes(w http.ResponseWriter, r *http.Request) {
 	var request PostApiV1RecipesRequestObject
-
-	request.Params = params
 
 	var body PostApiV1RecipesJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -1514,11 +1286,10 @@ func (sh *strictHandler) PostApiV1Recipes(w http.ResponseWriter, r *http.Request
 }
 
 // DeleteApiV1RecipesRecipeId operation middleware
-func (sh *strictHandler) DeleteApiV1RecipesRecipeId(w http.ResponseWriter, r *http.Request, recipeId string, params DeleteApiV1RecipesRecipeIdParams) {
+func (sh *strictHandler) DeleteApiV1RecipesRecipeId(w http.ResponseWriter, r *http.Request, recipeId string) {
 	var request DeleteApiV1RecipesRecipeIdRequestObject
 
 	request.RecipeId = recipeId
-	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.DeleteApiV1RecipesRecipeId(ctx, request.(DeleteApiV1RecipesRecipeIdRequestObject))
@@ -1541,11 +1312,10 @@ func (sh *strictHandler) DeleteApiV1RecipesRecipeId(w http.ResponseWriter, r *ht
 }
 
 // PatchApiV1RecipesRecipeId operation middleware
-func (sh *strictHandler) PatchApiV1RecipesRecipeId(w http.ResponseWriter, r *http.Request, recipeId string, params PatchApiV1RecipesRecipeIdParams) {
+func (sh *strictHandler) PatchApiV1RecipesRecipeId(w http.ResponseWriter, r *http.Request, recipeId string) {
 	var request PatchApiV1RecipesRecipeIdRequestObject
 
 	request.RecipeId = recipeId
-	request.Params = params
 
 	var body PatchApiV1RecipesRecipeIdJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -1575,11 +1345,10 @@ func (sh *strictHandler) PatchApiV1RecipesRecipeId(w http.ResponseWriter, r *htt
 }
 
 // PutApiV1RecipesRecipeId operation middleware
-func (sh *strictHandler) PutApiV1RecipesRecipeId(w http.ResponseWriter, r *http.Request, recipeId string, params PutApiV1RecipesRecipeIdParams) {
+func (sh *strictHandler) PutApiV1RecipesRecipeId(w http.ResponseWriter, r *http.Request, recipeId string) {
 	var request PutApiV1RecipesRecipeIdRequestObject
 
 	request.RecipeId = recipeId
-	request.Params = params
 
 	var body PutApiV1RecipesRecipeIdJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -1609,10 +1378,8 @@ func (sh *strictHandler) PutApiV1RecipesRecipeId(w http.ResponseWriter, r *http.
 }
 
 // PostApiV1UploadsImages operation middleware
-func (sh *strictHandler) PostApiV1UploadsImages(w http.ResponseWriter, r *http.Request, params PostApiV1UploadsImagesParams) {
+func (sh *strictHandler) PostApiV1UploadsImages(w http.ResponseWriter, r *http.Request) {
 	var request PostApiV1UploadsImagesRequestObject
-
-	request.Params = params
 
 	if reader, err := r.MultipartReader(); err != nil {
 		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode multipart body: %w", err))
@@ -1642,11 +1409,10 @@ func (sh *strictHandler) PostApiV1UploadsImages(w http.ResponseWriter, r *http.R
 }
 
 // GetApiV1UploadsImagesImageId operation middleware
-func (sh *strictHandler) GetApiV1UploadsImagesImageId(w http.ResponseWriter, r *http.Request, imageId string, params GetApiV1UploadsImagesImageIdParams) {
+func (sh *strictHandler) GetApiV1UploadsImagesImageId(w http.ResponseWriter, r *http.Request, imageId string) {
 	var request GetApiV1UploadsImagesImageIdRequestObject
 
 	request.ImageId = imageId
-	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.GetApiV1UploadsImagesImageId(ctx, request.(GetApiV1UploadsImagesImageIdRequestObject))
@@ -1695,51 +1461,52 @@ func (sh *strictHandler) GetHealth(w http.ResponseWriter, r *http.Request) {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"RwAA",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

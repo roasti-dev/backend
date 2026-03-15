@@ -11,6 +11,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/joho/godotenv"
+
 	"github.com/nikpivkin/roasti-app-backend/internal/app"
 	"github.com/nikpivkin/roasti-app-backend/internal/log"
 	"github.com/nikpivkin/roasti-app-backend/internal/server"
@@ -26,29 +28,47 @@ func main() {
 }
 
 const (
-	appVersion = "0.0.1"
-
-	serverAddr      = ":9090"
+	appVersion      = "0.0.1"
 	shutdownTimeout = 5 * time.Second
 )
 
 func run() error {
 
-	logger := log.InitLogger(appVersion)
+	if err := godotenv.Load(".env"); err != nil {
+		return fmt.Errorf("load .env: %w", err)
+	}
+
+	serverPort := getEnvOrDefault("SERVER_PORT", "9090")
+
+	env := getEnvOrDefault(os.Getenv("APP_ENV"), "development")
+	logger := log.InitLogger(appVersion, env)
 	slog.SetDefault(logger)
+
+	emulatorHost := os.Getenv("FIREBASE_AUTH_EMULATOR_HOST")
+	if emulatorHost != "" {
+		logger.Info("Firebase auth emulator is used", slog.String("host", emulatorHost))
+	} else {
+		logger.Info("Firebase auth production is used")
+	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	a, err := app.New(app.Config{
-		DBPath:      "data.db",
-		UploadsPath: "./uploads",
-		AppVersion:  appVersion,
+	a, err := app.New(ctx, app.Config{
+		DBPath:                  "data.db",
+		UploadsPath:             "./uploads",
+		AppVersion:              appVersion,
+		FirebaseProjectID:       os.Getenv("FIREBASE_PROJECT_ID"),
+		FirebaseAPIKey:          os.Getenv("FIREBASE_API_KEY"),
+		FirebaseCredentialsJSON: os.Getenv("FIREBASE_CREDENTIALS_JSON"),
+		FirebaseIdentityBaseURL: getEnvOrDefault("FIREBASE_IDENTITY_BASE_URL", "https://identitytoolkit.googleapis.com/v1/accounts"),
+		FirebaseTokenBaseURL:    getEnvOrDefault("FIREBASE_TOKEN_BASE_URL", "https://securetoken.googleapis.com/v1/token"),
 	}, logger)
 	if err != nil {
 		return fmt.Errorf("create app: %w", err)
 	}
 
+	serverAddr := ":" + serverPort
 	s := server.New(serverAddr, a.Handler())
 
 	if err := a.Seed(ctx); err != nil {
@@ -80,5 +100,11 @@ func run() error {
 
 	slog.Info("Server stopped")
 	return nil
+}
 
+func getEnvOrDefault(key, defaultVal string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return defaultVal
 }

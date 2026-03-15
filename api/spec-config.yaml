@@ -12,4 +12,4 @@ output-options:
   skip-prune: true
 
 import-mapping:
-  './models.yaml': 'github.com/nikpivkin/roasti-app-backend/internal/api/models'
+  "./models.yaml": "github.com/nikpivkin/roasti-app-backend/internal/api/models"

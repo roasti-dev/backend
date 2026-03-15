@@ -10,11 +10,15 @@ import (
 	"net/http"
 	"strings"
 
+	firebase "firebase.google.com/go/v4"
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/getkin/kin-openapi/openapi3filter"
 	oapimiddleware "github.com/oapi-codegen/nethttp-middleware"
+	"google.golang.org/api/option"
 
 	"github.com/nikpivkin/roasti-app-backend/docs"
 	"github.com/nikpivkin/roasti-app-backend/internal/api/apierr"
+	"github.com/nikpivkin/roasti-app-backend/internal/auth"
 	"github.com/nikpivkin/roasti-app-backend/internal/db"
 	"github.com/nikpivkin/roasti-app-backend/internal/handlers"
 	"github.com/nikpivkin/roasti-app-backend/internal/log"
@@ -25,9 +29,14 @@ import (
 )
 
 type Config struct {
-	DBPath      string
-	UploadsPath string
-	AppVersion  string
+	DBPath                  string
+	UploadsPath             string
+	AppVersion              string
+	FirebaseProjectID       string
+	FirebaseCredentialsJSON string
+	FirebaseAPIKey          string
+	FirebaseIdentityBaseURL string
+	FirebaseTokenBaseURL    string
 }
 
 type App struct {
@@ -36,7 +45,7 @@ type App struct {
 	recipeService *recipe.Service
 }
 
-func New(cfg Config, logger *slog.Logger) (*App, error) {
+func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 	database, err := db.NewSQLite(cfg.DBPath)
 	if err != nil {
 		return nil, fmt.Errorf("create db: %w", err)
@@ -46,16 +55,43 @@ func New(cfg Config, logger *slog.Logger) (*App, error) {
 		return nil, fmt.Errorf("init schema: %w", err)
 	}
 
+	config := &firebase.Config{ProjectID: cfg.FirebaseProjectID}
+
+	opts := []option.ClientOption{}
+	if cfg.FirebaseCredentialsJSON != "" {
+		opts = append(opts, option.WithCredentialsJSON([]byte(cfg.FirebaseCredentialsJSON)))
+	}
+
+	firebaseApp, err := firebase.NewApp(ctx, config, opts...)
+	if err != nil {
+		return nil, fmt.Errorf("create a new firebase app: %w", err)
+	}
+
+	firebaseAuth, err := firebaseApp.Auth(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("create a new firebase auth client: %w", err)
+	}
+
+	logger.InfoContext(ctx, "firebase config",
+		slog.String("identity_base_url", cfg.FirebaseIdentityBaseURL),
+		slog.String("token_base_url", cfg.FirebaseTokenBaseURL),
+	)
+
 	uploader := uploads.NewService(cfg.UploadsPath)
 	recipeRepo := recipe.NewRepository(database, logger)
 	recipeService := recipe.NewService(recipeRepo, uploader)
+	authRepo := auth.NewRepository(database)
+	passwordSigner := auth.NewFirebasePasswordSigner(
+		cfg.FirebaseAPIKey, cfg.FirebaseIdentityBaseURL, cfg.FirebaseTokenBaseURL,
+	)
+	authService := auth.NewService(authRepo, uploader, firebaseAuth, passwordSigner)
 
 	swagger, err := handlers.GetSwagger()
 	if err != nil {
 		return nil, err
 	}
 
-	strictHandler := handlers.NewServerHandler(recipeService, uploader)
+	strictHandler := handlers.NewServerHandler(recipeService, authService, uploader)
 	handler := handlers.NewStrictHandlerWithOptions(strictHandler, nil, handlers.StrictHTTPServerOptions{
 		ResponseErrorHandlerFunc: responseErrorHandler,
 	})
@@ -71,10 +107,13 @@ func New(cfg Config, logger *slog.Logger) (*App, error) {
 
 	apiHandler := middleware.Chain(
 		router,
-		oapimiddleware.OapiRequestValidator(swagger),
+		oapimiddleware.OapiRequestValidatorWithOptions(swagger, &oapimiddleware.Options{
+			Options: openapi3filter.Options{
+				AuthenticationFunc: middleware.Authenticate(firebaseAuth),
+			},
+		}),
 		middleware.RequestLogging(logger),
 		middleware.RequestID,
-		middleware.UserID,
 	)
 
 	finalHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -6,3 +6,6 @@ coverage.out
 
 uploads/images
 uplodas/tmp
+
+.env
+.env.production
