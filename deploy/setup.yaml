@@ -1,0 +1,20 @@
+- name: Setup
+  hosts: vps
+  tasks:
+    - name: update apt repository
+      ansible.builtin.apt:
+        update_cache: yes
+
+    - name: Create user
+      user:
+        name: roasti
+        system: yes
+        shell: /usr/sbin/nologin
+
+    - name: Create directories
+      file:
+        path: /var/lib/roasti/uploads
+        state: directory
+        owner: roasti
+        recurse: yes
+

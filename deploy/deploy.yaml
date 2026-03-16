@@ -1,0 +1,26 @@
+- name: Deploy
+  hosts: vps
+  tasks:
+    - name: Copy binary
+      copy:
+        src: ../app-debian
+        dest: /usr/local/bin/roasti
+        mode: '0755'
+
+    - name: Copy env file
+      copy:
+        src: ../.env.production
+        dest: /var/lib/roasti/.env
+        owner: roasti
+
+    - name: Copy service file
+      copy:
+        src: ./roasti.service
+        dest: /etc/systemd/system/roasti.service
+
+    - name: Reload systemd and restart service
+      systemd:
+        daemon_reload: yes
+        name: roasti
+        enabled: yes
+        state: restarted

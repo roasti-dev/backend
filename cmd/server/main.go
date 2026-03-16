@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -39,9 +40,12 @@ func run() error {
 	}
 
 	serverPort := getEnvOrDefault("SERVER_PORT", "9090")
+	if _, err := strconv.Atoi(serverPort); err != nil {
+		return fmt.Errorf("invalid port %q: must be a valid integer (e.g. 8080)", serverPort)
+	}
 
-	env := getEnvOrDefault(os.Getenv("APP_ENV"), "development")
-	logger := log.InitLogger(appVersion, env)
+	appEnv := getEnvOrDefault("APP_ENV", "development")
+	logger := log.InitLogger(appVersion, appEnv)
 	slog.SetDefault(logger)
 
 	emulatorHost := os.Getenv("FIREBASE_AUTH_EMULATOR_HOST")
@@ -55,14 +59,14 @@ func run() error {
 	defer stop()
 
 	a, err := app.New(ctx, app.Config{
-		DBPath:                  "data.db",
-		UploadsPath:             "./uploads",
-		AppVersion:              appVersion,
-		FirebaseProjectID:       os.Getenv("FIREBASE_PROJECT_ID"),
-		FirebaseAPIKey:          os.Getenv("FIREBASE_API_KEY"),
-		FirebaseCredentialsJSON: os.Getenv("FIREBASE_CREDENTIALS_JSON"),
-		FirebaseIdentityBaseURL: getEnvOrDefault("FIREBASE_IDENTITY_BASE_URL", "https://identitytoolkit.googleapis.com/v1/accounts"),
-		FirebaseTokenBaseURL:    getEnvOrDefault("FIREBASE_TOKEN_BASE_URL", "https://securetoken.googleapis.com/v1/token"),
+		DBPath:                        getEnvOrDefault("DATABASE_PATH", "data.db"),
+		UploadsPath:                   getEnvOrDefault("UPLOADS_PATH", "./uploads"),
+		AppVersion:                    appVersion,
+		FirebaseProjectID:             os.Getenv("FIREBASE_PROJECT_ID"),
+		FirebaseAPIKey:                os.Getenv("FIREBASE_API_KEY"),
+		FirebaseCredentialsJSONBase64: os.Getenv("FIREBASE_CREDENTIALS_JSON_BASE64"),
+		FirebaseIdentityBaseURL:       getEnvOrDefault("FIREBASE_IDENTITY_BASE_URL", "https://identitytoolkit.googleapis.com/v1/accounts"),
+		FirebaseTokenBaseURL:          getEnvOrDefault("FIREBASE_TOKEN_BASE_URL", "https://securetoken.googleapis.com/v1/token"),
 	}, logger)
 	if err != nil {
 		return fmt.Errorf("create app: %w", err)

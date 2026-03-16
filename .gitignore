@@ -7,5 +7,7 @@ coverage.out
 uploads/images
 uplodas/tmp
 
+inventory.ini
+
 .env
 .env.production

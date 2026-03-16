@@ -29,30 +29,21 @@ Make sure the app and Firebase emulator are running before executing e2e tests.
 make e2e
 ```
 
-## Systemd service configuration
+## Deploy
 
-Create a service file at `/etc/systemd/system/<service-name>.service`:
-```ini
-[Unit]
-Description=Backend Service
-After=network.target
+Deployment is automated with Ansible.
 
-[Service]
-Type=simple
-User=root
-WorkingDirectory=/home/app
-ExecStart=/home/app/app-debian
-Restart=always
-RestartSec=3
-Environment=APP_ENV=production
-
-[Install]
-WantedBy=multi-user.target
+Copy the inventory file and fill in your server details:
+```bash
+cp deploy/inventory.example.ini deploy/inventory.ini
 ```
 
-Then enable and start the service:
+First time setup (creates user, directories, and systemd service):
 ```bash
-sudo systemctl daemon-reload
-sudo systemctl enable <service-name>
-sudo systemctl start <service-name>
+make setup-server
+```
+
+Deploy a new version:
+```bash
+make deploy
 ```

@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"database/sql"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -29,14 +30,14 @@ import (
 )
 
 type Config struct {
-	DBPath                  string
-	UploadsPath             string
-	AppVersion              string
-	FirebaseProjectID       string
-	FirebaseCredentialsJSON string
-	FirebaseAPIKey          string
-	FirebaseIdentityBaseURL string
-	FirebaseTokenBaseURL    string
+	DBPath                        string
+	UploadsPath                   string
+	AppVersion                    string
+	FirebaseProjectID             string
+	FirebaseCredentialsJSONBase64 string
+	FirebaseAPIKey                string
+	FirebaseIdentityBaseURL       string
+	FirebaseTokenBaseURL          string
 }
 
 type App struct {
@@ -58,8 +59,12 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 	config := &firebase.Config{ProjectID: cfg.FirebaseProjectID}
 
 	opts := []option.ClientOption{}
-	if cfg.FirebaseCredentialsJSON != "" {
-		opts = append(opts, option.WithCredentialsJSON([]byte(cfg.FirebaseCredentialsJSON)))
+	if cfg.FirebaseCredentialsJSONBase64 != "" {
+		decoded, err := base64.StdEncoding.DecodeString(cfg.FirebaseCredentialsJSONBase64)
+		if err != nil {
+			return nil, fmt.Errorf("decode firebase credentials: %w", err)
+		}
+		opts = append(opts, option.WithCredentialsJSON(decoded))
 	}
 
 	firebaseApp, err := firebase.NewApp(ctx, config, opts...)

@@ -7,39 +7,25 @@ FIREBASE_CONTAINER_NAME := firebase-emulator-dev
 
 OUTPUT_DEBIAN := app-debian
 
-STANDARD_ENUMS := ./internal/recipe/brew_method.go \
-	./internal/recipe/difficulty.go
+OAPI_SPEC            := api/spec.yaml
+OAPI_CONFIG          := api/spec-config.yaml
+OAPI_MODELS_CONFIG   := api/models-config.yaml
+OAPI_MODELS          := api/models.yaml
+OAPI_OUT             := internal/handlers/server.gen.go
+OAPI_MODELS_OUT      := internal/api/models/models.gen.go
+OAPI_CLIENT_CONFIG   := api/client-config.yaml
+OAPI_CLIENT_OUT      := tests/client/client.gen.go
 
-NULLABLE_ENUMS := ./internal/recipe/roast_level.go
-
-STANDARD_ENUMS_GO := $(STANDARD_ENUMS:.go=_enum.go)
-NULLABLE_ENUMS_GO := $(NULLABLE_ENUMS:.go=_enum.go)
-
-$(STANDARD_ENUMS_GO): GO_ENUM_FLAGS=--marshal --names --sqlint
-$(NULLABLE_ENUMS_GO): GO_ENUM_FLAGS=--marshal --names --sqlnullint
-
-enums: $(STANDARD_ENUMS_GO) $(NULLABLE_ENUMS_GO)
-
-%_enum.go: %.go
-	$(GO) tool go-enum -f $< $(GO_ENUM_FLAGS)
-
-OAPI_SPEC := api/spec.yaml
-OAPI_CONFIG := api/spec-config.yaml
-OAPI_MODELS_CONFIG := api/models-config.yaml
-OAPI_MODELS := api/models.yaml
-OAPI_OUT := internal/handlers/server.gen.go
-OAPI_MODELS_OUT := internal/api/models/models.gen.go
-OAPI_CLIENT_CONFIG := api/client-config.yaml
-OAPI_CLIENT_OUT := tests/client/client.gen.go
+OAPI_CODEGEN := $(GO) tool oapi-codegen
 
 $(OAPI_MODELS_OUT): $(OAPI_MODELS) $(OAPI_MODELS_CONFIG)
-	$(GO) tool oapi-codegen -config $(OAPI_MODELS_CONFIG) -o $(OAPI_MODELS_OUT) $(OAPI_MODELS)
+	$(OAPI_CODEGEN) -config $(OAPI_MODELS_CONFIG) -o $@ $(OAPI_MODELS)
 
 $(OAPI_OUT): $(OAPI_SPEC) $(OAPI_CONFIG) $(OAPI_MODELS_OUT)
-	$(GO) tool oapi-codegen -config $(OAPI_CONFIG) -o $(OAPI_OUT) $(OAPI_SPEC)
+	$(OAPI_CODEGEN) -config $(OAPI_CONFIG) -o $@ $(OAPI_SPEC)
 
 $(OAPI_CLIENT_OUT): $(OAPI_SPEC) $(OAPI_CLIENT_CONFIG) $(OAPI_MODELS_OUT)
-	$(GO) tool oapi-codegen -config $(OAPI_CLIENT_CONFIG) -o $(OAPI_CLIENT_OUT) $(OAPI_SPEC)
+	$(OAPI_CODEGEN) -config $(OAPI_CLIENT_CONFIG) -o $@ $(OAPI_SPEC)
 
 oapi: $(OAPI_MODELS_OUT) $(OAPI_OUT) $(OAPI_CLIENT_OUT)
 
@@ -54,24 +40,11 @@ build-debian:
 start:
 	APP_ENV=development DEBUG=true $(GO) run ./cmd/server
 
-DEPLOY_USER ?= root
-DEPLOY_PATH ?= /home/app
-BACKEND_SERVICE := backend
-REMOTE := $(DEPLOY_USER)@$(DEPLOY_HOST)
-REMOTE_BIN := $(DEPLOY_PATH)/$(OUTPUT_DEBIAN)
+setup-server:
+	ansible-playbook -i deploy/inventory.ini deploy/setup.yaml
 
 deploy: build-debian
-ifndef DEPLOY_HOST
-	$(error DEPLOY_HOST is not set)
-endif
-	scp $(OUTPUT_DEBIAN) $(REMOTE):$(REMOTE_BIN).new
-	scp .env.production $(REMOTE):$(REMOTE_DIR)/.env
-	ssh $(REMOTE) '\
-		mv $(REMOTE_BIN).new $(REMOTE_BIN) && \
-		chmod +x $(REMOTE_BIN) && \
-		sudo systemctl restart $(BACKEND_SERVICE) && \
-		sudo systemctl status $(BACKEND_SERVICE) --no-pager \
-	'
+	ansible-playbook -i deploy/inventory.ini deploy/deploy.yaml
 
 lint:
 	golangci-lint run
@@ -83,11 +56,11 @@ test-e2e: firebase-emulator wait-firebase
 	FIREBASE_AUTH_EMULATOR_HOST=localhost:$(FIREBASE_AUTH_PORT) \
 	FIREBASE_IDENTITY_BASE_URL=http://localhost:$(FIREBASE_AUTH_PORT)/identitytoolkit.googleapis.com/v1/accounts \
 	FIREBASE_TOKEN_BASE_URL=http://localhost:$(FIREBASE_AUTH_PORT)/securetoken.googleapis.com/v1/token \
-	go test -v -coverprofile=coverage.out -coverpkg=./internal/... ./tests/e2e/... ; \
+	$(GO) test -v -coverprofile=coverage.out -coverpkg=./internal/... ./tests/e2e/... ; \
 	$(MAKE) firebase-emulator-stop
 
 cover:
-	go tool cover -html=coverage.out
+	$(GO) tool cover -html=coverage.out
 
 firebase-pull:
 	docker pull andreysenov/firebase-tools:$(FIREBASE_TOOLS_VERSION)
@@ -109,4 +82,6 @@ wait-firebase:
 	done
 	@echo "Firebase emulator is ready"
 
-.PHONY: build build-debian start deploy lint test-e2e firebase-pull firebase-emulator firebase-emulator-stop wait-firebase
+.PHONY: build build-debian start setup-server deploy lint \
+	test-e2e firebase-pull firebase-emulator firebase-emulator-stop \
+	wait-firebase

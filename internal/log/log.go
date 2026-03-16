@@ -28,7 +28,7 @@ func (h *contextHandler) Handle(ctx context.Context, r slog.Record) error {
 	return h.Handler.Handle(ctx, r)
 }
 
-func InitLogger(appVersion, env string) *slog.Logger {
+func InitLogger(appVersion, appEnv string) *slog.Logger {
 	debug := os.Getenv("DEBUG") != ""
 	logLevel := slog.LevelInfo
 	if debug {
@@ -39,7 +39,7 @@ func InitLogger(appVersion, env string) *slog.Logger {
 		Level:     logLevel,
 	}).WithAttrs([]slog.Attr{
 		slog.String("appVer", appVersion),
-		slog.String("env", env),
+		slog.String("env", appEnv),
 	})
 	return slog.New(&contextHandler{handler})
 }
