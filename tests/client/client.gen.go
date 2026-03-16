@@ -221,6 +221,9 @@ type ClientInterface interface {
 
 	PostApiV1AuthRegister(ctx context.Context, body PostApiV1AuthRegisterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetApiV1ProfilesMe request
+	GetApiV1ProfilesMe(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetApiV1Recipes request
 	GetApiV1Recipes(ctx context.Context, params *GetApiV1RecipesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -326,6 +329,18 @@ func (c *Client) PostApiV1AuthRegisterWithBody(ctx context.Context, contentType 
 
 func (c *Client) PostApiV1AuthRegister(ctx context.Context, body PostApiV1AuthRegisterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPostApiV1AuthRegisterRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetApiV1ProfilesMe(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetApiV1ProfilesMeRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -611,6 +626,33 @@ func NewPostApiV1AuthRegisterRequestWithBody(server string, contentType string, 
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetApiV1ProfilesMeRequest generates requests for GetApiV1ProfilesMe
+func NewGetApiV1ProfilesMeRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/profiles/me")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -983,6 +1025,9 @@ type ClientWithResponsesInterface interface {
 
 	PostApiV1AuthRegisterWithResponse(ctx context.Context, body PostApiV1AuthRegisterJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiV1AuthRegisterResponse, error)
 
+	// GetApiV1ProfilesMeWithResponse request
+	GetApiV1ProfilesMeWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1ProfilesMeResponse, error)
+
 	// GetApiV1RecipesWithResponse request
 	GetApiV1RecipesWithResponse(ctx context.Context, params *GetApiV1RecipesParams, reqEditors ...RequestEditorFn) (*GetApiV1RecipesResponse, error)
 
@@ -1101,6 +1146,28 @@ func (r PostApiV1AuthRegisterResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r PostApiV1AuthRegisterResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetApiV1ProfilesMeResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *externalRef0.MyProfile
+}
+
+// Status returns HTTPResponse.Status
+func (r GetApiV1ProfilesMeResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetApiV1ProfilesMeResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -1346,6 +1413,15 @@ func (c *ClientWithResponses) PostApiV1AuthRegisterWithResponse(ctx context.Cont
 	return ParsePostApiV1AuthRegisterResponse(rsp)
 }
 
+// GetApiV1ProfilesMeWithResponse request returning *GetApiV1ProfilesMeResponse
+func (c *ClientWithResponses) GetApiV1ProfilesMeWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1ProfilesMeResponse, error) {
+	rsp, err := c.GetApiV1ProfilesMe(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetApiV1ProfilesMeResponse(rsp)
+}
+
 // GetApiV1RecipesWithResponse request returning *GetApiV1RecipesResponse
 func (c *ClientWithResponses) GetApiV1RecipesWithResponse(ctx context.Context, params *GetApiV1RecipesParams, reqEditors ...RequestEditorFn) (*GetApiV1RecipesResponse, error) {
 	rsp, err := c.GetApiV1Recipes(ctx, params, reqEditors...)
@@ -1572,6 +1648,32 @@ func ParsePostApiV1AuthRegisterResponse(rsp *http.Response) (*PostApiV1AuthRegis
 			return nil, err
 		}
 		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetApiV1ProfilesMeResponse parses an HTTP response from a GetApiV1ProfilesMeWithResponse call
+func ParseGetApiV1ProfilesMeResponse(rsp *http.Response) (*GetApiV1ProfilesMeResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetApiV1ProfilesMeResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest externalRef0.MyProfile
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
 
 	}
 

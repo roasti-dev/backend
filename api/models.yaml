@@ -390,6 +390,11 @@ components:
           nullable: true
           description: ID of the uploaded avatar image. Can be resolved via the image upload endpoint.
 
+
+    MyProfile:
+      allOf:
+        - $ref: "#/components/schemas/UserResponse"
+
     UserProfile:
       type: object
       required:

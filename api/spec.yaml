@@ -13,6 +13,8 @@ tags:
     description: Image upload and retrieval
   - name: auth
     description: User registration, authentication and token management
+  - name: profiles
+    description: Operations related to user profiles, including current user and public profiles
   - name: public
     description: Endpoints that do not require authentication
 paths:
@@ -324,6 +326,20 @@ paths:
           description: Unauthorized
         "500":
           description: Internal server error
+
+  /api/v1/profiles/me:
+    get:
+      summary: Get current user profile
+      tags: [profiles]
+      responses:
+        "200":
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/MyProfile"
+        "401":
+          description: Unauthorized
 
 components:
   securitySchemes:

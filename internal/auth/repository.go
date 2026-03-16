@@ -55,7 +55,23 @@ func (r *Repository) GetByUsername(ctx context.Context, username string) (User, 
 		if errors.Is(err, sql.ErrNoRows) {
 			return User{}, ErrNotFound
 		}
-		return User{}, fmt.Errorf("get user by username: %w", err)
+		return User{}, fmt.Errorf("select user: %w", err)
+	}
+	return user, nil
+}
+
+func (r *Repository) GetByID(ctx context.Context, userID string) (User, error) {
+	var user User
+	err := r.psql.Select(userColumns...).
+		From(usersTable).
+		Where(sq.Eq{"id": userID}).
+		QueryRowContext(ctx).
+		Scan(&user.ID, &user.Email, &user.Username, &user.AvatarID, &user.Bio, &user.CreatedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return User{}, ErrNotFound
+		}
+		return User{}, fmt.Errorf("get user by id: %w", err)
 	}
 	return user, nil
 }

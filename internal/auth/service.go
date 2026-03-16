@@ -56,6 +56,19 @@ func NewService(
 	}
 }
 
+func (s *Service) CurrentUser(ctx context.Context, userID string) (models.MyProfile, error) {
+	user, err := s.repo.GetByID(ctx, userID)
+	if err != nil {
+		return models.UserResponse{}, fmt.Errorf("get user by id: %w", err)
+	}
+	return models.UserResponse{
+		Id:       user.ID,
+		Username: user.Username,
+		AvatarId: user.AvatarID,
+		Bio:      user.Bio,
+	}, nil
+}
+
 func (s *Service) Register(ctx context.Context, req models.RegisterRequest) (models.AuthResponse, error) {
 	if err := validateRegisterRequest(req); err != nil {
 		return models.AuthResponse{}, err
