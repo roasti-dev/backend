@@ -28,8 +28,9 @@ func main() {
 	}
 }
 
+var appVersion = "dev"
+
 const (
-	appVersion      = "0.0.1"
 	shutdownTimeout = 5 * time.Second
 )
 

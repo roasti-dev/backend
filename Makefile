@@ -1,11 +1,11 @@
 GO ?= go
 
+GIT_COMMIT := $(shell git rev-parse --short HEAD)
+
 FIREBASE_TOOLS_VERSION := 15.10.0@sha256:740d133bffbcda740b49f7e5ce883ecf7412752a931c68a6ad2040a0622e03a4
 FIREBASE_PROJECT := roasti-dev-project
 FIREBASE_AUTH_PORT := 9099
 FIREBASE_CONTAINER_NAME := firebase-emulator-dev
-
-OUTPUT_DEBIAN := app-debian
 
 OAPI_SPEC            := api/spec.yaml
 OAPI_CONFIG          := api/spec-config.yaml
@@ -29,13 +29,16 @@ $(OAPI_CLIENT_OUT): $(OAPI_SPEC) $(OAPI_CLIENT_CONFIG) $(OAPI_MODELS_OUT)
 
 oapi: $(OAPI_MODELS_OUT) $(OAPI_OUT) $(OAPI_CLIENT_OUT)
 
+build-%:
+	$(eval PARTS := $(subst -, ,$*))
+	$(eval GOOS  := $(word 1, $(PARTS)))
+	$(eval GOARCH := $(word 2, $(PARTS)))
+	GOOS=$(GOOS) GOARCH=$(GOARCH) $(GO) build \
+		-ldflags="-s -w -X main.appVersion=$(GIT_COMMIT)" \
+		-o app-$(GOOS)-$(GOARCH) ./cmd/server
+
 build:
 	$(GO) build -o app ./cmd/server
-
-# Debian 13 (Trixie) 64-bit
-build-debian:
-	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 \
-		$(GO) build -ldflags="-s -w" -o $(OUTPUT_DEBIAN) ./cmd/server
 
 start:
 	APP_ENV=development DEBUG=true $(GO) run ./cmd/server
@@ -43,7 +46,7 @@ start:
 setup-server:
 	ansible-playbook -i deploy/inventory.ini deploy/setup.yaml
 
-deploy: build-debian
+deploy: build-linux-amd64
 	ansible-playbook -i deploy/inventory.ini deploy/deploy.yaml
 
 lint:

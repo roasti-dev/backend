@@ -3,7 +3,7 @@
   tasks:
     - name: Copy binary
       copy:
-        src: ../app-debian
+        src: ../app-linux-amd64
         dest: /usr/local/bin/roasti
         mode: '0755'
 
