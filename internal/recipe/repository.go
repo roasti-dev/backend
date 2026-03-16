@@ -13,7 +13,6 @@ import (
 	sq "github.com/Masterminds/squirrel"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
-	"github.com/nikpivkin/roasti-app-backend/internal/pagination"
 )
 
 type scanner interface {
@@ -231,7 +230,7 @@ func (r *Repository) GetRecipeByID(ctx context.Context, recipeID string) (models
 
 func (r *Repository) ListRecipes(
 	ctx context.Context, currentUserID string, params models.ListRecipesParams,
-) (pagination.Page[models.Recipe], error) {
+) (models.GenericPage[models.Recipe], error) {
 	pag := params.Pagination()
 
 	sb := r.psql.
@@ -243,22 +242,22 @@ func (r *Repository) ListRecipes(
 
 	rows, err := sb.RunWith(r.runner).QueryContext(ctx)
 	if err != nil {
-		return pagination.Page[models.Recipe]{}, err
+		return models.GenericPage[models.Recipe]{}, err
 	}
 	defer rows.Close()
 
 	recipes, recipeIDs, err := scanRecipes(rows)
 	if err != nil {
-		return pagination.Page[models.Recipe]{}, err
+		return models.GenericPage[models.Recipe]{}, err
 	}
 
 	if len(recipes) == 0 {
-		return pagination.NewPage(recipes, pag, 0), nil
+		return models.NewPage(recipes, pag, 0), nil
 	}
 
 	stepsMap, err := r.getBrewStepsByRecipeIDs(ctx, recipeIDs)
 	if err != nil {
-		return pagination.Page[models.Recipe]{}, err
+		return models.GenericPage[models.Recipe]{}, err
 	}
 
 	for i := range recipes {
@@ -275,9 +274,9 @@ func (r *Repository) ListRecipes(
 		RunWith(r.runner).
 		QueryRowContext(ctx).
 		Scan(&total); err != nil {
-		return pagination.Page[models.Recipe]{}, err
+		return models.GenericPage[models.Recipe]{}, err
 	}
-	return pagination.NewPage(recipes, pag, total), nil
+	return models.NewPage(recipes, pag, total), nil
 }
 
 func applyListRecipesFilter(
@@ -328,8 +327,8 @@ func applySort(sb sq.SelectBuilder, sortField, sortDirection *string, allowedFie
 	return sb.OrderBy(fmt.Sprintf("%s %s, id %s", sort, dir, dir))
 }
 
-func applyPagination(sb sq.SelectBuilder, pag pagination.Pagination) sq.SelectBuilder {
-	return sb.Limit(uint64(pag.Limit())).Offset(uint64(pag.Offset()))
+func applyPagination(sb sq.SelectBuilder, pag models.PaginationParams) sq.SelectBuilder {
+	return sb.Limit(uint64(pag.GetLimit())).Offset(uint64(pag.Offset()))
 }
 
 func scanRecipes(rows *sql.Rows) ([]models.Recipe, []string, error) {

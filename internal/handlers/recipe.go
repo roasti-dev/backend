@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
 	"github.com/nikpivkin/roasti-app-backend/internal/ptr"
@@ -12,19 +13,18 @@ func (s *ServerHandler) GetApiV1Recipes(ctx context.Context, request GetApiV1Rec
 	s.logger.DebugContext(ctx, "list recipes request")
 
 	userID := requestctx.GetUserID(ctx)
-	recipes, err := s.recipeService.ListRecipes(ctx, userID, ptr.GetOr(request.Params.ListRecipes, models.ListRecipesParams{}))
+	recipePage, err := s.recipeService.ListRecipes(ctx, userID, ptr.GetOr(request.Params.ListRecipes, models.ListRecipesParams{}))
 	if err != nil {
 		return nil, err
 	}
 
 	s.logger.DebugContext(ctx, "recipes returned",
-		"count", len(recipes.Items),
+		slog.Int("count", len(recipePage.Items)),
+		slog.Any("pagination", recipePage.Pagination),
 	)
 	return GetApiV1Recipes200JSONResponse{
-		Items:      recipes.Items,
-		Page:       recipes.Page,
-		Limit:      recipes.Limit,
-		TotalCount: recipes.TotalCount,
+		Items:      recipePage.Items,
+		Pagination: recipePage.Pagination,
 	}, nil
 }
 

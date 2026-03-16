@@ -12,8 +12,7 @@ components:
       explode: true
       schema:
         allOf:
-          - $ref: "#/components/schemas/Pagination"
-          # - $ref: '#/components/schemas/SortOrder'
+          - $ref: "#/components/schemas/PaginationParams"
           - type: object
             properties:
               authorId:
@@ -37,15 +36,66 @@ components:
                 description: "Sort direction"
 
   schemas:
-    Pagination:
+    PaginationParams:
       type: object
       properties:
         limit:
           type: integer
+          format: int32
           default: 20
+          minimum: 1
+          maximum: 100
+          description: Number of items per page
         page:
           type: integer
+          format: int32
           default: 1
+          minimum: 1
+          description: Page number
+
+    PaginationMeta:
+      type: object
+      properties:
+        items_count:
+          type: integer
+          format: int32
+          minimum: 0
+          description: Number of items on the current page
+        current_page:
+          type: integer
+          format: int32
+          minimum: 1
+          description: Current page number
+        next_page:
+          type: integer
+          format: int32
+          minimum: 1
+          description: Next page number
+        last_page:
+          type: integer
+          format: int32
+          minimum: 1
+          description: Last page number
+      required:
+        - items_count
+        - current_page
+        - next_page
+        - last_page
+        
+
+    Page:
+      type: object
+      description: Generic paginated response
+      properties:
+        items:
+          type: array
+          items: {}
+          description: List of items on this page
+        pagination:
+          $ref: "#/components/schemas/PaginationMeta"
+      required:
+        - items
+        - pagination
 
     # SortOrder:
     #   type: object

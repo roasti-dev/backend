@@ -8,7 +8,6 @@ import (
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
 	"github.com/nikpivkin/roasti-app-backend/internal/ids"
-	"github.com/nikpivkin/roasti-app-backend/internal/pagination"
 	"github.com/nikpivkin/roasti-app-backend/internal/uploads"
 )
 
@@ -28,7 +27,7 @@ func NewService(repo *Repository, uploader *uploads.Service) *Service {
 
 func (s *Service) ListRecipes(
 	ctx context.Context, userID string, params models.ListRecipesParams,
-) (pagination.Page[models.Recipe], error) {
+) (models.GenericPage[models.Recipe], error) {
 	return s.repo.ListRecipes(ctx, userID, params)
 }
 

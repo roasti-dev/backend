@@ -19,14 +19,14 @@ var recipesData []byte
 
 func seedRecipes(ctx context.Context, recipeService *recipe.Service) error {
 	recipes, err := recipeService.ListRecipes(ctx, seedUserID, models.ListRecipesParams{
-		Page:  new(1),
-		Limit: new(1),
+		Page:  new(int32(1)),
+		Limit: new(int32(1)),
 	})
 	if err != nil {
 		return fmt.Errorf("list recipes: %w", err)
 	}
 
-	if recipes.TotalCount > 0 {
+	if recipes.Pagination.ItemsCount > 0 {
 		return nil
 	}
 

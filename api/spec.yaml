@@ -366,34 +366,9 @@ components:
         default: 1
 
   schemas:
-    Page:
-      type: object
-      description: Generic paginated response
-      properties:
-        items:
-          type: array
-          items: {}
-          description: List of items on this page
-        page:
-          type: integer
-          format: int
-          description: Current page number
-        limit:
-          type: integer
-          format: int
-          description: Maximum number of items per page
-        total_count:
-          type: integer
-          format: int
-          description: Total number of items available
-      required:
-        - items
-        - page
-        - limit
-        - total_count
     RecipePage:
       allOf:
-        - $ref: "#/components/schemas/Page"
+        - $ref: "./models.yaml#/components/schemas/Page"
         - type: object
           properties:
             items:

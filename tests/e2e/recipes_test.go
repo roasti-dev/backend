@@ -136,7 +136,7 @@ func TestListRecipes(t *testing.T) {
 		resp, err := c2.GetApiV1RecipesWithResponse(t.Context(), &client.GetApiV1RecipesParams{})
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode())
-		assert.GreaterOrEqual(t, resp.JSON200.TotalCount, 2)
+		assert.GreaterOrEqual(t, resp.JSON200.Pagination.ItemsCount, int32(2))
 	})
 
 	t.Run("filter by brew method", func(t *testing.T) {

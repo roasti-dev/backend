@@ -61,33 +61,10 @@ func (e GetApiV1RecipesParamsListRecipesSortField) Valid() bool {
 // CreateRecipeResponse Coffee brewing recipe
 type CreateRecipeResponse = externalRef0.Recipe
 
-// Page Generic paginated response
-type Page struct {
-	// Items List of items on this page
-	Items []interface{} `json:"items"`
-
-	// Limit Maximum number of items per page
-	Limit int `json:"limit"`
-
-	// Page Current page number
-	Page int `json:"page"`
-
-	// TotalCount Total number of items available
-	TotalCount int `json:"total_count"`
-}
-
 // RecipePage defines model for RecipePage.
 type RecipePage struct {
-	Items []externalRef0.Recipe `json:"items"`
-
-	// Limit Maximum number of items per page
-	Limit int `json:"limit"`
-
-	// Page Current page number
-	Page int `json:"page"`
-
-	// TotalCount Total number of items available
-	TotalCount int `json:"total_count"`
+	Items      []externalRef0.Recipe       `json:"items"`
+	Pagination externalRef0.PaginationMeta `json:"pagination"`
 }
 
 // UpdateRecipeResponse Coffee brewing recipe
