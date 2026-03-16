@@ -5,7 +5,7 @@ coverage.out
 *.db
 
 uploads/images
-uplodas/tmp
+uploads/tmp
 
 inventory.ini
 
