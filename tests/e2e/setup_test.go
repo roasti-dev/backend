@@ -26,7 +26,6 @@ func setupTestServer(t *testing.T) *httptest.Server {
 		AppVersion:              "test",
 		FirebaseProjectID:       os.Getenv("FIREBASE_PROJECT_ID"),
 		FirebaseAPIKey:          os.Getenv("FIREBASE_API_KEY"),
-		FirebaseCredentialsJSON: os.Getenv("FIREBASE_CREDENTIALS_JSON"),
 		FirebaseIdentityBaseURL: os.Getenv("FIREBASE_IDENTITY_BASE_URL"),
 		FirebaseTokenBaseURL:    os.Getenv("FIREBASE_TOKEN_BASE_URL"),
 	}, slog.Default())
