@@ -85,7 +85,6 @@ components:
 
     RoastLevel:
       type: string
-      nullable: true
       description: Coffee roast level
       enum:
         - light
@@ -189,7 +188,6 @@ components:
           type: string
           format: date-time
           description: "Timestamp when the recipe was created"
-
         updated_at:
           type: string
           format: date-time
@@ -208,6 +206,8 @@ components:
         - difficulty
         - steps
         - public
+        - created_at
+        - updated_at
 
     RecipePayload:
       type: object

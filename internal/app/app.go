@@ -130,7 +130,7 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 	})
 
 	return &App{
-		handler:       finalHandler,
+		handler:       corsMiddleware(finalHandler),
 		db:            database,
 		recipeService: recipeService,
 	}, nil
@@ -176,4 +176,19 @@ func serveOpenAPIJSON(doc *openapi3.T) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
+}
+
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
