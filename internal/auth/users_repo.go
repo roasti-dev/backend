@@ -14,19 +14,19 @@ const usersTable = "users"
 
 var userColumns = []string{"id", "email", "username", "avatar_id", "bio", "created_at"}
 
-type Repository struct {
+type UserRepository struct {
 	db   *sql.DB
 	psql sq.StatementBuilderType
 }
 
-func NewRepository(db *sql.DB) *Repository {
-	return &Repository{
+func NewUserRepository(db *sql.DB) *UserRepository {
+	return &UserRepository{
 		db:   db,
 		psql: sq.StatementBuilder.PlaceholderFormat(sq.Dollar).RunWith(db),
 	}
 }
 
-func (r *Repository) Create(ctx context.Context, user User) error {
+func (r *UserRepository) Create(ctx context.Context, user User) error {
 	_, err := r.psql.Insert(usersTable).
 		Columns(userColumns...).
 		Values(
@@ -44,7 +44,7 @@ func (r *Repository) Create(ctx context.Context, user User) error {
 	return nil
 }
 
-func (r *Repository) GetByUsername(ctx context.Context, username string) (User, error) {
+func (r *UserRepository) GetByUsername(ctx context.Context, username string) (User, error) {
 	var user User
 	err := r.psql.Select(userColumns...).
 		From(usersTable).
@@ -60,7 +60,7 @@ func (r *Repository) GetByUsername(ctx context.Context, username string) (User, 
 	return user, nil
 }
 
-func (r *Repository) GetByID(ctx context.Context, userID string) (User, error) {
+func (r *UserRepository) GetByID(ctx context.Context, userID string) (User, error) {
 	var user User
 	err := r.psql.Select(userColumns...).
 		From(usersTable).
@@ -76,7 +76,7 @@ func (r *Repository) GetByID(ctx context.Context, userID string) (User, error) {
 	return user, nil
 }
 
-func (r *Repository) ExistsByUsername(ctx context.Context, username string) (bool, error) {
+func (r *UserRepository) ExistsByUsername(ctx context.Context, username string) (bool, error) {
 	var count int
 	err := r.psql.Select("COUNT(1)").
 		From(usersTable).
@@ -89,7 +89,7 @@ func (r *Repository) ExistsByUsername(ctx context.Context, username string) (boo
 	return count > 0, nil
 }
 
-func (r *Repository) ExistsByEmail(ctx context.Context, email string) (bool, error) {
+func (r *UserRepository) ExistsByEmail(ctx context.Context, email string) (bool, error) {
 	var count int
 	err := r.psql.Select("COUNT(1)").
 		From(usersTable).

@@ -9,6 +9,7 @@ import (
 
 var (
 	ErrNotFound              = apierr.NewApiError(http.StatusNotFound, "user not found")
+	ErrTokenRevoked          = apierr.NewApiError(http.StatusUnauthorized, "token revoked")
 	ErrInvalidCredentials    = apierr.NewApiError(http.StatusUnauthorized, "invalid credentials")
 	ErrInvalidRefreshToken   = apierr.NewApiError(http.StatusUnauthorized, "invalid or expired refresh token")
 	ErrUsernameTaken         = apierr.NewApiError(http.StatusConflict, "username already taken")

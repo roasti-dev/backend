@@ -401,6 +401,13 @@ components:
           type: string
           description: Refresh token obtained during login or registration
 
+    LogoutRequest:
+          type: object
+          required: [refresh_token]
+          properties:
+            refresh_token:
+              type: string
+
     AuthResponse:
       type: object
       required:
@@ -437,7 +444,6 @@ components:
           type: string
           nullable: true
           description: ID of the uploaded avatar image. Can be resolved via the image upload endpoint.
-
 
     MyProfile:
       allOf:

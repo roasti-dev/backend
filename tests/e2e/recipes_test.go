@@ -22,7 +22,7 @@ var defaultPayload = models.RecipePayload{
 	},
 }
 
-func createRecipe(t *testing.T, c *client.ClientWithResponses, payload models.RecipePayload) *models.Recipe {
+func createRecipe(t *testing.T, c *authenticatedClient, payload models.RecipePayload) *models.Recipe {
 	t.Helper()
 	resp, err := c.PostApiV1RecipesWithResponse(t.Context(), payload)
 	require.NoError(t, err)

@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"time"
 
 	firebase "firebase.google.com/go/v4"
 	"github.com/getkin/kin-openapi/openapi3"
@@ -85,11 +86,15 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 	uploader := uploads.NewService(cfg.UploadsPath)
 	recipeRepo := recipe.NewRepository(database, logger)
 	recipeService := recipe.NewService(recipeRepo, uploader)
-	authRepo := auth.NewRepository(database)
+	userRepo := auth.NewUserRepository(database)
+
+	revokedTokenRepo := auth.NewRevokedTokenRepository(database)
+	startRevokedTokenCleanup(ctx, revokedTokenRepo)
+
 	passwordSigner := auth.NewFirebasePasswordSigner(
 		cfg.FirebaseAPIKey, cfg.FirebaseIdentityBaseURL, cfg.FirebaseTokenBaseURL,
 	)
-	authService := auth.NewService(authRepo, uploader, firebaseAuth, passwordSigner)
+	authService := auth.NewService(userRepo, revokedTokenRepo, uploader, firebaseAuth, passwordSigner)
 
 	swagger, err := handlers.GetSwagger()
 	if err != nil {
@@ -191,4 +196,25 @@ func corsMiddleware(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+func startRevokedTokenCleanup(ctx context.Context, repo *auth.RevokedTokenRepository) {
+	go func() {
+		if err := repo.DeleteExpired(ctx); err != nil {
+			slog.ErrorContext(ctx, "delete expired tokens", log.Err(err))
+		}
+
+		ticker := time.NewTicker(24 * time.Hour)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				if err := repo.DeleteExpired(ctx); err != nil {
+					slog.ErrorContext(ctx, "delete expired tokens", log.Err(err))
+				}
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
 }

@@ -46,7 +46,14 @@ func newTestClient(t *testing.T, srv *httptest.Server) *client.ClientWithRespons
 	return c
 }
 
-func newAuthenticatedTestClient(t *testing.T, srv *httptest.Server) *client.ClientWithResponses {
+type authenticatedClient struct {
+	*client.ClientWithResponses
+
+	AccessToken  string
+	RefreshToken string
+}
+
+func newAuthenticatedTestClient(t *testing.T, srv *httptest.Server) *authenticatedClient {
 	t.Helper()
 
 	c := newTestClient(t, srv)
@@ -70,7 +77,11 @@ func newAuthenticatedTestClient(t *testing.T, srv *httptest.Server) *client.Clie
 	)
 	require.NoError(t, err)
 
-	return authenticated
+	return &authenticatedClient{
+		ClientWithResponses: authenticated,
+		AccessToken:         resp.JSON201.AccessToken,
+		RefreshToken:        resp.JSON201.RefreshToken,
+	}
 }
 
 func randomString(n int) string {

@@ -164,6 +164,26 @@ func TestRefresh(t *testing.T) {
 		assert.NotEmpty(t, resp.JSON200.RefreshToken)
 	})
 
+	t.Run("refresh token rotates and new token is usable", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+
+		first, err := c.PostApiV1AuthRefreshWithResponse(t.Context(), models.RefreshRequest{
+			RefreshToken: c.RefreshToken,
+		})
+		require.NoError(t, err)
+		require.Equal(t, 200, first.StatusCode())
+
+		// NOTE: In the Firebase production environment, the token rotates, but the emulator returns the same one
+		// assert.NotEqual(t, c.RefreshToken, first.JSON200.RefreshToken)
+
+		second, err := c.PostApiV1AuthRefreshWithResponse(t.Context(), models.RefreshRequest{
+			RefreshToken: first.JSON200.RefreshToken,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 200, second.StatusCode())
+		assert.NotEmpty(t, second.JSON200.AccessToken)
+	})
+
 	t.Run("invalid refresh token", func(t *testing.T) {
 		c := newTestClient(t, srv)
 
@@ -181,8 +201,37 @@ func TestLogout(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		c := newAuthenticatedTestClient(t, srv)
 
-		resp, err := c.PostApiV1AuthLogoutWithResponse(t.Context())
+		resp, err := c.PostApiV1AuthLogoutWithResponse(t.Context(), models.LogoutRequest{
+			RefreshToken: c.RefreshToken,
+		})
 		require.NoError(t, err)
 		assert.Equal(t, 204, resp.StatusCode())
+	})
+
+	t.Run("double logout is idempotent", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+
+		for range 2 {
+			resp, err := c.PostApiV1AuthLogoutWithResponse(t.Context(), models.LogoutRequest{
+				RefreshToken: c.RefreshToken,
+			})
+			require.NoError(t, err)
+			assert.Equal(t, 204, resp.StatusCode())
+		}
+	})
+
+	t.Run("revoked token cannot be used to refresh", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+
+		_, err := c.PostApiV1AuthLogoutWithResponse(t.Context(), models.LogoutRequest{
+			RefreshToken: c.RefreshToken,
+		})
+		require.NoError(t, err)
+
+		refresh, err := c.PostApiV1AuthRefreshWithResponse(t.Context(), models.RefreshRequest{
+			RefreshToken: c.RefreshToken,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 401, refresh.StatusCode())
 	})
 }

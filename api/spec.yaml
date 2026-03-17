@@ -349,9 +349,17 @@ paths:
     post:
       summary: Logout user
       tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './models.yaml#/components/schemas/LogoutRequest'
       responses:
         "204":
           description: Logged out successfully
+        "400":
+          description: Bad request
         "401":
           description: Unauthorized
         "500":

@@ -89,6 +89,9 @@ type PostApiV1UploadsImagesMultipartBody struct {
 // PostApiV1AuthLoginJSONRequestBody defines body for PostApiV1AuthLogin for application/json ContentType.
 type PostApiV1AuthLoginJSONRequestBody = externalRef0.LoginRequest
 
+// PostApiV1AuthLogoutJSONRequestBody defines body for PostApiV1AuthLogout for application/json ContentType.
+type PostApiV1AuthLogoutJSONRequestBody = externalRef0.LogoutRequest
+
 // PostApiV1AuthRefreshJSONRequestBody defines body for PostApiV1AuthRefresh for application/json ContentType.
 type PostApiV1AuthRefreshJSONRequestBody = externalRef0.RefreshRequest
 
@@ -185,8 +188,10 @@ type ClientInterface interface {
 
 	PostApiV1AuthLogin(ctx context.Context, body PostApiV1AuthLoginJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// PostApiV1AuthLogout request
-	PostApiV1AuthLogout(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// PostApiV1AuthLogoutWithBody request with any body
+	PostApiV1AuthLogoutWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostApiV1AuthLogout(ctx context.Context, body PostApiV1AuthLogoutJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// PostApiV1AuthRefreshWithBody request with any body
 	PostApiV1AuthRefreshWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -259,8 +264,20 @@ func (c *Client) PostApiV1AuthLogin(ctx context.Context, body PostApiV1AuthLogin
 	return c.Client.Do(req)
 }
 
-func (c *Client) PostApiV1AuthLogout(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostApiV1AuthLogoutRequest(c.Server)
+func (c *Client) PostApiV1AuthLogoutWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostApiV1AuthLogoutRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostApiV1AuthLogout(ctx context.Context, body PostApiV1AuthLogoutJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostApiV1AuthLogoutRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -515,8 +532,19 @@ func NewPostApiV1AuthLoginRequestWithBody(server string, contentType string, bod
 	return req, nil
 }
 
-// NewPostApiV1AuthLogoutRequest generates requests for PostApiV1AuthLogout
-func NewPostApiV1AuthLogoutRequest(server string) (*http.Request, error) {
+// NewPostApiV1AuthLogoutRequest calls the generic PostApiV1AuthLogout builder with application/json body
+func NewPostApiV1AuthLogoutRequest(server string, body PostApiV1AuthLogoutJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostApiV1AuthLogoutRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewPostApiV1AuthLogoutRequestWithBody generates requests for PostApiV1AuthLogout with any type of body
+func NewPostApiV1AuthLogoutRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -534,10 +562,12 @@ func NewPostApiV1AuthLogoutRequest(server string) (*http.Request, error) {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	req, err := http.NewRequest("POST", queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -1038,8 +1068,10 @@ type ClientWithResponsesInterface interface {
 
 	PostApiV1AuthLoginWithResponse(ctx context.Context, body PostApiV1AuthLoginJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiV1AuthLoginResponse, error)
 
-	// PostApiV1AuthLogoutWithResponse request
-	PostApiV1AuthLogoutWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostApiV1AuthLogoutResponse, error)
+	// PostApiV1AuthLogoutWithBodyWithResponse request with any body
+	PostApiV1AuthLogoutWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1AuthLogoutResponse, error)
+
+	PostApiV1AuthLogoutWithResponse(ctx context.Context, body PostApiV1AuthLogoutJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiV1AuthLogoutResponse, error)
 
 	// PostApiV1AuthRefreshWithBodyWithResponse request with any body
 	PostApiV1AuthRefreshWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1AuthRefreshResponse, error)
@@ -1423,9 +1455,17 @@ func (c *ClientWithResponses) PostApiV1AuthLoginWithResponse(ctx context.Context
 	return ParsePostApiV1AuthLoginResponse(rsp)
 }
 
-// PostApiV1AuthLogoutWithResponse request returning *PostApiV1AuthLogoutResponse
-func (c *ClientWithResponses) PostApiV1AuthLogoutWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostApiV1AuthLogoutResponse, error) {
-	rsp, err := c.PostApiV1AuthLogout(ctx, reqEditors...)
+// PostApiV1AuthLogoutWithBodyWithResponse request with arbitrary body returning *PostApiV1AuthLogoutResponse
+func (c *ClientWithResponses) PostApiV1AuthLogoutWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1AuthLogoutResponse, error) {
+	rsp, err := c.PostApiV1AuthLogoutWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostApiV1AuthLogoutResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostApiV1AuthLogoutWithResponse(ctx context.Context, body PostApiV1AuthLogoutJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiV1AuthLogoutResponse, error) {
+	rsp, err := c.PostApiV1AuthLogout(ctx, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}

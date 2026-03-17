@@ -2,8 +2,6 @@ package handlers
 
 import (
 	"context"
-
-	"github.com/nikpivkin/roasti-app-backend/internal/requestctx"
 )
 
 func (s *ServerHandler) PostApiV1AuthRegister(ctx context.Context, request PostApiV1AuthRegisterRequestObject) (PostApiV1AuthRegisterResponseObject, error) {
@@ -31,8 +29,7 @@ func (s *ServerHandler) PostApiV1AuthRefresh(ctx context.Context, request PostAp
 }
 
 func (s *ServerHandler) PostApiV1AuthLogout(ctx context.Context, request PostApiV1AuthLogoutRequestObject) (PostApiV1AuthLogoutResponseObject, error) {
-	userID := requestctx.GetUserID(ctx)
-	if err := s.authService.Logout(ctx, userID); err != nil {
+	if err := s.authService.Logout(ctx, request.Body.RefreshToken); err != nil {
 		return nil, err
 	}
 	return PostApiV1AuthLogout204Response{}, nil

@@ -34,30 +34,33 @@ type SignInResult struct {
 }
 
 type Service struct {
-	logger       *slog.Logger
-	repo         *Repository
-	uploader     *uploads.Service
-	firebaseAuth *firebaseAuth.Client
-	signer       FirebasePasswordSigner
+	logger        *slog.Logger
+	users         *UserRepository
+	revokedTokens *RevokedTokenRepository
+	uploader      *uploads.Service
+	firebaseAuth  *firebaseAuth.Client
+	signer        FirebasePasswordSigner
 }
 
 func NewService(
-	repo *Repository,
+	users *UserRepository,
+	revokedTokens *RevokedTokenRepository,
 	uploader *uploads.Service,
 	firebaseAuth *firebaseAuth.Client,
 	passwordSigner FirebasePasswordSigner,
 ) *Service {
 	return &Service{
-		logger:       slog.Default(),
-		repo:         repo,
-		uploader:     uploader,
-		firebaseAuth: firebaseAuth,
-		signer:       passwordSigner,
+		logger:        slog.Default(),
+		users:         users,
+		revokedTokens: revokedTokens,
+		uploader:      uploader,
+		firebaseAuth:  firebaseAuth,
+		signer:        passwordSigner,
 	}
 }
 
 func (s *Service) CurrentUser(ctx context.Context, userID string) (models.MyProfile, error) {
-	user, err := s.repo.GetByID(ctx, userID)
+	user, err := s.users.GetByID(ctx, userID)
 	if err != nil {
 		return models.UserResponse{}, fmt.Errorf("get user by id: %w", err)
 	}
@@ -74,7 +77,7 @@ func (s *Service) Register(ctx context.Context, req models.RegisterRequest) (mod
 		return models.AuthResponse{}, err
 	}
 
-	exists, err := s.repo.ExistsByUsername(ctx, req.Username)
+	exists, err := s.users.ExistsByUsername(ctx, req.Username)
 	if err != nil {
 		return models.AuthResponse{}, fmt.Errorf("check username: %w", err)
 	}
@@ -82,7 +85,7 @@ func (s *Service) Register(ctx context.Context, req models.RegisterRequest) (mod
 		return models.AuthResponse{}, ErrUsernameTaken
 	}
 
-	exists, err = s.repo.ExistsByEmail(ctx, string(req.Email))
+	exists, err = s.users.ExistsByEmail(ctx, string(req.Email))
 	if err != nil {
 		return models.AuthResponse{}, fmt.Errorf("check email: %w", err)
 	}
@@ -99,7 +102,7 @@ func (s *Service) Register(ctx context.Context, req models.RegisterRequest) (mod
 		return models.AuthResponse{}, fmt.Errorf("create firebase user: %w", err)
 	}
 
-	if err := s.repo.Create(ctx, User{
+	if err := s.users.Create(ctx, User{
 		ID:       firebaseUser.UID,
 		Email:    string(req.Email),
 		Username: req.Username,
@@ -109,7 +112,7 @@ func (s *Service) Register(ctx context.Context, req models.RegisterRequest) (mod
 		return models.AuthResponse{}, fmt.Errorf("create user: %w", err)
 	}
 
-	user, err := s.repo.GetByUsername(ctx, req.Username)
+	user, err := s.users.GetByUsername(ctx, req.Username)
 	if err != nil {
 		return models.AuthResponse{}, fmt.Errorf("get user: %w", err)
 	}
@@ -133,7 +136,7 @@ func (s *Service) Login(ctx context.Context, req models.LoginRequest) (models.Au
 		return models.AuthResponse{}, err
 	}
 
-	user, err := s.repo.GetByUsername(ctx, req.Username)
+	user, err := s.users.GetByUsername(ctx, req.Username)
 	if err != nil {
 		if errors.Is(err, ErrNotFound) {
 			return models.AuthResponse{}, ErrInvalidCredentials
@@ -154,6 +157,14 @@ func (s *Service) Login(ctx context.Context, req models.LoginRequest) (models.Au
 }
 
 func (s *Service) Refresh(ctx context.Context, req models.RefreshRequest) (models.TokensResponse, error) {
+	revoked, err := s.revokedTokens.IsRevoked(ctx, req.RefreshToken)
+	if err != nil {
+		return models.TokensResponse{}, fmt.Errorf("check revoked token: %w", err)
+	}
+	if revoked {
+		return models.TokensResponse{}, ErrTokenRevoked
+	}
+
 	signIn, err := s.signer.RefreshToken(ctx, req.RefreshToken)
 	if err != nil {
 		return models.TokensResponse{}, err
@@ -165,9 +176,9 @@ func (s *Service) Refresh(ctx context.Context, req models.RefreshRequest) (model
 	}, nil
 }
 
-func (s *Service) Logout(ctx context.Context, userID string) error {
-	if err := s.firebaseAuth.RevokeRefreshTokens(ctx, userID); err != nil {
-		return fmt.Errorf("revoke refresh tokens: %w", err)
+func (s *Service) Logout(ctx context.Context, refreshToken string) error {
+	if err := s.revokedTokens.Add(ctx, refreshToken); err != nil {
+		return fmt.Errorf("mark token as revoked: %w", err)
 	}
 	return nil
 }

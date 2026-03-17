@@ -10,8 +10,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/nikpivkin/roasti-app-backend/tests/client"
 )
 
 func generateTestImage(t *testing.T) []byte {
@@ -40,7 +38,7 @@ func createMultipart(t *testing.T, data []byte) ([]byte, string) {
 	return buf.Bytes(), w.FormDataContentType()
 }
 
-func uploadImage(t *testing.T, c *client.ClientWithResponses, data []byte) string {
+func uploadImage(t *testing.T, c *authenticatedClient, data []byte) string {
 	t.Helper()
 	body, contentType := createMultipart(t, data)
 	resp, err := c.PostApiV1UploadsImagesWithBodyWithResponse(t.Context(), contentType, bytes.NewReader(body))

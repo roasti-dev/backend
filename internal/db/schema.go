@@ -41,6 +41,12 @@ func InitSchema(db *sql.DB) error {
 			FOREIGN KEY(recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
 		);`,
 
+		`CREATE TABLE IF NOT EXISTS revoked_tokens (
+         	token_hash TEXT PRIMARY KEY,
+         	revoked_at DATETIME NOT NULL,
+         	expires_at DATETIME GENERATED ALWAYS AS (datetime(revoked_at, '+90 days')) VIRTUAL
+	    );`,
+
 		`ALTER TABLE recipes ADD COLUMN created_at DATETIME;
 		 ALTER TABLE recipes ADD COLUMN updated_at DATETIME;
 		 UPDATE recipes SET created_at = datetime('now'), updated_at = datetime('now');`,
