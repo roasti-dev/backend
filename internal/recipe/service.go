@@ -41,7 +41,7 @@ func (s *Service) CreateRecipe(ctx context.Context, userID string, request model
 	recipe.Id = ids.NewID()
 	recipe.AuthorId = userID
 	if err := s.repo.UpsertRecipe(ctx, recipe); err != nil {
-		return recipe, nil
+		return recipe, err
 	}
 
 	created, err := s.repo.GetRecipeByID(ctx, recipe.Id)

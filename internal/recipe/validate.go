@@ -31,7 +31,7 @@ func validateRecipePayload(req models.RecipePayload) error {
 		if strings.TrimSpace(step.Title) == "" {
 			return ErrInvalidStepTitle
 		}
-		if strings.TrimSpace(step.Description) == "" {
+		if step.Description != nil && strings.TrimSpace(*step.Description) == "" {
 			return ErrInvalidStepDescription
 		}
 	}

@@ -172,7 +172,6 @@ components:
         - id
         - order
         - title
-        - description
 
     BrewStepPayload:
       type: object
@@ -199,7 +198,6 @@ components:
       required:
         - order
         - title
-        - description
 
     Recipe:
       type: object

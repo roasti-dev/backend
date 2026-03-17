@@ -35,16 +35,23 @@ func InitSchema(db *sql.DB) error {
 			recipe_id TEXT NOT NULL,
 			step_order INTEGER NOT NULL,
 			title TEXT NOT NULL,
-			description TEXT NOT NULL,
+			description TEXT NOT NULL DEFAULT '',
 			duration_seconds INTEGER,
 			image_id TEXT,
 			FOREIGN KEY(recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
 		);`,
+
 		`ALTER TABLE recipes ADD COLUMN created_at DATETIME;
 		 ALTER TABLE recipes ADD COLUMN updated_at DATETIME;
 		 UPDATE recipes SET created_at = datetime('now'), updated_at = datetime('now');`,
+
 		`ALTER TABLE recipes ADD COLUMN image_id TEXT;
 		 ALTER TABLE brew_steps ADD COLUMN image_id TEXT;`,
+
+		`ALTER TABLE brew_steps RENAME COLUMN description TO description_old;
+		 ALTER TABLE brew_steps ADD COLUMN description TEXT NOT NULL DEFAULT '';
+		 UPDATE brew_steps SET description = description_old;
+		 ALTER TABLE brew_steps DROP COLUMN description_old;`,
 	}
 
 	for _, q := range queries {

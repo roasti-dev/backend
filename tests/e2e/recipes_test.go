@@ -17,7 +17,7 @@ var defaultPayload = models.RecipePayload{
 	BrewMethod:  models.V60,
 	Difficulty:  models.DifficultyEasy,
 	Steps: []models.BrewStepPayload{
-		{Order: 1, Title: "Boil water", Description: "Boil water to 92°C"},
+		{Order: 1, Title: "Boil water"},
 	},
 }
 

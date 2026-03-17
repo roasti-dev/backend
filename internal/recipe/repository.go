@@ -13,6 +13,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
+	"github.com/nikpivkin/roasti-app-backend/internal/ptr"
 )
 
 type scanner interface {
@@ -189,7 +190,7 @@ func (r *Repository) UpsertRecipe(ctx context.Context, recipe models.Recipe) err
 	if len(recipe.Steps) > 0 {
 		q := r.psql.Insert(brewStepsTable).Columns(brewStepsColumns...)
 		for _, step := range recipe.Steps {
-			q = q.Values(nil, recipe.Id, step.Order, step.Title, step.Description, step.DurationSeconds, step.ImageId)
+			q = q.Values(nil, recipe.Id, step.Order, step.Title, ptr.GetOr(step.Description, ""), step.DurationSeconds, step.ImageId)
 		}
 		if _, err = q.RunWith(tx).ExecContext(ctx); err != nil {
 			return fmt.Errorf("insert steps: %w", err)

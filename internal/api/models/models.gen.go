@@ -120,7 +120,7 @@ type BrewMethod string
 // BrewStep Single step of the brewing process
 type BrewStep struct {
 	// Description Detailed instructions for the step
-	Description string `json:"description"`
+	Description *string `json:"description,omitempty"`
 
 	// DurationSeconds Optional duration of the step in seconds
 	DurationSeconds *int `json:"duration_seconds,omitempty"`
@@ -141,7 +141,7 @@ type BrewStep struct {
 // BrewStepPayload Single step of the brewing process
 type BrewStepPayload struct {
 	// Description Detailed instructions for the step
-	Description string `json:"description"`
+	Description *string `json:"description,omitempty"`
 
 	// DurationSeconds Optional duration of the step in seconds
 	DurationSeconds *int `json:"duration_seconds,omitempty"`
@@ -411,24 +411,24 @@ var swaggerSpec = []string{
 	"z5EP7n7yy3pesDQXCsFQ6Hs2L7WLxgxq+NlBGTlPoZYSiHVQEp0Rl7e6lkanQYc+QHoMNvldgGNCAidC",
 	"WWcqH9vWYwRZo5jY0fHK+NQ3t5BqxbfF0E/+B5OkIW209ZoLRZqdCVWVlBgvTa6upQnlYAkGxYnIQX1R",
 	"4lvVsOMI5kwAJlKMaOYCg7O/0Ci/gi1hHuN6edHoWZVSM46OQeIJOWeKLIAYsFpiMD0I5un8ck1NQPFS",
-	"C+Umw2a1TtSGQySJfMLPm97C38bfVVGDQu6LB3/IoF2Go6lIIOKDeg3vpMd6KKoQszdshb7wqYlzEWBw",
-	"00FkxqSF5IjrIw7HcPi9EDz39UCo6W7DnTYKwz6mFsCUHb4VcDVcdg2S1s4YdTPCeV4cUtDthfPO58bH",
-	"mwfVwfmBNeLbAGxZLaRIgw4Zq6QbyCmXimOFA5Y85uBy6J4YEZYEPnJFHoQVC9nx1EJrCUz5+kcz6+YS",
-	"HkCO+eoWSa88pa8wobQDYQWcYPeBLmuyXCBPqHAQOpgxgHRzbVvjMmPYakcohuAgTUTtjr9Y3PWB3INS",
-	"Y3MsNC96iNvA8HqNeD9v4bcpvoBZlFIAF1VBE5ozw6P10yViK1Iz9KC5daHsKDMCWHt1xugVGnPDlV4K",
-	"dVhqKpm1j9rEdLRgyHq5UwF1vhVCXYFaupzOTgdq8dAWDzhgTTDCasMNHQ3WHGJ+uV7dGJ2JgNj9GvB+",
-	"a4A93U300P8BCoxISRkaduCYisKuLQA0sdfncFWHql8mGm9BzB4BQs2eSAiW6xHBWDy3w4RrcGwbTF5G",
-	"j2HMiRtctjrFtDIGlJuXUT+dh1VvF1FVsdiqpj+8D6cvCgzH02hFg5rOU10pty3ho2e64UkgaUfwTonT",
-	"mESJ6Tlu0RWzrzRHwdMQ84/w9CrmsSOuHZf0T6qrRtfe3RBoR2F9EEhRCNe7O99Pk5GDKn1+GTgd9lTb",
-	"OJ2OubP1ZC36dFPyzascGnGHS/MfUg/+svLup9Rq31VSdc/j3+vCSdhfVjmtS5fRSV5S1zOjc5x1KRGb",
-	"0I4VtHi9Pua6GUuO1NZvsYXoDEq3J3iiAOtYUWKV3O3wyCOzjc3dYOTMwYkTRbyzeEPNynA51yB5Rz33",
-	"Fpud1zQ3k/+97uaHtTUJrUp+YADgfUvq7XtGQWya1maa5NC2ao2FpP/w0bHtbjBD7juVO45DjuOQ4zjk",
-	"p49DbsPT1WFF6ciTXM27fu4LT3IYERUaRaReCkW0IQaWwrowxB41vS8ybhGyw5b8EJPYA3PM7BtKgfrn",
-	"RdRC6KEhti8GF0IvDSvz1T7MoGBCDgxt/BphnNePh+vbJWyKBft+U6AJua6sQ7f89eTDe5LmzLDUgbGT",
-	"gfnQ4ROhVtTZyelZR1RCJLjwI3R0ljDFSaU4GJtqA5ZoJVeT8Zfx2hn7DpM6iWfo6vJpLEwbO/NFKZa5",
-	"Ww8Y5/0/2++cmXsMdfwnNn30b+L2/+7FfuNUNl7bxzPEF1+nHF9njuXIsRx5Y+UI3h2dAfwf5m7eMSLw",
-	"zHYPCL7n0WSPFnHnndZ77Tge0ds7IqQXKvOW19FNrzUHGaocmtAHMDbInk6mk1P/Xy9KUKwUdEY/TKaT",
-	"qa9xXG7pDN3y8t8AAAD//4qSlhP3KgAA",
+	"C+Umw2a1TtSGQySJfMLPm97C38bfVVGDQu6LB3/IoF2Go6lIIOKDett5tR9HiNIbtkLrfTLiXISDv+lg",
+	"MGPSQnJE8hF5Y8gbB925v/ND3XYb7q1R4PVRtACm7HDmx9VwoTXYWZs/6lgE8Lw4pGjbC9mdz41XN4+m",
+	"g+wD68C3AdGyWkiRBh0yVkk3kEUuFccqBix5zMHl0D0xIiwJfOSKPAgrUOBa1kJrCUz5Gkcz6+YSHkCO",
+	"+eoWSa88pa8iobQDgQScYIeBLmvyWiBPqHAQupQxgHSza1vHMmPYakfwheAI0TcacQ1Vl0UfyD0oNTbH",
+	"QvOih7gNDK/XiPfzFn6bAguYRSkFcFEVNKE5MzxaI10itiJ1QQ+aW1fIjlIigLVXS4xekzE3XOmlUIel",
+	"ppJZ+6hNTEcLhqyXO1VO51sh1BWopcvp7HSg3g6t74AD1gQjrDbc0NFgzSHml+vVjdGZCIjdr8nul//Y",
+	"t91ED/0foMCIlJShKQeOqSjs2gJAE3t9Dld1qPplovHew+wRINTsiYRguR4DjMVzOzC4Bse2weRl9BjG",
+	"nLjBZasbTCtjQLl5GfXTeVj1dhFVFYutivnD+3D6osBwPI3WMKjpPNWVctsSPnqmG54EknYE75Q4jUmU",
+	"mJ7jFl0x+0pzFDwNMf8IT69iHjvi2nFJ/6S6anTt3Q2BdtzVB4EUhXC9u/P9NBk5qNLnl4HTYU+1jdPp",
+	"mDtbT9aiTzcl37zKoRF3uDT/IfXgLyvvfkqt9l0lVfc8/r0unIT9ZZXTunQZndYldT0zOqtZlxKxKexY",
+	"QYvX62Oum9HjSG39FluIzjB0e0onCrCOFSVWyd2ejjwy29jcDUbOHJw4UcQ7izfUrAyXcw2Sd9Rzb7HZ",
+	"eU1zM/nf625+WFuT0KrkBwYA3rek3r5nFMQmZm2mSQ5tq9ZYSPqPGx3b7gYz5L5zuOM45DgOOY5Dfvo4",
+	"5DY8Tx1WlI48u9W86ye98OyGEVGhUUTqpVBEG2JgKawLY+tR0/si4xYhO2zJDzGJPTDHzL6hFKh/XkQt",
+	"hB4aW/ticCH00rAyX+3DDAom5MDQxq8Rxnn9QLi+XcKmWLDvNwWakOvKOnTLX08+vCdpzgxLHRg7GZgP",
+	"HT4RakWdnZyedUQlRIILP0JHZwlTnFSKg7GpNmCJVnI1GX/9rp2x7zCpk3iGri6fxsK0sTNflGKZu/WA",
+	"cd7/s/3OmbnHUMd/YtNH/+5t/+9e5TdOZeNFfTxDfPF1yvF15liOHMuRN1aO4N3RGcD/Ye7mHSMCz2z3",
+	"gOB7Hk32aBF33mm9147jEb29I0J6oTJveR3d9FpzkKHKoQl9AGOD7OlkOjn1/9miBMVKQWf0w2Q6mfoa",
+	"x+WWztAtL/8NAAD//7w7bWXbKgAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
