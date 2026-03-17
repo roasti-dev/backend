@@ -5,7 +5,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"log/slog"
+	"mime"
 	"net/http"
+	"strings"
+
+	"github.com/nikpivkin/roasti-app-backend/internal/log"
 )
 
 type firebasePasswordSigner struct {
@@ -62,9 +68,9 @@ func (f *firebasePasswordSigner) SignInWithPassword(ctx context.Context, email, 
 	defer resp.Body.Close() // nolint:errcheck
 
 	if resp.StatusCode != http.StatusOK {
-		var errResp firebaseAuthErrorResponse
-		if err := json.NewDecoder(resp.Body).Decode(&errResp); err != nil {
-			return SignInResult{}, fmt.Errorf("decode error response: %w", err)
+		errResp, err := f.decodeFirebaseError(ctx, resp)
+		if err != nil {
+			return SignInResult{}, fmt.Errorf("decode firebase error: %w", err)
 		}
 
 		switch errResp.Error.Message {
@@ -116,9 +122,9 @@ func (f *firebasePasswordSigner) RefreshToken(ctx context.Context, refreshToken 
 	defer resp.Body.Close() // nolint:errcheck
 
 	if resp.StatusCode != http.StatusOK {
-		var errResp firebaseAuthErrorResponse
-		if err := json.NewDecoder(resp.Body).Decode(&errResp); err != nil {
-			return SignInResult{}, fmt.Errorf("decode error response: %w", err)
+		errResp, err := f.decodeFirebaseError(ctx, resp)
+		if err != nil {
+			return SignInResult{}, fmt.Errorf("decode firebase error: %w", err)
 		}
 
 		switch errResp.Error.Message {
@@ -149,4 +155,33 @@ func (f *firebasePasswordSigner) RefreshToken(ctx context.Context, refreshToken 
 		IDToken:      result.IDToken,
 		RefreshToken: result.RefreshToken,
 	}, nil
+}
+
+func (f *firebasePasswordSigner) decodeFirebaseError(ctx context.Context, resp *http.Response) (firebaseAuthErrorResponse, error) {
+	contentType := strings.ToLower(resp.Header.Get("Content-Type"))
+
+	logger := slog.With(
+		slog.String("operation", "refreshToken"),
+		slog.String("content-type", contentType),
+		slog.Int("status", resp.StatusCode),
+	)
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		logger.ErrorContext(ctx, "read body", log.Err(err))
+		return firebaseAuthErrorResponse{}, err
+	}
+
+	logger.ErrorContext(ctx, "firebase error response", slog.String("body", string(body)))
+
+	mediaType, _, _ := mime.ParseMediaType(resp.Header.Get("Content-Type"))
+	if mediaType != "application/json" {
+		return firebaseAuthErrorResponse{}, fmt.Errorf("unexpected response")
+	}
+
+	var errResp firebaseAuthErrorResponse
+	if err := json.Unmarshal(body, &errResp); err != nil {
+		return firebaseAuthErrorResponse{}, fmt.Errorf("decode response: %w", err)
+	}
+	return errResp, nil
 }
