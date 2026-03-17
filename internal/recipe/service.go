@@ -143,7 +143,7 @@ func (s *Service) DeleteRecipe(ctx context.Context, userID, recipeID string) err
 
 func (s *Service) confirmRecipeImages(ctx context.Context, recipe models.Recipe) {
 	if recipe.ImageId != nil {
-		if err := s.uploader.Confirm(*recipe.ImageId); err != nil {
+		if err := s.uploader.Confirm(ctx, *recipe.ImageId); err != nil {
 			s.logger.WarnContext(ctx, "failed to confirm recipe image",
 				slog.String("recipe_id", recipe.Id),
 				slog.String("image_id", *recipe.ImageId),
@@ -153,7 +153,7 @@ func (s *Service) confirmRecipeImages(ctx context.Context, recipe models.Recipe)
 
 	for _, step := range recipe.Steps {
 		if step.ImageId != nil {
-			if err := s.uploader.Confirm(*step.ImageId); err != nil {
+			if err := s.uploader.Confirm(ctx, *step.ImageId); err != nil {
 				s.logger.WarnContext(ctx, "failed to confirm step image",
 					slog.Int64("step_id", step.Id),
 					slog.String("image_id", *step.ImageId),

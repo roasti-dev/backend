@@ -185,7 +185,7 @@ func (s *Service) Logout(ctx context.Context, refreshToken string) error {
 
 func (s *Service) confirmAvatar(ctx context.Context, user User) {
 	if user.AvatarID != nil {
-		if err := s.uploader.Confirm(*user.AvatarID); err != nil {
+		if err := s.uploader.Confirm(ctx, *user.AvatarID); err != nil {
 			s.logger.WarnContext(ctx, "failed to confirm recipe image",
 				slog.String("recipe_id", user.ID),
 				slog.String("image_id", *user.AvatarID),

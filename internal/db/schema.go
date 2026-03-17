@@ -58,6 +58,14 @@ func InitSchema(db *sql.DB) error {
 		 ALTER TABLE brew_steps ADD COLUMN description TEXT NOT NULL DEFAULT '';
 		 UPDATE brew_steps SET description = description_old;
 		 ALTER TABLE brew_steps DROP COLUMN description_old;`,
+
+		`CREATE TABLE IF NOT EXISTS uploads (
+    	 	id TEXT PRIMARY KEY,
+    	 	path TEXT NOT NULL,
+    	 	mime_type TEXT NOT NULL,
+    	 	created_at DATETIME NOT NULL,
+    	 	confirmed BOOLEAN NOT NULL DEFAULT 0
+		);`,
 	}
 
 	for _, q := range queries {

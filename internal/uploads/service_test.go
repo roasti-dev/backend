@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nikpivkin/roasti-app-backend/internal/db"
 	"github.com/nikpivkin/roasti-app-backend/internal/uploads"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -14,7 +15,11 @@ import (
 func setupTestService(t *testing.T) *uploads.Service {
 	t.Helper()
 	dir := t.TempDir()
-	return uploads.NewService(dir)
+	database, err := db.NewSQLite(":memory:")
+	require.NoError(t, err)
+	require.NoError(t, db.InitSchema(database))
+	t.Cleanup(func() { database.Close() }) //nolint: errcheck
+	return uploads.NewService(dir, uploads.NewRepository(database))
 }
 
 func jpegBytes() []byte {
@@ -45,7 +50,7 @@ func TestUploadMultipart(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		svc := setupTestService(t)
 		mr := multipartFixture(t, "file", "image.jpg", jpegBytes())
-		id, err := svc.UploadMultipart(mr)
+		id, err := svc.UploadMultipart(t.Context(), mr)
 		require.NoError(t, err)
 		assert.NotEmpty(t, id)
 	})
@@ -53,7 +58,7 @@ func TestUploadMultipart(t *testing.T) {
 	t.Run("no file field", func(t *testing.T) {
 		svc := setupTestService(t)
 		mr := multipartFixture(t, "other", "image.jpg", jpegBytes())
-		_, err := svc.UploadMultipart(mr)
+		_, err := svc.UploadMultipart(t.Context(), mr)
 		assert.ErrorIs(t, err, uploads.ErrNoFile)
 	})
 
@@ -63,14 +68,14 @@ func TestUploadMultipart(t *testing.T) {
 		w := multipart.NewWriter(&buf)
 		require.NoError(t, w.Close())
 		mr := multipart.NewReader(&buf, w.Boundary())
-		_, err := svc.UploadMultipart(mr)
+		_, err := svc.UploadMultipart(t.Context(), mr)
 		assert.ErrorIs(t, err, uploads.ErrNoFile)
 	})
 
 	t.Run("unsupported mime type", func(t *testing.T) {
 		svc := setupTestService(t)
 		mr := multipartFixture(t, "file", "file.txt", []byte("plain text"))
-		_, err := svc.UploadMultipart(mr)
+		_, err := svc.UploadMultipart(t.Context(), mr)
 		assert.ErrorIs(t, err, uploads.ErrUnsupportedMIMEType)
 	})
 }
@@ -78,20 +83,20 @@ func TestUploadMultipart(t *testing.T) {
 func TestUpload(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		svc := setupTestService(t)
-		id, err := svc.Upload(jpegFixture())
+		id, err := svc.Upload(t.Context(), jpegFixture())
 		require.NoError(t, err)
 		assert.NotEmpty(t, id)
 	})
 
 	t.Run("file too large", func(t *testing.T) {
 		svc := setupTestService(t)
-		_, err := svc.Upload(bytes.NewReader(make([]byte, 11*1024*1024)))
+		_, err := svc.Upload(t.Context(), bytes.NewReader(make([]byte, 11*1024*1024)))
 		assert.ErrorIs(t, err, uploads.ErrFileTooLarge)
 	})
 
 	t.Run("unsupported mime type", func(t *testing.T) {
 		svc := setupTestService(t)
-		_, err := svc.Upload(bytes.NewReader([]byte("plain text")))
+		_, err := svc.Upload(t.Context(), bytes.NewReader([]byte("plain text")))
 		assert.ErrorIs(t, err, uploads.ErrUnsupportedMIMEType)
 	})
 }
@@ -99,74 +104,82 @@ func TestUpload(t *testing.T) {
 func TestConfirm(t *testing.T) {
 	t.Run("moves file from tmp to images", func(t *testing.T) {
 		svc := setupTestService(t)
-		id, err := svc.Upload(jpegFixture())
+		id, err := svc.Upload(t.Context(), jpegFixture())
 		require.NoError(t, err)
 
-		err = svc.Confirm(id)
+		err = svc.Confirm(t.Context(), id)
 		require.NoError(t, err)
 
-		f, err := svc.Resolve(id)
+		f, err := svc.Resolve(t.Context(), id)
 		require.NoError(t, err)
 		require.NoError(t, f.Body.Close())
 	})
 
 	t.Run("idempotent", func(t *testing.T) {
 		svc := setupTestService(t)
-		id, err := svc.Upload(jpegFixture())
+		id, err := svc.Upload(t.Context(), jpegFixture())
 		require.NoError(t, err)
 
-		require.NoError(t, svc.Confirm(id))
-		require.NoError(t, svc.Confirm(id))
+		require.NoError(t, svc.Confirm(t.Context(), id))
+		require.NoError(t, svc.Confirm(t.Context(), id))
 	})
 
 	t.Run("not found", func(t *testing.T) {
 		svc := setupTestService(t)
-		err := svc.Confirm("nonexistent")
+		err := svc.Confirm(t.Context(), "nonexistent")
 		assert.ErrorIs(t, err, uploads.ErrNotFound)
 	})
 
 	t.Run("invalid id", func(t *testing.T) {
 		svc := setupTestService(t)
-		err := svc.Confirm("../../etc/passwd")
+		err := svc.Confirm(t.Context(), "../../etc/passwd")
 		assert.ErrorIs(t, err, uploads.ErrNotFound)
 	})
 }
 
-func TestDeleteExpiredTmp(t *testing.T) {
+func TestDeleteUnconfirmed(t *testing.T) {
 	t.Run("deletes old files", func(t *testing.T) {
 		svc := setupTestService(t)
-		id, err := svc.Upload(jpegFixture())
+		id, err := svc.Upload(t.Context(), jpegFixture())
 		require.NoError(t, err)
 
-		err = svc.DeleteExpiredTmp(t.Context(), 0)
+		err = svc.DeleteUnconfirmed(t.Context(), 0)
 		require.NoError(t, err)
 
-		_, err = svc.Resolve(id)
+		_, err = svc.Resolve(t.Context(), id)
 		assert.ErrorIs(t, err, uploads.ErrNotFound)
 	})
 
 	t.Run("keeps recent files", func(t *testing.T) {
 		svc := setupTestService(t)
-		id, err := svc.Upload(jpegFixture())
+		id, err := svc.Upload(t.Context(), jpegFixture())
 		require.NoError(t, err)
 
-		err = svc.DeleteExpiredTmp(t.Context(), 24*time.Hour)
+		err = svc.DeleteUnconfirmed(t.Context(), 24*time.Hour)
 		require.NoError(t, err)
 
-		f, err := svc.Resolve(id)
+		_, err = svc.Resolve(t.Context(), id)
+		require.NoError(t, err)
+	})
+
+	t.Run("does not delete confirmed", func(t *testing.T) {
+		svc := setupTestService(t)
+		id, err := svc.Upload(t.Context(), jpegFixture())
+		require.NoError(t, err)
+
+		require.NoError(t, svc.Confirm(t.Context(), id))
+
+		err = svc.DeleteUnconfirmed(t.Context(), 0)
+		require.NoError(t, err)
+
+		f, err := svc.Resolve(t.Context(), id)
 		require.NoError(t, err)
 		f.Body.Close()
 	})
 
-	t.Run("empty tmp dir", func(t *testing.T) {
+	t.Run("no unconfirmed files", func(t *testing.T) {
 		svc := setupTestService(t)
-		err := svc.DeleteExpiredTmp(t.Context(), 24*time.Hour)
+		err := svc.DeleteUnconfirmed(t.Context(), 24*time.Hour)
 		assert.NoError(t, err)
-	})
-
-	t.Run("invalid id", func(t *testing.T) {
-		svc := setupTestService(t)
-		_, err := svc.Resolve("../../etc/passwd")
-		assert.ErrorIs(t, err, uploads.ErrNotFound)
 	})
 }

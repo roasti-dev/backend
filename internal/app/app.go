@@ -83,7 +83,8 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 		slog.String("token_base_url", cfg.FirebaseTokenBaseURL),
 	)
 
-	uploader := uploads.NewService(cfg.UploadsPath)
+	uploadRepo := uploads.NewRepository(database)
+	uploader := uploads.NewService(cfg.UploadsPath, uploadRepo)
 	startTmpCleanup(ctx, uploader)
 
 	recipeRepo := recipe.NewRepository(database, logger)
@@ -223,7 +224,7 @@ func startRevokedTokenCleanup(ctx context.Context, repo *auth.RevokedTokenReposi
 
 func startTmpCleanup(ctx context.Context, svc *uploads.Service) {
 	go func() {
-		if err := svc.DeleteExpiredTmp(ctx, 24*time.Hour); err != nil {
+		if err := svc.DeleteUnconfirmed(ctx, 24*time.Hour); err != nil {
 			slog.ErrorContext(ctx, "cleanup tmp uploads", log.Err(err))
 		}
 
@@ -232,7 +233,7 @@ func startTmpCleanup(ctx context.Context, svc *uploads.Service) {
 		for {
 			select {
 			case <-ticker.C:
-				if err := svc.DeleteExpiredTmp(ctx, 24*time.Hour); err != nil {
+				if err := svc.DeleteUnconfirmed(ctx, 24*time.Hour); err != nil {
 					slog.ErrorContext(ctx, "cleanup tmp uploads", log.Err(err))
 				}
 			case <-ctx.Done():

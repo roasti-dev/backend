@@ -7,7 +7,7 @@ import (
 )
 
 func (s *ServerHandler) PostApiV1UploadsImages(ctx context.Context, request PostApiV1UploadsImagesRequestObject) (PostApiV1UploadsImagesResponseObject, error) {
-	id, err := s.uploadsService.UploadMultipart(request.Body)
+	id, err := s.uploadsService.UploadMultipart(ctx, request.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -15,7 +15,7 @@ func (s *ServerHandler) PostApiV1UploadsImages(ctx context.Context, request Post
 }
 
 func (s *ServerHandler) GetApiV1UploadsImagesImageId(ctx context.Context, request GetApiV1UploadsImagesImageIdRequestObject) (GetApiV1UploadsImagesImageIdResponseObject, error) {
-	img, err := s.uploadsService.Resolve(request.ImageId)
+	img, err := s.uploadsService.Resolve(ctx, request.ImageId)
 	if err != nil {
 		return nil, err
 	}

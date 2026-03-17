@@ -26,13 +26,14 @@ const maxFileSize = 10 * 1024 * 1024 // 10MB
 
 type Service struct {
 	basePath string
+	repo     *Repository
 }
 
-func NewService(basePath string) *Service {
-	return &Service{basePath: basePath}
+func NewService(basePath string, repo *Repository) *Service {
+	return &Service{basePath: basePath, repo: repo}
 }
 
-func (s *Service) UploadMultipart(mr *multipart.Reader) (string, error) {
+func (s *Service) UploadMultipart(ctx context.Context, mr *multipart.Reader) (string, error) {
 	for {
 		part, err := mr.NextPart()
 		if err == io.EOF {
@@ -44,7 +45,7 @@ func (s *Service) UploadMultipart(mr *multipart.Reader) (string, error) {
 
 		switch part.FormName() {
 		case "file":
-			id, err := s.Upload(part)
+			id, err := s.Upload(ctx, part)
 			part.Close()
 			return id, err
 		default:
@@ -53,7 +54,7 @@ func (s *Service) UploadMultipart(mr *multipart.Reader) (string, error) {
 	}
 }
 
-func (s *Service) Upload(r io.Reader) (string, error) {
+func (s *Service) Upload(ctx context.Context, r io.Reader) (string, error) {
 	buf, err := io.ReadAll(io.LimitReader(r, maxFileSize+1))
 	if err != nil {
 		return "", fmt.Errorf("read file: %w", err)
@@ -71,21 +72,26 @@ func (s *Service) Upload(r io.Reader) (string, error) {
 	}
 
 	id := ids.NewID()
-	filename := id + ext
+	path := filepath.Join(s.basePath, "images", id+ext)
 
-	tmpDir := filepath.Join(s.basePath, "tmp")
-	if err := os.MkdirAll(tmpDir, 0755); err != nil {
-		return "", fmt.Errorf("create tmp dir: %w", err)
+	if err := os.MkdirAll(filepath.Join(s.basePath, "images"), 0755); err != nil {
+		return "", fmt.Errorf("create images dir: %w", err)
 	}
 
-	dst, err := os.Create(filepath.Join(tmpDir, filename))
+	dst, err := os.Create(path)
 	if err != nil {
 		return "", fmt.Errorf("create file: %w", err)
 	}
 	defer dst.Close()
 
 	if _, err := dst.Write(buf); err != nil {
+		os.Remove(path)
 		return "", fmt.Errorf("write file: %w", err)
+	}
+
+	if err := s.repo.Add(ctx, id, path, mimeType); err != nil {
+		os.Remove(path)
+		return "", fmt.Errorf("save upload: %w", err)
 	}
 
 	return id, nil
@@ -97,64 +103,38 @@ type ImageFile struct {
 	Size        int64
 }
 
-func (s *Service) Resolve(id string) (*ImageFile, error) {
+func (s *Service) Resolve(ctx context.Context, id string) (*ImageFile, error) {
 	if !ids.IsValidID(id) {
 		return nil, ErrNotFound
 	}
-	for _, dir := range []string{"images", "tmp"} {
-		path, err := s.findInDir(dir, id)
-		if err == nil {
-			return s.openImage(path)
-		}
+
+	path, err := s.repo.GetPath(ctx, id)
+	if err != nil {
+		return nil, err
 	}
-	return nil, ErrNotFound
+
+	return s.openImage(path)
 }
 
-func (s *Service) Confirm(id string) error {
+func (s *Service) Confirm(ctx context.Context, id string) error {
 	if !ids.IsValidID(id) {
 		return ErrNotFound
 	}
-
-	if _, err := s.findInDir("images", id); err == nil {
-		return nil
-	}
-
-	src, err := s.findInDir("tmp", id)
-	if err != nil {
-		return err
-	}
-
-	dst := filepath.Join(s.basePath, "images", filepath.Base(src))
-
-	if err := os.MkdirAll(filepath.Join(s.basePath, "images"), 0755); err != nil {
-		return fmt.Errorf("create images dir: %w", err)
-	}
-
-	return os.Rename(src, dst)
+	return s.repo.Confirm(ctx, id)
 }
 
-func (s *Service) DeleteExpiredTmp(ctx context.Context, maxAge time.Duration) error {
-	tmpDir := filepath.Join(s.basePath, "tmp")
-	entries, err := os.ReadDir(tmpDir)
+func (s *Service) DeleteUnconfirmed(ctx context.Context, maxAge time.Duration) error {
+	paths, err := s.repo.DeleteUnconfirmed(ctx, maxAge)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return nil
-		}
-		return fmt.Errorf("read tmp dir: %w", err)
+		return fmt.Errorf("delete unconfirmed records: %w", err)
 	}
 
-	for _, e := range entries {
-		info, err := e.Info()
-		if err != nil {
-			continue
-		}
-		if time.Since(info.ModTime()) > maxAge {
-			if err := os.Remove(filepath.Join(tmpDir, e.Name())); err != nil {
-				slog.ErrorContext(ctx, "remove expired tmp file",
-					slog.String("file", e.Name()),
-					log.Err(err),
-				)
-			}
+	for _, path := range paths {
+		if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+			slog.ErrorContext(ctx, "remove unconfirmed file",
+				slog.String("file", path),
+				log.Err(err),
+			)
 		}
 	}
 	return nil
@@ -177,23 +157,4 @@ func (s *Service) openImage(path string) (*ImageFile, error) {
 		ContentType: mime.TypeByExtension(filepath.Ext(path)),
 		Size:        stat.Size(),
 	}, nil
-}
-
-func (s *Service) findInDir(dir, id string) (string, error) {
-	entries, err := os.ReadDir(filepath.Join(s.basePath, dir))
-	if err != nil {
-		if os.IsNotExist(err) {
-			return "", ErrNotFound
-		}
-		return "", fmt.Errorf("read dir: %w", err)
-	}
-
-	for _, e := range entries {
-		name := e.Name()
-		if name[:len(name)-len(filepath.Ext(name))] == id {
-			return filepath.Join(s.basePath, dir, name), nil
-		}
-	}
-
-	return "", ErrNotFound
 }
