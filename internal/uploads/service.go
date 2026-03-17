@@ -1,15 +1,19 @@
 package uploads
 
 import (
+	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"mime"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/ids"
+	"github.com/nikpivkin/roasti-app-backend/internal/log"
 )
 
 var allowedMIMETypes = map[string]string{
@@ -122,6 +126,33 @@ func (s *Service) Confirm(id string) error {
 	return os.Rename(src, dst)
 }
 
+func (s *Service) DeleteExpiredTmp(ctx context.Context, maxAge time.Duration) error {
+	tmpDir := filepath.Join(s.basePath, "tmp")
+	entries, err := os.ReadDir(tmpDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return fmt.Errorf("read tmp dir: %w", err)
+	}
+
+	for _, e := range entries {
+		info, err := e.Info()
+		if err != nil {
+			continue
+		}
+		if time.Since(info.ModTime()) > maxAge {
+			if err := os.Remove(filepath.Join(tmpDir, e.Name())); err != nil {
+				slog.ErrorContext(ctx, "remove expired tmp file",
+					slog.String("file", e.Name()),
+					log.Err(err),
+				)
+			}
+		}
+	}
+	return nil
+}
+
 func (s *Service) openImage(path string) (*ImageFile, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -144,6 +175,9 @@ func (s *Service) openImage(path string) (*ImageFile, error) {
 func (s *Service) findInDir(dir, id string) (string, error) {
 	entries, err := os.ReadDir(filepath.Join(s.basePath, dir))
 	if err != nil {
+		if os.IsNotExist(err) {
+			return "", ErrNotFound
+		}
 		return "", fmt.Errorf("read dir: %w", err)
 	}
 

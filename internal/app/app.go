@@ -84,6 +84,8 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 	)
 
 	uploader := uploads.NewService(cfg.UploadsPath)
+	startTmpCleanup(ctx, uploader)
+
 	recipeRepo := recipe.NewRepository(database, logger)
 	recipeService := recipe.NewService(recipeRepo, uploader)
 	userRepo := auth.NewUserRepository(database)
@@ -211,6 +213,27 @@ func startRevokedTokenCleanup(ctx context.Context, repo *auth.RevokedTokenReposi
 			case <-ticker.C:
 				if err := repo.DeleteExpired(ctx); err != nil {
 					slog.ErrorContext(ctx, "delete expired tokens", log.Err(err))
+				}
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+}
+
+func startTmpCleanup(ctx context.Context, svc *uploads.Service) {
+	go func() {
+		if err := svc.DeleteExpiredTmp(ctx, 24*time.Hour); err != nil {
+			slog.ErrorContext(ctx, "cleanup tmp uploads", log.Err(err))
+		}
+
+		ticker := time.NewTicker(24 * time.Hour)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				if err := svc.DeleteExpiredTmp(ctx, 24*time.Hour); err != nil {
+					slog.ErrorContext(ctx, "cleanup tmp uploads", log.Err(err))
 				}
 			case <-ctx.Done():
 				return
