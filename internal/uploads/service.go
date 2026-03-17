@@ -129,14 +129,22 @@ func (s *Service) DeleteUnconfirmed(ctx context.Context, maxAge time.Duration) e
 		return fmt.Errorf("delete unconfirmed records: %w", err)
 	}
 
+	var removed int
 	for _, path := range paths {
 		if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
 			slog.ErrorContext(ctx, "remove unconfirmed file",
 				slog.String("file", path),
 				log.Err(err),
 			)
+			continue
 		}
+		removed++
 	}
+
+	slog.InfoContext(ctx, "unconfirmed uploads cleanup",
+		slog.Int("removed", removed),
+		slog.Int("total", len(paths)),
+	)
 	return nil
 }
 
