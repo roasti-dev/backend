@@ -98,6 +98,9 @@ type ImageFile struct {
 }
 
 func (s *Service) Resolve(id string) (*ImageFile, error) {
+	if !ids.IsValidID(id) {
+		return nil, ErrNotFound
+	}
 	for _, dir := range []string{"images", "tmp"} {
 		path, err := s.findInDir(dir, id)
 		if err == nil {
@@ -108,6 +111,10 @@ func (s *Service) Resolve(id string) (*ImageFile, error) {
 }
 
 func (s *Service) Confirm(id string) error {
+	if !ids.IsValidID(id) {
+		return ErrNotFound
+	}
+
 	if _, err := s.findInDir("images", id); err == nil {
 		return nil
 	}

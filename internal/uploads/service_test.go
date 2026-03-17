@@ -124,6 +124,12 @@ func TestConfirm(t *testing.T) {
 		err := svc.Confirm("nonexistent")
 		assert.ErrorIs(t, err, uploads.ErrNotFound)
 	})
+
+	t.Run("invalid id", func(t *testing.T) {
+		svc := setupTestService(t)
+		err := svc.Confirm("../../etc/passwd")
+		assert.ErrorIs(t, err, uploads.ErrNotFound)
+	})
 }
 
 func TestDeleteExpiredTmp(t *testing.T) {
@@ -156,5 +162,11 @@ func TestDeleteExpiredTmp(t *testing.T) {
 		svc := setupTestService(t)
 		err := svc.DeleteExpiredTmp(t.Context(), 24*time.Hour)
 		assert.NoError(t, err)
+	})
+
+	t.Run("invalid id", func(t *testing.T) {
+		svc := setupTestService(t)
+		_, err := svc.Resolve("../../etc/passwd")
+		assert.ErrorIs(t, err, uploads.ErrNotFound)
 	})
 }
