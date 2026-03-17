@@ -9,6 +9,15 @@ import (
 	"github.com/nikpivkin/roasti-app-backend/internal/requestctx"
 )
 
+func (s *ServerHandler) GetApiV1RecipesRecipeId(ctx context.Context, request GetApiV1RecipesRecipeIdRequestObject) (GetApiV1RecipesRecipeIdResponseObject, error) {
+	userID := requestctx.GetUserID(ctx)
+	recipe, err := s.recipeService.GetRecipeByID(ctx, userID, request.RecipeId)
+	if err != nil {
+		return nil, err
+	}
+	return GetApiV1RecipesRecipeId200JSONResponse(recipe), nil
+}
+
 func (s *ServerHandler) GetApiV1Recipes(ctx context.Context, request GetApiV1RecipesRequestObject) (GetApiV1RecipesResponseObject, error) {
 	s.logger.DebugContext(ctx, "list recipes request")
 

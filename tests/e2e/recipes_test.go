@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
+	"github.com/nikpivkin/roasti-app-backend/internal/ids"
 	"github.com/nikpivkin/roasti-app-backend/tests/client"
 )
 
@@ -113,6 +114,54 @@ func TestDeleteRecipe(t *testing.T) {
 
 		other := newAuthenticatedTestClient(t, srv)
 		resp, err := other.DeleteApiV1RecipesRecipeIdWithResponse(t.Context(), recipe.Id)
+		require.NoError(t, err)
+		assert.Equal(t, 403, resp.StatusCode())
+	})
+}
+
+func TestGetRecipeByID(t *testing.T) {
+	srv := setupTestServer(t)
+
+	t.Run("happy - your own recipe", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		recipe := createRecipe(t, c, defaultPayload)
+
+		resp, err := c.GetApiV1RecipesRecipeIdWithResponse(t.Context(), recipe.Id)
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode())
+		assert.NotEmpty(t, resp.JSON200.AuthorId)
+		assert.Equal(t, recipe.Id, resp.JSON200.Id)
+	})
+
+	t.Run("happy - another user's public recipe", func(t *testing.T) {
+		c1 := newAuthenticatedTestClient(t, srv)
+		public := defaultPayload
+		public.Public = new(true)
+		recipe := createRecipe(t, c1, public)
+
+		c2 := newAuthenticatedTestClient(t, srv)
+		resp, err := c2.GetApiV1RecipesRecipeIdWithResponse(t.Context(), recipe.Id)
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode())
+		assert.NotEmpty(t, resp.JSON200.AuthorId)
+		assert.Equal(t, recipe.Id, resp.JSON200.Id)
+	})
+
+	t.Run("not found - recipe not found ", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		resp, err := c.GetApiV1RecipesRecipeIdWithResponse(t.Context(), ids.NewID())
+		require.NoError(t, err)
+		assert.Equal(t, 404, resp.StatusCode())
+	})
+
+	t.Run("forbidden - another user's private recipe", func(t *testing.T) {
+		c1 := newAuthenticatedTestClient(t, srv)
+		private := defaultPayload
+		private.Public = new(false)
+		recipe := createRecipe(t, c1, private)
+
+		c2 := newAuthenticatedTestClient(t, srv)
+		resp, err := c2.GetApiV1RecipesRecipeIdWithResponse(t.Context(), recipe.Id)
 		require.NoError(t, err)
 		assert.Equal(t, 403, resp.StatusCode())
 	})

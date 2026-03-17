@@ -25,6 +25,21 @@ func NewService(repo *Repository, uploader *uploads.Service) *Service {
 	}
 }
 
+func (s *Service) GetRecipeByID(ctx context.Context, userID, recipeID string) (models.Recipe, error) {
+	recipe, err := s.repo.GetRecipeByID(ctx, recipeID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return models.Recipe{}, ErrNotFound
+		}
+		return models.Recipe{}, err
+	}
+
+	if !recipe.Public && recipe.AuthorId != userID {
+		return models.Recipe{}, ErrForbidden
+	}
+	return recipe, nil
+}
+
 func (s *Service) ListRecipes(
 	ctx context.Context, userID string, params models.ListRecipesParams,
 ) (models.GenericPage[models.Recipe], error) {

@@ -212,6 +212,9 @@ type ClientInterface interface {
 	// DeleteApiV1RecipesRecipeId request
 	DeleteApiV1RecipesRecipeId(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetApiV1RecipesRecipeId request
+	GetApiV1RecipesRecipeId(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// PatchApiV1RecipesRecipeIdWithBody request with any body
 	PatchApiV1RecipesRecipeIdWithBody(ctx context.Context, recipeId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -366,6 +369,18 @@ func (c *Client) PostApiV1Recipes(ctx context.Context, body PostApiV1RecipesJSON
 
 func (c *Client) DeleteApiV1RecipesRecipeId(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDeleteApiV1RecipesRecipeIdRequest(c.Server, recipeId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetApiV1RecipesRecipeId(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetApiV1RecipesRecipeIdRequest(c.Server, recipeId)
 	if err != nil {
 		return nil, err
 	}
@@ -757,6 +772,40 @@ func NewDeleteApiV1RecipesRecipeIdRequest(server string, recipeId string) (*http
 	return req, nil
 }
 
+// NewGetApiV1RecipesRecipeIdRequest generates requests for GetApiV1RecipesRecipeId
+func NewGetApiV1RecipesRecipeIdRequest(server string, recipeId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "recipe_id", recipeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/recipes/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewPatchApiV1RecipesRecipeIdRequest calls the generic PatchApiV1RecipesRecipeId builder with application/json body
 func NewPatchApiV1RecipesRecipeIdRequest(server string, recipeId string, body PatchApiV1RecipesRecipeIdJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -1016,6 +1065,9 @@ type ClientWithResponsesInterface interface {
 	// DeleteApiV1RecipesRecipeIdWithResponse request
 	DeleteApiV1RecipesRecipeIdWithResponse(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*DeleteApiV1RecipesRecipeIdResponse, error)
 
+	// GetApiV1RecipesRecipeIdWithResponse request
+	GetApiV1RecipesRecipeIdWithResponse(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*GetApiV1RecipesRecipeIdResponse, error)
+
 	// PatchApiV1RecipesRecipeIdWithBodyWithResponse request with any body
 	PatchApiV1RecipesRecipeIdWithBodyWithResponse(ctx context.Context, recipeId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchApiV1RecipesRecipeIdResponse, error)
 
@@ -1210,6 +1262,30 @@ func (r DeleteApiV1RecipesRecipeIdResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r DeleteApiV1RecipesRecipeIdResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetApiV1RecipesRecipeIdResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *externalRef0.Recipe
+	JSON403      *externalRef0.ApiErrorResponse
+	JSON404      *externalRef0.ApiErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetApiV1RecipesRecipeIdResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetApiV1RecipesRecipeIdResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -1432,6 +1508,15 @@ func (c *ClientWithResponses) DeleteApiV1RecipesRecipeIdWithResponse(ctx context
 		return nil, err
 	}
 	return ParseDeleteApiV1RecipesRecipeIdResponse(rsp)
+}
+
+// GetApiV1RecipesRecipeIdWithResponse request returning *GetApiV1RecipesRecipeIdResponse
+func (c *ClientWithResponses) GetApiV1RecipesRecipeIdWithResponse(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*GetApiV1RecipesRecipeIdResponse, error) {
+	rsp, err := c.GetApiV1RecipesRecipeId(ctx, recipeId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetApiV1RecipesRecipeIdResponse(rsp)
 }
 
 // PatchApiV1RecipesRecipeIdWithBodyWithResponse request with arbitrary body returning *PatchApiV1RecipesRecipeIdResponse
@@ -1720,6 +1805,46 @@ func ParseDeleteApiV1RecipesRecipeIdResponse(rsp *http.Response) (*DeleteApiV1Re
 	response := &DeleteApiV1RecipesRecipeIdResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseGetApiV1RecipesRecipeIdResponse parses an HTTP response from a GetApiV1RecipesRecipeIdWithResponse call
+func ParseGetApiV1RecipesRecipeIdResponse(rsp *http.Response) (*GetApiV1RecipesRecipeIdResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetApiV1RecipesRecipeIdResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest externalRef0.Recipe
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
 	}
 
 	return response, nil
