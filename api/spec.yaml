@@ -3,6 +3,7 @@ openapi: 3.0.0
 info:
   version: 0.0.1
   title: Roasti App
+  description: Roasti App API
 
 security:
   - BearerAuth: []
@@ -21,8 +22,10 @@ paths:
   /health:
     get:
       summary: Health check
-      description: Returns the current health status of the service.
       operationId: healthCheck
+      tags:
+        - public
+      description: Returns the current health status of the service.
       responses:
         "200":
           description: OK
@@ -35,6 +38,7 @@ paths:
     get:
       summary: List recipes
       operationId: listRecipes
+      description: Returns a paginated list of recipes with optional filters by author, brew method, difficulty, and sorting.
       tags: [recipes]
       parameters:
         - $ref: "./models.yaml#/components/parameters/ListRecipesParams"
@@ -53,6 +57,7 @@ paths:
     post:
       summary: Create recipe
       operationId: createRecipe
+      description: Creates a new coffee brewing recipe for the authenticated user.
       tags: [recipes]
       requestBody:
         required: true
@@ -74,6 +79,7 @@ paths:
     get:
       summary: Get recipe by ID
       operationId: getRecipe
+      description: Returns a single recipe by its ID.
       tags: [recipes]
       parameters:
         - name: recipe_id
@@ -105,6 +111,7 @@ paths:
     delete:
       summary: Delete recipe
       operationId: deleteRecipe
+      description: Permanently deletes a recipe. Only the author can delete their own recipe.
       tags: [recipes]
       parameters:
         - in: path
@@ -121,6 +128,7 @@ paths:
     put:
       summary: Update recipe
       operationId: updateRecipe
+      description: Updates an existing recipe. Only the author can update their own recipe.
       tags: [recipes]
       parameters:
         - name: recipe_id
@@ -164,6 +172,7 @@ paths:
     get:
       summary: Get image by ID
       operationId: getImage
+      description: Returns an image file by its ID.
       tags: [uploads]
       parameters:
         - name: image_id
@@ -188,6 +197,7 @@ paths:
     post:
       summary: Upload an image
       operationId: uploadImage
+      description: Uploads an image file and returns its ID and URL.
       tags: [uploads]
       requestBody:
         required: true
@@ -219,6 +229,7 @@ paths:
     post:
       summary: Register a new user
       operationId: registerUser
+      description: Creates a new user account and returns access and refresh tokens.
       security: []
       tags: [auth, public]
       requestBody:
@@ -259,6 +270,7 @@ paths:
     post:
       summary: Login with username and password
       operationId: loginUser
+      description: Authenticates a user with username and password and returns access and refresh tokens.
       security: []
       tags: [auth, public]
       requestBody:
@@ -293,6 +305,7 @@ paths:
     post:
       summary: Refresh access token
       operationId: refreshToken
+      description: Issues a new access token using a valid refresh token.
       security: []
       tags: [auth, public]
       requestBody:
@@ -321,6 +334,7 @@ paths:
     post:
       summary: Logout user
       operationId: logoutUser
+      description: Invalidates the provided refresh token, effectively logging the user out.
       tags: [auth]
       requestBody:
         required: true
@@ -342,6 +356,7 @@ paths:
     get:
       summary: Get current user profile
       operationId: getMyProfile
+      description: Returns the profile of the currently authenticated user.
       tags: [profiles]
       responses:
         "200":
@@ -369,4 +384,3 @@ components:
               type: array
               items:
                 $ref: "./models.yaml#/components/schemas/Recipe"
-
