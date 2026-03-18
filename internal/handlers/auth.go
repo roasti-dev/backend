@@ -4,33 +4,33 @@ import (
 	"context"
 )
 
-func (s *ServerHandler) PostApiV1AuthRegister(ctx context.Context, request PostApiV1AuthRegisterRequestObject) (PostApiV1AuthRegisterResponseObject, error) {
+func (s *ServerHandler) RegisterUser(ctx context.Context, request RegisterUserRequestObject) (RegisterUserResponseObject, error) {
 	resp, err := s.authService.Register(ctx, *request.Body)
 	if err != nil {
 		return nil, err
 	}
-	return PostApiV1AuthRegister201JSONResponse(resp), nil
+	return RegisterUser201JSONResponse(resp), nil
 }
 
-func (s *ServerHandler) PostApiV1AuthLogin(ctx context.Context, request PostApiV1AuthLoginRequestObject) (PostApiV1AuthLoginResponseObject, error) {
+func (s *ServerHandler) LoginUser(ctx context.Context, request LoginUserRequestObject) (LoginUserResponseObject, error) {
 	resp, err := s.authService.Login(ctx, *request.Body)
 	if err != nil {
 		return nil, err
 	}
-	return PostApiV1AuthLogin200JSONResponse(resp), nil
+	return LoginUser200JSONResponse(resp), nil
 }
 
-func (s *ServerHandler) PostApiV1AuthRefresh(ctx context.Context, request PostApiV1AuthRefreshRequestObject) (PostApiV1AuthRefreshResponseObject, error) {
+func (s *ServerHandler) RefreshToken(ctx context.Context, request RefreshTokenRequestObject) (RefreshTokenResponseObject, error) {
 	resp, err := s.authService.Refresh(ctx, *request.Body)
 	if err != nil {
 		return nil, err
 	}
-	return PostApiV1AuthRefresh200JSONResponse(resp), nil
+	return RefreshToken200JSONResponse(resp), nil
 }
 
-func (s *ServerHandler) PostApiV1AuthLogout(ctx context.Context, request PostApiV1AuthLogoutRequestObject) (PostApiV1AuthLogoutResponseObject, error) {
+func (s *ServerHandler) LogoutUser(ctx context.Context, request LogoutUserRequestObject) (LogoutUserResponseObject, error) {
 	if err := s.authService.Logout(ctx, request.Body.RefreshToken); err != nil {
 		return nil, err
 	}
-	return PostApiV1AuthLogout204Response{}, nil
+	return LogoutUser204Response{}, nil
 }

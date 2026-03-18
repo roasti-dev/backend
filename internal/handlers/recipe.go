@@ -9,16 +9,16 @@ import (
 	"github.com/nikpivkin/roasti-app-backend/internal/requestctx"
 )
 
-func (s *ServerHandler) GetApiV1RecipesRecipeId(ctx context.Context, request GetApiV1RecipesRecipeIdRequestObject) (GetApiV1RecipesRecipeIdResponseObject, error) {
+func (s *ServerHandler) GetRecipe(ctx context.Context, request GetRecipeRequestObject) (GetRecipeResponseObject, error) {
 	userID := requestctx.GetUserID(ctx)
 	recipe, err := s.recipeService.GetRecipeByID(ctx, userID, request.RecipeId)
 	if err != nil {
 		return nil, err
 	}
-	return GetApiV1RecipesRecipeId200JSONResponse(recipe), nil
+	return GetRecipe200JSONResponse(recipe), nil
 }
 
-func (s *ServerHandler) GetApiV1Recipes(ctx context.Context, request GetApiV1RecipesRequestObject) (GetApiV1RecipesResponseObject, error) {
+func (s *ServerHandler) ListRecipes(ctx context.Context, request ListRecipesRequestObject) (ListRecipesResponseObject, error) {
 	s.logger.DebugContext(ctx, "list recipes request")
 
 	userID := requestctx.GetUserID(ctx)
@@ -31,43 +31,34 @@ func (s *ServerHandler) GetApiV1Recipes(ctx context.Context, request GetApiV1Rec
 		slog.Int("count", len(recipePage.Items)),
 		slog.Any("pagination", recipePage.Pagination),
 	)
-	return GetApiV1Recipes200JSONResponse{
+	return ListRecipes200JSONResponse{
 		Items:      recipePage.Items,
 		Pagination: recipePage.Pagination,
 	}, nil
 }
 
-func (s *ServerHandler) PostApiV1Recipes(ctx context.Context, request PostApiV1RecipesRequestObject) (PostApiV1RecipesResponseObject, error) {
+func (s *ServerHandler) CreateRecipe(ctx context.Context, request CreateRecipeRequestObject) (CreateRecipeResponseObject, error) {
 	userID := requestctx.GetUserID(ctx)
 	created, err := s.recipeService.CreateRecipe(ctx, userID, *request.Body)
 	if err != nil {
 		return nil, err
 	}
-	return PostApiV1Recipes201JSONResponse(created), nil
+	return CreateRecipe201JSONResponse(created), nil
 }
 
-func (s *ServerHandler) PutApiV1RecipesRecipeId(ctx context.Context, request PutApiV1RecipesRecipeIdRequestObject) (PutApiV1RecipesRecipeIdResponseObject, error) {
+func (s *ServerHandler) UpdateRecipe(ctx context.Context, request UpdateRecipeRequestObject) (UpdateRecipeResponseObject, error) {
 	userID := requestctx.GetUserID(ctx)
 	updated, err := s.recipeService.UpdateRecipe(ctx, userID, request.RecipeId, *request.Body)
 	if err != nil {
 		return nil, err
 	}
-	return PutApiV1RecipesRecipeId200JSONResponse(updated), nil
+	return UpdateRecipe200JSONResponse(updated), nil
 }
 
-func (s *ServerHandler) PatchApiV1RecipesRecipeId(ctx context.Context, request PatchApiV1RecipesRecipeIdRequestObject) (PatchApiV1RecipesRecipeIdResponseObject, error) {
-	userID := requestctx.GetUserID(ctx)
-	updated, err := s.recipeService.PatchRecipe(ctx, userID, request.RecipeId, *request.Body)
-	if err != nil {
-		return nil, err
-	}
-	return PatchApiV1RecipesRecipeId200JSONResponse(updated), nil
-}
-
-func (s *ServerHandler) DeleteApiV1RecipesRecipeId(ctx context.Context, request DeleteApiV1RecipesRecipeIdRequestObject) (DeleteApiV1RecipesRecipeIdResponseObject, error) {
+func (s *ServerHandler) DeleteRecipe(ctx context.Context, request DeleteRecipeRequestObject) (DeleteRecipeResponseObject, error) {
 	userID := requestctx.GetUserID(ctx)
 	if err := s.recipeService.DeleteRecipe(ctx, userID, request.RecipeId); err != nil {
 		return nil, err
 	}
-	return DeleteApiV1RecipesRecipeId204Response{}, nil
+	return DeleteRecipe204Response{}, nil
 }

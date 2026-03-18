@@ -6,21 +6,20 @@ import (
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
 )
 
-func (s *ServerHandler) PostApiV1UploadsImages(ctx context.Context, request PostApiV1UploadsImagesRequestObject) (PostApiV1UploadsImagesResponseObject, error) {
+func (s *ServerHandler) UploadImage(ctx context.Context, request UploadImageRequestObject) (UploadImageResponseObject, error) {
 	id, err := s.uploadsService.UploadMultipart(ctx, request.Body)
 	if err != nil {
 		return nil, err
 	}
-	return PostApiV1UploadsImages201JSONResponse(models.Image{Id: id}), nil
+	return UploadImage201JSONResponse(models.Image{Id: id}), nil
 }
 
-func (s *ServerHandler) GetApiV1UploadsImagesImageId(ctx context.Context, request GetApiV1UploadsImagesImageIdRequestObject) (GetApiV1UploadsImagesImageIdResponseObject, error) {
+func (s *ServerHandler) GetImage(ctx context.Context, request GetImageRequestObject) (GetImageResponseObject, error) {
 	img, err := s.uploadsService.Resolve(ctx, request.ImageId)
 	if err != nil {
 		return nil, err
 	}
-	// defer img.Body.Close()
-	return GetApiV1UploadsImagesImageId200ImageResponse{
+	return GetImage200ImageResponse{
 		Body:          img.Body,
 		ContentType:   img.ContentType,
 		ContentLength: img.Size,

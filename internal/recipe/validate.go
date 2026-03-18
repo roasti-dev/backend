@@ -38,26 +38,3 @@ func validateRecipePayload(req models.RecipePayload) error {
 
 	return nil
 }
-
-func validatePatchRecipe(req models.PatchRecipeRequest) error {
-	if req.Title != nil && strings.TrimSpace(*req.Title) == "" {
-		return ErrInvalidTitle
-	}
-
-	if req.Description != nil && strings.TrimSpace(*req.Description) == "" {
-		return ErrInvalidDescription
-	}
-
-	if req.BrewMethod != nil && !req.BrewMethod.Valid() {
-		return ErrInvalidBrewMethod
-	}
-
-	if req.Difficulty != nil && !req.Difficulty.Valid() {
-		return ErrInvalidDifficulty
-	}
-
-	if req.RoastLevel != nil && !req.RoastLevel.Valid() {
-		return ErrInvalidRoastLevel
-	}
-	return nil
-}

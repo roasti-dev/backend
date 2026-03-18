@@ -5,6 +5,7 @@ info:
   version: 0.0.1
 components:
   parameters:
+
     ListRecipesParams:
       name: listRecipes
       in: query
@@ -36,22 +37,26 @@ components:
                 description: "Sort direction"
 
   schemas:
+    LimitParam:
+      description: Number of items per page
+      type: integer
+      format: int32
+      default: 20
+
+    PageParam:
+      description: Page number
+      type: integer
+      format: int32
+      default: 1
+      minimum: 1
+
     PaginationParams:
       type: object
       properties:
         limit:
-          type: integer
-          format: int32
-          default: 20
-          minimum: 1
-          maximum: 100
-          description: Number of items per page
+          $ref: '#/components/schemas/LimitParam'
         page:
-          type: integer
-          format: int32
-          default: 1
-          minimum: 1
-          description: Page number
+          $ref: '#/components/schemas/PageParam'
 
     PaginationMeta:
       type: object
@@ -81,7 +86,6 @@ components:
         - current_page
         - next_page
         - last_page
-        
 
     Page:
       type: object
@@ -96,22 +100,6 @@ components:
       required:
         - items
         - pagination
-
-    # SortOrder:
-    #   type: object
-    #   properties:
-    #     sort_field:
-    #       type: string
-    #       description: "Field to sort by, e.g. created_at, title, difficulty"
-    #     sort_direction:
-    #       type: string
-    #       enum:
-    #         - asc
-    #         - desc
-    #       description: "Sort direction"
-    #   required:
-    #     - sort_field
-    #     - sort_direction
 
     BrewMethod:
       type: string
@@ -302,30 +290,6 @@ components:
 
     UpdateRecipeRequest:
       $ref: "#/components/schemas/RecipePayload"
-
-    PatchRecipeRequest:
-      type: object
-      properties:
-        title:
-          type: string
-        description:
-          type: string
-        image_id:
-          type: string
-          nullable: true
-        brew_method:
-          $ref: "#/components/schemas/BrewMethod"
-        difficulty:
-          $ref: "#/components/schemas/Difficulty"
-        roast_level:
-          $ref: "#/components/schemas/RoastLevel"
-        beans:
-          type: string
-          nullable: true
-        public:
-          type: boolean
-          description: Whether this recipe is publicly visible
-      additionalProperties: false
 
     ApiErrorResponse:
       type: object

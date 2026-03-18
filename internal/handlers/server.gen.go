@@ -30,14 +30,14 @@ const (
 	BearerAuthScopes = "BearerAuth.Scopes"
 )
 
-// Defines values for GetApiV1RecipesParamsListRecipesSortDirection.
+// Defines values for ListRecipesParamsListRecipesSortDirection.
 const (
-	Asc  GetApiV1RecipesParamsListRecipesSortDirection = "asc"
-	Desc GetApiV1RecipesParamsListRecipesSortDirection = "desc"
+	Asc  ListRecipesParamsListRecipesSortDirection = "asc"
+	Desc ListRecipesParamsListRecipesSortDirection = "desc"
 )
 
-// Valid indicates whether the value is a known member of the GetApiV1RecipesParamsListRecipesSortDirection enum.
-func (e GetApiV1RecipesParamsListRecipesSortDirection) Valid() bool {
+// Valid indicates whether the value is a known member of the ListRecipesParamsListRecipesSortDirection enum.
+func (e ListRecipesParamsListRecipesSortDirection) Valid() bool {
 	switch e {
 	case Asc:
 		return true
@@ -48,14 +48,14 @@ func (e GetApiV1RecipesParamsListRecipesSortDirection) Valid() bool {
 	}
 }
 
-// Defines values for GetApiV1RecipesParamsListRecipesSortField.
+// Defines values for ListRecipesParamsListRecipesSortField.
 const (
-	CreatedAt GetApiV1RecipesParamsListRecipesSortField = "created_at"
-	Title     GetApiV1RecipesParamsListRecipesSortField = "title"
+	CreatedAt ListRecipesParamsListRecipesSortField = "created_at"
+	Title     ListRecipesParamsListRecipesSortField = "title"
 )
 
-// Valid indicates whether the value is a known member of the GetApiV1RecipesParamsListRecipesSortField enum.
-func (e GetApiV1RecipesParamsListRecipesSortField) Valid() bool {
+// Valid indicates whether the value is a known member of the ListRecipesParamsListRecipesSortField enum.
+func (e ListRecipesParamsListRecipesSortField) Valid() bool {
 	switch e {
 	case CreatedAt:
 		return true
@@ -66,108 +66,90 @@ func (e GetApiV1RecipesParamsListRecipesSortField) Valid() bool {
 	}
 }
 
-// CreateRecipeResponse Coffee brewing recipe
-type CreateRecipeResponse = externalRef0.Recipe
-
 // RecipePage defines model for RecipePage.
 type RecipePage struct {
 	Items      []externalRef0.Recipe       `json:"items"`
 	Pagination externalRef0.PaginationMeta `json:"pagination"`
 }
 
-// UpdateRecipeResponse Coffee brewing recipe
-type UpdateRecipeResponse = externalRef0.Recipe
-
-// LimitParam defines model for LimitParam.
-type LimitParam = int
-
-// PageParam defines model for PageParam.
-type PageParam = int
-
-// GetApiV1RecipesParams defines parameters for GetApiV1Recipes.
-type GetApiV1RecipesParams struct {
+// ListRecipesParams defines parameters for ListRecipes.
+type ListRecipesParams struct {
 	ListRecipes *externalRef0.ListRecipesParams `form:"listRecipes,omitempty" json:"listRecipes,omitempty"`
 }
 
-// GetApiV1RecipesParamsListRecipesSortDirection defines parameters for GetApiV1Recipes.
-type GetApiV1RecipesParamsListRecipesSortDirection string
+// ListRecipesParamsListRecipesSortDirection defines parameters for ListRecipes.
+type ListRecipesParamsListRecipesSortDirection string
 
-// GetApiV1RecipesParamsListRecipesSortField defines parameters for GetApiV1Recipes.
-type GetApiV1RecipesParamsListRecipesSortField string
+// ListRecipesParamsListRecipesSortField defines parameters for ListRecipes.
+type ListRecipesParamsListRecipesSortField string
 
-// PostApiV1UploadsImagesMultipartBody defines parameters for PostApiV1UploadsImages.
-type PostApiV1UploadsImagesMultipartBody struct {
+// UploadImageMultipartBody defines parameters for UploadImage.
+type UploadImageMultipartBody struct {
 	File openapi_types.File `json:"file"`
 }
 
-// PostApiV1AuthLoginJSONRequestBody defines body for PostApiV1AuthLogin for application/json ContentType.
-type PostApiV1AuthLoginJSONRequestBody = externalRef0.LoginRequest
+// LoginUserJSONRequestBody defines body for LoginUser for application/json ContentType.
+type LoginUserJSONRequestBody = externalRef0.LoginRequest
 
-// PostApiV1AuthLogoutJSONRequestBody defines body for PostApiV1AuthLogout for application/json ContentType.
-type PostApiV1AuthLogoutJSONRequestBody = externalRef0.LogoutRequest
+// LogoutUserJSONRequestBody defines body for LogoutUser for application/json ContentType.
+type LogoutUserJSONRequestBody = externalRef0.LogoutRequest
 
-// PostApiV1AuthRefreshJSONRequestBody defines body for PostApiV1AuthRefresh for application/json ContentType.
-type PostApiV1AuthRefreshJSONRequestBody = externalRef0.RefreshRequest
+// RefreshTokenJSONRequestBody defines body for RefreshToken for application/json ContentType.
+type RefreshTokenJSONRequestBody = externalRef0.RefreshRequest
 
-// PostApiV1AuthRegisterJSONRequestBody defines body for PostApiV1AuthRegister for application/json ContentType.
-type PostApiV1AuthRegisterJSONRequestBody = externalRef0.RegisterRequest
+// RegisterUserJSONRequestBody defines body for RegisterUser for application/json ContentType.
+type RegisterUserJSONRequestBody = externalRef0.RegisterRequest
 
-// PostApiV1RecipesJSONRequestBody defines body for PostApiV1Recipes for application/json ContentType.
-type PostApiV1RecipesJSONRequestBody = externalRef0.CreateRecipeRequest
+// CreateRecipeJSONRequestBody defines body for CreateRecipe for application/json ContentType.
+type CreateRecipeJSONRequestBody = externalRef0.CreateRecipeRequest
 
-// PatchApiV1RecipesRecipeIdJSONRequestBody defines body for PatchApiV1RecipesRecipeId for application/json ContentType.
-type PatchApiV1RecipesRecipeIdJSONRequestBody = externalRef0.PatchRecipeRequest
+// UpdateRecipeJSONRequestBody defines body for UpdateRecipe for application/json ContentType.
+type UpdateRecipeJSONRequestBody = externalRef0.UpdateRecipeRequest
 
-// PutApiV1RecipesRecipeIdJSONRequestBody defines body for PutApiV1RecipesRecipeId for application/json ContentType.
-type PutApiV1RecipesRecipeIdJSONRequestBody = externalRef0.UpdateRecipeRequest
-
-// PostApiV1UploadsImagesMultipartRequestBody defines body for PostApiV1UploadsImages for multipart/form-data ContentType.
-type PostApiV1UploadsImagesMultipartRequestBody PostApiV1UploadsImagesMultipartBody
+// UploadImageMultipartRequestBody defines body for UploadImage for multipart/form-data ContentType.
+type UploadImageMultipartRequestBody UploadImageMultipartBody
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// Login with username and password
 	// (POST /api/v1/auth/login)
-	PostApiV1AuthLogin(w http.ResponseWriter, r *http.Request)
+	LoginUser(w http.ResponseWriter, r *http.Request)
 	// Logout user
 	// (POST /api/v1/auth/logout)
-	PostApiV1AuthLogout(w http.ResponseWriter, r *http.Request)
+	LogoutUser(w http.ResponseWriter, r *http.Request)
 	// Refresh access token
 	// (POST /api/v1/auth/refresh)
-	PostApiV1AuthRefresh(w http.ResponseWriter, r *http.Request)
+	RefreshToken(w http.ResponseWriter, r *http.Request)
 	// Register a new user
 	// (POST /api/v1/auth/register)
-	PostApiV1AuthRegister(w http.ResponseWriter, r *http.Request)
+	RegisterUser(w http.ResponseWriter, r *http.Request)
 	// Get current user profile
 	// (GET /api/v1/profiles/me)
-	GetApiV1ProfilesMe(w http.ResponseWriter, r *http.Request)
+	GetMyProfile(w http.ResponseWriter, r *http.Request)
 	// List recipes
 	// (GET /api/v1/recipes)
-	GetApiV1Recipes(w http.ResponseWriter, r *http.Request, params GetApiV1RecipesParams)
+	ListRecipes(w http.ResponseWriter, r *http.Request, params ListRecipesParams)
 	// Create recipe
 	// (POST /api/v1/recipes)
-	PostApiV1Recipes(w http.ResponseWriter, r *http.Request)
+	CreateRecipe(w http.ResponseWriter, r *http.Request)
 	// Delete recipe
 	// (DELETE /api/v1/recipes/{recipe_id})
-	DeleteApiV1RecipesRecipeId(w http.ResponseWriter, r *http.Request, recipeId string)
+	DeleteRecipe(w http.ResponseWriter, r *http.Request, recipeId string)
 	// Get recipe by ID
 	// (GET /api/v1/recipes/{recipe_id})
-	GetApiV1RecipesRecipeId(w http.ResponseWriter, r *http.Request, recipeId string)
-	// Partially update recipe
-	// (PATCH /api/v1/recipes/{recipe_id})
-	PatchApiV1RecipesRecipeId(w http.ResponseWriter, r *http.Request, recipeId string)
+	GetRecipe(w http.ResponseWriter, r *http.Request, recipeId string)
 	// Update recipe
 	// (PUT /api/v1/recipes/{recipe_id})
-	PutApiV1RecipesRecipeId(w http.ResponseWriter, r *http.Request, recipeId string)
+	UpdateRecipe(w http.ResponseWriter, r *http.Request, recipeId string)
 	// Upload an image
 	// (POST /api/v1/uploads/images)
-	PostApiV1UploadsImages(w http.ResponseWriter, r *http.Request)
+	UploadImage(w http.ResponseWriter, r *http.Request)
 	// Get image by ID
 	// (GET /api/v1/uploads/images/{image_id})
-	GetApiV1UploadsImagesImageId(w http.ResponseWriter, r *http.Request, imageId string)
-
+	GetImage(w http.ResponseWriter, r *http.Request, imageId string)
+	// Health check
 	// (GET /health)
-	GetHealth(w http.ResponseWriter, r *http.Request)
+	HealthCheck(w http.ResponseWriter, r *http.Request)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -179,11 +161,11 @@ type ServerInterfaceWrapper struct {
 
 type MiddlewareFunc func(http.Handler) http.Handler
 
-// PostApiV1AuthLogin operation middleware
-func (siw *ServerInterfaceWrapper) PostApiV1AuthLogin(w http.ResponseWriter, r *http.Request) {
+// LoginUser operation middleware
+func (siw *ServerInterfaceWrapper) LoginUser(w http.ResponseWriter, r *http.Request) {
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PostApiV1AuthLogin(w, r)
+		siw.Handler.LoginUser(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -193,8 +175,8 @@ func (siw *ServerInterfaceWrapper) PostApiV1AuthLogin(w http.ResponseWriter, r *
 	handler.ServeHTTP(w, r)
 }
 
-// PostApiV1AuthLogout operation middleware
-func (siw *ServerInterfaceWrapper) PostApiV1AuthLogout(w http.ResponseWriter, r *http.Request) {
+// LogoutUser operation middleware
+func (siw *ServerInterfaceWrapper) LogoutUser(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
@@ -203,7 +185,7 @@ func (siw *ServerInterfaceWrapper) PostApiV1AuthLogout(w http.ResponseWriter, r 
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PostApiV1AuthLogout(w, r)
+		siw.Handler.LogoutUser(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -213,11 +195,11 @@ func (siw *ServerInterfaceWrapper) PostApiV1AuthLogout(w http.ResponseWriter, r 
 	handler.ServeHTTP(w, r)
 }
 
-// PostApiV1AuthRefresh operation middleware
-func (siw *ServerInterfaceWrapper) PostApiV1AuthRefresh(w http.ResponseWriter, r *http.Request) {
+// RefreshToken operation middleware
+func (siw *ServerInterfaceWrapper) RefreshToken(w http.ResponseWriter, r *http.Request) {
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PostApiV1AuthRefresh(w, r)
+		siw.Handler.RefreshToken(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -227,11 +209,11 @@ func (siw *ServerInterfaceWrapper) PostApiV1AuthRefresh(w http.ResponseWriter, r
 	handler.ServeHTTP(w, r)
 }
 
-// PostApiV1AuthRegister operation middleware
-func (siw *ServerInterfaceWrapper) PostApiV1AuthRegister(w http.ResponseWriter, r *http.Request) {
+// RegisterUser operation middleware
+func (siw *ServerInterfaceWrapper) RegisterUser(w http.ResponseWriter, r *http.Request) {
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PostApiV1AuthRegister(w, r)
+		siw.Handler.RegisterUser(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -241,8 +223,8 @@ func (siw *ServerInterfaceWrapper) PostApiV1AuthRegister(w http.ResponseWriter, 
 	handler.ServeHTTP(w, r)
 }
 
-// GetApiV1ProfilesMe operation middleware
-func (siw *ServerInterfaceWrapper) GetApiV1ProfilesMe(w http.ResponseWriter, r *http.Request) {
+// GetMyProfile operation middleware
+func (siw *ServerInterfaceWrapper) GetMyProfile(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
@@ -251,7 +233,7 @@ func (siw *ServerInterfaceWrapper) GetApiV1ProfilesMe(w http.ResponseWriter, r *
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetApiV1ProfilesMe(w, r)
+		siw.Handler.GetMyProfile(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -261,8 +243,8 @@ func (siw *ServerInterfaceWrapper) GetApiV1ProfilesMe(w http.ResponseWriter, r *
 	handler.ServeHTTP(w, r)
 }
 
-// GetApiV1Recipes operation middleware
-func (siw *ServerInterfaceWrapper) GetApiV1Recipes(w http.ResponseWriter, r *http.Request) {
+// ListRecipes operation middleware
+func (siw *ServerInterfaceWrapper) ListRecipes(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 
@@ -273,7 +255,7 @@ func (siw *ServerInterfaceWrapper) GetApiV1Recipes(w http.ResponseWriter, r *htt
 	r = r.WithContext(ctx)
 
 	// Parameter object where we will unmarshal all parameters from the context
-	var params GetApiV1RecipesParams
+	var params ListRecipesParams
 
 	// ------------- Optional query parameter "listRecipes" -------------
 
@@ -284,7 +266,7 @@ func (siw *ServerInterfaceWrapper) GetApiV1Recipes(w http.ResponseWriter, r *htt
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetApiV1Recipes(w, r, params)
+		siw.Handler.ListRecipes(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -294,8 +276,8 @@ func (siw *ServerInterfaceWrapper) GetApiV1Recipes(w http.ResponseWriter, r *htt
 	handler.ServeHTTP(w, r)
 }
 
-// PostApiV1Recipes operation middleware
-func (siw *ServerInterfaceWrapper) PostApiV1Recipes(w http.ResponseWriter, r *http.Request) {
+// CreateRecipe operation middleware
+func (siw *ServerInterfaceWrapper) CreateRecipe(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
@@ -304,7 +286,7 @@ func (siw *ServerInterfaceWrapper) PostApiV1Recipes(w http.ResponseWriter, r *ht
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PostApiV1Recipes(w, r)
+		siw.Handler.CreateRecipe(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -314,8 +296,8 @@ func (siw *ServerInterfaceWrapper) PostApiV1Recipes(w http.ResponseWriter, r *ht
 	handler.ServeHTTP(w, r)
 }
 
-// DeleteApiV1RecipesRecipeId operation middleware
-func (siw *ServerInterfaceWrapper) DeleteApiV1RecipesRecipeId(w http.ResponseWriter, r *http.Request) {
+// DeleteRecipe operation middleware
+func (siw *ServerInterfaceWrapper) DeleteRecipe(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 
@@ -335,7 +317,7 @@ func (siw *ServerInterfaceWrapper) DeleteApiV1RecipesRecipeId(w http.ResponseWri
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteApiV1RecipesRecipeId(w, r, recipeId)
+		siw.Handler.DeleteRecipe(w, r, recipeId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -345,8 +327,8 @@ func (siw *ServerInterfaceWrapper) DeleteApiV1RecipesRecipeId(w http.ResponseWri
 	handler.ServeHTTP(w, r)
 }
 
-// GetApiV1RecipesRecipeId operation middleware
-func (siw *ServerInterfaceWrapper) GetApiV1RecipesRecipeId(w http.ResponseWriter, r *http.Request) {
+// GetRecipe operation middleware
+func (siw *ServerInterfaceWrapper) GetRecipe(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 
@@ -366,7 +348,7 @@ func (siw *ServerInterfaceWrapper) GetApiV1RecipesRecipeId(w http.ResponseWriter
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetApiV1RecipesRecipeId(w, r, recipeId)
+		siw.Handler.GetRecipe(w, r, recipeId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -376,8 +358,8 @@ func (siw *ServerInterfaceWrapper) GetApiV1RecipesRecipeId(w http.ResponseWriter
 	handler.ServeHTTP(w, r)
 }
 
-// PatchApiV1RecipesRecipeId operation middleware
-func (siw *ServerInterfaceWrapper) PatchApiV1RecipesRecipeId(w http.ResponseWriter, r *http.Request) {
+// UpdateRecipe operation middleware
+func (siw *ServerInterfaceWrapper) UpdateRecipe(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 
@@ -397,7 +379,7 @@ func (siw *ServerInterfaceWrapper) PatchApiV1RecipesRecipeId(w http.ResponseWrit
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PatchApiV1RecipesRecipeId(w, r, recipeId)
+		siw.Handler.UpdateRecipe(w, r, recipeId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -407,19 +389,8 @@ func (siw *ServerInterfaceWrapper) PatchApiV1RecipesRecipeId(w http.ResponseWrit
 	handler.ServeHTTP(w, r)
 }
 
-// PutApiV1RecipesRecipeId operation middleware
-func (siw *ServerInterfaceWrapper) PutApiV1RecipesRecipeId(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "recipe_id" -------------
-	var recipeId string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "recipe_id", r.PathValue("recipe_id"), &recipeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "recipe_id", Err: err})
-		return
-	}
+// UploadImage operation middleware
+func (siw *ServerInterfaceWrapper) UploadImage(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
@@ -428,7 +399,7 @@ func (siw *ServerInterfaceWrapper) PutApiV1RecipesRecipeId(w http.ResponseWriter
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PutApiV1RecipesRecipeId(w, r, recipeId)
+		siw.Handler.UploadImage(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -438,28 +409,8 @@ func (siw *ServerInterfaceWrapper) PutApiV1RecipesRecipeId(w http.ResponseWriter
 	handler.ServeHTTP(w, r)
 }
 
-// PostApiV1UploadsImages operation middleware
-func (siw *ServerInterfaceWrapper) PostApiV1UploadsImages(w http.ResponseWriter, r *http.Request) {
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PostApiV1UploadsImages(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetApiV1UploadsImagesImageId operation middleware
-func (siw *ServerInterfaceWrapper) GetApiV1UploadsImagesImageId(w http.ResponseWriter, r *http.Request) {
+// GetImage operation middleware
+func (siw *ServerInterfaceWrapper) GetImage(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 
@@ -479,7 +430,7 @@ func (siw *ServerInterfaceWrapper) GetApiV1UploadsImagesImageId(w http.ResponseW
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetApiV1UploadsImagesImageId(w, r, imageId)
+		siw.Handler.GetImage(w, r, imageId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -489,8 +440,8 @@ func (siw *ServerInterfaceWrapper) GetApiV1UploadsImagesImageId(w http.ResponseW
 	handler.ServeHTTP(w, r)
 }
 
-// GetHealth operation middleware
-func (siw *ServerInterfaceWrapper) GetHealth(w http.ResponseWriter, r *http.Request) {
+// HealthCheck operation middleware
+func (siw *ServerInterfaceWrapper) HealthCheck(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
@@ -499,7 +450,7 @@ func (siw *ServerInterfaceWrapper) GetHealth(w http.ResponseWriter, r *http.Requ
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetHealth(w, r)
+		siw.Handler.HealthCheck(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -629,488 +580,442 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 		ErrorHandlerFunc:   options.ErrorHandlerFunc,
 	}
 
-	m.HandleFunc("POST "+options.BaseURL+"/api/v1/auth/login", wrapper.PostApiV1AuthLogin)
-	m.HandleFunc("POST "+options.BaseURL+"/api/v1/auth/logout", wrapper.PostApiV1AuthLogout)
-	m.HandleFunc("POST "+options.BaseURL+"/api/v1/auth/refresh", wrapper.PostApiV1AuthRefresh)
-	m.HandleFunc("POST "+options.BaseURL+"/api/v1/auth/register", wrapper.PostApiV1AuthRegister)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/profiles/me", wrapper.GetApiV1ProfilesMe)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/recipes", wrapper.GetApiV1Recipes)
-	m.HandleFunc("POST "+options.BaseURL+"/api/v1/recipes", wrapper.PostApiV1Recipes)
-	m.HandleFunc("DELETE "+options.BaseURL+"/api/v1/recipes/{recipe_id}", wrapper.DeleteApiV1RecipesRecipeId)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/recipes/{recipe_id}", wrapper.GetApiV1RecipesRecipeId)
-	m.HandleFunc("PATCH "+options.BaseURL+"/api/v1/recipes/{recipe_id}", wrapper.PatchApiV1RecipesRecipeId)
-	m.HandleFunc("PUT "+options.BaseURL+"/api/v1/recipes/{recipe_id}", wrapper.PutApiV1RecipesRecipeId)
-	m.HandleFunc("POST "+options.BaseURL+"/api/v1/uploads/images", wrapper.PostApiV1UploadsImages)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/uploads/images/{image_id}", wrapper.GetApiV1UploadsImagesImageId)
-	m.HandleFunc("GET "+options.BaseURL+"/health", wrapper.GetHealth)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/auth/login", wrapper.LoginUser)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/auth/logout", wrapper.LogoutUser)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/auth/refresh", wrapper.RefreshToken)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/auth/register", wrapper.RegisterUser)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/profiles/me", wrapper.GetMyProfile)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/recipes", wrapper.ListRecipes)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/recipes", wrapper.CreateRecipe)
+	m.HandleFunc("DELETE "+options.BaseURL+"/api/v1/recipes/{recipe_id}", wrapper.DeleteRecipe)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/recipes/{recipe_id}", wrapper.GetRecipe)
+	m.HandleFunc("PUT "+options.BaseURL+"/api/v1/recipes/{recipe_id}", wrapper.UpdateRecipe)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/uploads/images", wrapper.UploadImage)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/uploads/images/{image_id}", wrapper.GetImage)
+	m.HandleFunc("GET "+options.BaseURL+"/health", wrapper.HealthCheck)
 
 	return m
 }
 
-type PostApiV1AuthLoginRequestObject struct {
-	Body *PostApiV1AuthLoginJSONRequestBody
+type LoginUserRequestObject struct {
+	Body *LoginUserJSONRequestBody
 }
 
-type PostApiV1AuthLoginResponseObject interface {
-	VisitPostApiV1AuthLoginResponse(w http.ResponseWriter) error
+type LoginUserResponseObject interface {
+	VisitLoginUserResponse(w http.ResponseWriter) error
 }
 
-type PostApiV1AuthLogin200JSONResponse externalRef0.AuthResponse
+type LoginUser200JSONResponse externalRef0.AuthResponse
 
-func (response PostApiV1AuthLogin200JSONResponse) VisitPostApiV1AuthLoginResponse(w http.ResponseWriter) error {
+func (response LoginUser200JSONResponse) VisitLoginUserResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type PostApiV1AuthLogin400JSONResponse externalRef0.ApiErrorResponse
+type LoginUser400JSONResponse externalRef0.ApiErrorResponse
 
-func (response PostApiV1AuthLogin400JSONResponse) VisitPostApiV1AuthLoginResponse(w http.ResponseWriter) error {
+func (response LoginUser400JSONResponse) VisitLoginUserResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(400)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type PostApiV1AuthLogin401JSONResponse externalRef0.ApiErrorResponse
+type LoginUser401JSONResponse externalRef0.ApiErrorResponse
 
-func (response PostApiV1AuthLogin401JSONResponse) VisitPostApiV1AuthLoginResponse(w http.ResponseWriter) error {
+func (response LoginUser401JSONResponse) VisitLoginUserResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(401)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type PostApiV1AuthLogin500Response struct {
+type LoginUser500Response struct {
 }
 
-func (response PostApiV1AuthLogin500Response) VisitPostApiV1AuthLoginResponse(w http.ResponseWriter) error {
+func (response LoginUser500Response) VisitLoginUserResponse(w http.ResponseWriter) error {
 	w.WriteHeader(500)
 	return nil
 }
 
-type PostApiV1AuthLogoutRequestObject struct {
-	Body *PostApiV1AuthLogoutJSONRequestBody
+type LogoutUserRequestObject struct {
+	Body *LogoutUserJSONRequestBody
 }
 
-type PostApiV1AuthLogoutResponseObject interface {
-	VisitPostApiV1AuthLogoutResponse(w http.ResponseWriter) error
+type LogoutUserResponseObject interface {
+	VisitLogoutUserResponse(w http.ResponseWriter) error
 }
 
-type PostApiV1AuthLogout204Response struct {
+type LogoutUser204Response struct {
 }
 
-func (response PostApiV1AuthLogout204Response) VisitPostApiV1AuthLogoutResponse(w http.ResponseWriter) error {
+func (response LogoutUser204Response) VisitLogoutUserResponse(w http.ResponseWriter) error {
 	w.WriteHeader(204)
 	return nil
 }
 
-type PostApiV1AuthLogout400Response struct {
+type LogoutUser400Response struct {
 }
 
-func (response PostApiV1AuthLogout400Response) VisitPostApiV1AuthLogoutResponse(w http.ResponseWriter) error {
+func (response LogoutUser400Response) VisitLogoutUserResponse(w http.ResponseWriter) error {
 	w.WriteHeader(400)
 	return nil
 }
 
-type PostApiV1AuthLogout401Response struct {
+type LogoutUser401Response struct {
 }
 
-func (response PostApiV1AuthLogout401Response) VisitPostApiV1AuthLogoutResponse(w http.ResponseWriter) error {
+func (response LogoutUser401Response) VisitLogoutUserResponse(w http.ResponseWriter) error {
 	w.WriteHeader(401)
 	return nil
 }
 
-type PostApiV1AuthLogout500Response struct {
+type LogoutUser500Response struct {
 }
 
-func (response PostApiV1AuthLogout500Response) VisitPostApiV1AuthLogoutResponse(w http.ResponseWriter) error {
+func (response LogoutUser500Response) VisitLogoutUserResponse(w http.ResponseWriter) error {
 	w.WriteHeader(500)
 	return nil
 }
 
-type PostApiV1AuthRefreshRequestObject struct {
-	Body *PostApiV1AuthRefreshJSONRequestBody
+type RefreshTokenRequestObject struct {
+	Body *RefreshTokenJSONRequestBody
 }
 
-type PostApiV1AuthRefreshResponseObject interface {
-	VisitPostApiV1AuthRefreshResponse(w http.ResponseWriter) error
+type RefreshTokenResponseObject interface {
+	VisitRefreshTokenResponse(w http.ResponseWriter) error
 }
 
-type PostApiV1AuthRefresh200JSONResponse externalRef0.TokensResponse
+type RefreshToken200JSONResponse externalRef0.TokensResponse
 
-func (response PostApiV1AuthRefresh200JSONResponse) VisitPostApiV1AuthRefreshResponse(w http.ResponseWriter) error {
+func (response RefreshToken200JSONResponse) VisitRefreshTokenResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type PostApiV1AuthRefresh401JSONResponse externalRef0.ApiErrorResponse
+type RefreshToken401JSONResponse externalRef0.ApiErrorResponse
 
-func (response PostApiV1AuthRefresh401JSONResponse) VisitPostApiV1AuthRefreshResponse(w http.ResponseWriter) error {
+func (response RefreshToken401JSONResponse) VisitRefreshTokenResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(401)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type PostApiV1AuthRefresh500Response struct {
+type RefreshToken500Response struct {
 }
 
-func (response PostApiV1AuthRefresh500Response) VisitPostApiV1AuthRefreshResponse(w http.ResponseWriter) error {
+func (response RefreshToken500Response) VisitRefreshTokenResponse(w http.ResponseWriter) error {
 	w.WriteHeader(500)
 	return nil
 }
 
-type PostApiV1AuthRegisterRequestObject struct {
-	Body *PostApiV1AuthRegisterJSONRequestBody
+type RegisterUserRequestObject struct {
+	Body *RegisterUserJSONRequestBody
 }
 
-type PostApiV1AuthRegisterResponseObject interface {
-	VisitPostApiV1AuthRegisterResponse(w http.ResponseWriter) error
+type RegisterUserResponseObject interface {
+	VisitRegisterUserResponse(w http.ResponseWriter) error
 }
 
-type PostApiV1AuthRegister201JSONResponse externalRef0.AuthResponse
+type RegisterUser201JSONResponse externalRef0.AuthResponse
 
-func (response PostApiV1AuthRegister201JSONResponse) VisitPostApiV1AuthRegisterResponse(w http.ResponseWriter) error {
+func (response RegisterUser201JSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(201)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type PostApiV1AuthRegister400JSONResponse externalRef0.ApiErrorResponse
+type RegisterUser400JSONResponse externalRef0.ApiErrorResponse
 
-func (response PostApiV1AuthRegister400JSONResponse) VisitPostApiV1AuthRegisterResponse(w http.ResponseWriter) error {
+func (response RegisterUser400JSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(400)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type PostApiV1AuthRegister409JSONResponse externalRef0.ApiErrorResponse
+type RegisterUser409JSONResponse externalRef0.ApiErrorResponse
 
-func (response PostApiV1AuthRegister409JSONResponse) VisitPostApiV1AuthRegisterResponse(w http.ResponseWriter) error {
+func (response RegisterUser409JSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(409)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type PostApiV1AuthRegister422JSONResponse externalRef0.ApiErrorResponse
+type RegisterUser422JSONResponse externalRef0.ApiErrorResponse
 
-func (response PostApiV1AuthRegister422JSONResponse) VisitPostApiV1AuthRegisterResponse(w http.ResponseWriter) error {
+func (response RegisterUser422JSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(422)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type PostApiV1AuthRegister500Response struct {
+type RegisterUser500Response struct {
 }
 
-func (response PostApiV1AuthRegister500Response) VisitPostApiV1AuthRegisterResponse(w http.ResponseWriter) error {
+func (response RegisterUser500Response) VisitRegisterUserResponse(w http.ResponseWriter) error {
 	w.WriteHeader(500)
 	return nil
 }
 
-type GetApiV1ProfilesMeRequestObject struct {
+type GetMyProfileRequestObject struct {
 }
 
-type GetApiV1ProfilesMeResponseObject interface {
-	VisitGetApiV1ProfilesMeResponse(w http.ResponseWriter) error
+type GetMyProfileResponseObject interface {
+	VisitGetMyProfileResponse(w http.ResponseWriter) error
 }
 
-type GetApiV1ProfilesMe200JSONResponse externalRef0.MyProfile
+type GetMyProfile200JSONResponse externalRef0.MyProfile
 
-func (response GetApiV1ProfilesMe200JSONResponse) VisitGetApiV1ProfilesMeResponse(w http.ResponseWriter) error {
+func (response GetMyProfile200JSONResponse) VisitGetMyProfileResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type GetApiV1ProfilesMe401Response struct {
+type GetMyProfile401Response struct {
 }
 
-func (response GetApiV1ProfilesMe401Response) VisitGetApiV1ProfilesMeResponse(w http.ResponseWriter) error {
+func (response GetMyProfile401Response) VisitGetMyProfileResponse(w http.ResponseWriter) error {
 	w.WriteHeader(401)
 	return nil
 }
 
-type GetApiV1RecipesRequestObject struct {
-	Params GetApiV1RecipesParams
+type ListRecipesRequestObject struct {
+	Params ListRecipesParams
 }
 
-type GetApiV1RecipesResponseObject interface {
-	VisitGetApiV1RecipesResponse(w http.ResponseWriter) error
+type ListRecipesResponseObject interface {
+	VisitListRecipesResponse(w http.ResponseWriter) error
 }
 
-type GetApiV1Recipes200JSONResponse RecipePage
+type ListRecipes200JSONResponse RecipePage
 
-func (response GetApiV1Recipes200JSONResponse) VisitGetApiV1RecipesResponse(w http.ResponseWriter) error {
+func (response ListRecipes200JSONResponse) VisitListRecipesResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type GetApiV1Recipes400Response struct {
+type ListRecipes400Response struct {
 }
 
-func (response GetApiV1Recipes400Response) VisitGetApiV1RecipesResponse(w http.ResponseWriter) error {
+func (response ListRecipes400Response) VisitListRecipesResponse(w http.ResponseWriter) error {
 	w.WriteHeader(400)
 	return nil
 }
 
-type GetApiV1Recipes500Response struct {
+type ListRecipes500Response struct {
 }
 
-func (response GetApiV1Recipes500Response) VisitGetApiV1RecipesResponse(w http.ResponseWriter) error {
+func (response ListRecipes500Response) VisitListRecipesResponse(w http.ResponseWriter) error {
 	w.WriteHeader(500)
 	return nil
 }
 
-type PostApiV1RecipesRequestObject struct {
-	Body *PostApiV1RecipesJSONRequestBody
+type CreateRecipeRequestObject struct {
+	Body *CreateRecipeJSONRequestBody
 }
 
-type PostApiV1RecipesResponseObject interface {
-	VisitPostApiV1RecipesResponse(w http.ResponseWriter) error
+type CreateRecipeResponseObject interface {
+	VisitCreateRecipeResponse(w http.ResponseWriter) error
 }
 
-type PostApiV1Recipes201JSONResponse CreateRecipeResponse
+type CreateRecipe201JSONResponse externalRef0.Recipe
 
-func (response PostApiV1Recipes201JSONResponse) VisitPostApiV1RecipesResponse(w http.ResponseWriter) error {
+func (response CreateRecipe201JSONResponse) VisitCreateRecipeResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(201)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type PostApiV1Recipes400Response struct {
+type CreateRecipe400Response struct {
 }
 
-func (response PostApiV1Recipes400Response) VisitPostApiV1RecipesResponse(w http.ResponseWriter) error {
+func (response CreateRecipe400Response) VisitCreateRecipeResponse(w http.ResponseWriter) error {
 	w.WriteHeader(400)
 	return nil
 }
 
-type DeleteApiV1RecipesRecipeIdRequestObject struct {
+type DeleteRecipeRequestObject struct {
 	RecipeId string `json:"recipe_id"`
 }
 
-type DeleteApiV1RecipesRecipeIdResponseObject interface {
-	VisitDeleteApiV1RecipesRecipeIdResponse(w http.ResponseWriter) error
+type DeleteRecipeResponseObject interface {
+	VisitDeleteRecipeResponse(w http.ResponseWriter) error
 }
 
-type DeleteApiV1RecipesRecipeId204Response struct {
+type DeleteRecipe204Response struct {
 }
 
-func (response DeleteApiV1RecipesRecipeId204Response) VisitDeleteApiV1RecipesRecipeIdResponse(w http.ResponseWriter) error {
+func (response DeleteRecipe204Response) VisitDeleteRecipeResponse(w http.ResponseWriter) error {
 	w.WriteHeader(204)
 	return nil
 }
 
-type DeleteApiV1RecipesRecipeId400Response struct {
+type DeleteRecipe400Response struct {
 }
 
-func (response DeleteApiV1RecipesRecipeId400Response) VisitDeleteApiV1RecipesRecipeIdResponse(w http.ResponseWriter) error {
+func (response DeleteRecipe400Response) VisitDeleteRecipeResponse(w http.ResponseWriter) error {
 	w.WriteHeader(400)
 	return nil
 }
 
-type GetApiV1RecipesRecipeIdRequestObject struct {
+type GetRecipeRequestObject struct {
 	RecipeId string `json:"recipe_id"`
 }
 
-type GetApiV1RecipesRecipeIdResponseObject interface {
-	VisitGetApiV1RecipesRecipeIdResponse(w http.ResponseWriter) error
+type GetRecipeResponseObject interface {
+	VisitGetRecipeResponse(w http.ResponseWriter) error
 }
 
-type GetApiV1RecipesRecipeId200JSONResponse externalRef0.Recipe
+type GetRecipe200JSONResponse externalRef0.Recipe
 
-func (response GetApiV1RecipesRecipeId200JSONResponse) VisitGetApiV1RecipesRecipeIdResponse(w http.ResponseWriter) error {
+func (response GetRecipe200JSONResponse) VisitGetRecipeResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type GetApiV1RecipesRecipeId403JSONResponse externalRef0.ApiErrorResponse
+type GetRecipe403JSONResponse externalRef0.ApiErrorResponse
 
-func (response GetApiV1RecipesRecipeId403JSONResponse) VisitGetApiV1RecipesRecipeIdResponse(w http.ResponseWriter) error {
+func (response GetRecipe403JSONResponse) VisitGetRecipeResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(403)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type GetApiV1RecipesRecipeId404JSONResponse externalRef0.ApiErrorResponse
+type GetRecipe404JSONResponse externalRef0.ApiErrorResponse
 
-func (response GetApiV1RecipesRecipeId404JSONResponse) VisitGetApiV1RecipesRecipeIdResponse(w http.ResponseWriter) error {
+func (response GetRecipe404JSONResponse) VisitGetRecipeResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type GetApiV1RecipesRecipeId500Response struct {
+type GetRecipe500Response struct {
 }
 
-func (response GetApiV1RecipesRecipeId500Response) VisitGetApiV1RecipesRecipeIdResponse(w http.ResponseWriter) error {
+func (response GetRecipe500Response) VisitGetRecipeResponse(w http.ResponseWriter) error {
 	w.WriteHeader(500)
 	return nil
 }
 
-type PatchApiV1RecipesRecipeIdRequestObject struct {
+type UpdateRecipeRequestObject struct {
 	RecipeId string `json:"recipe_id"`
-	Body     *PatchApiV1RecipesRecipeIdJSONRequestBody
+	Body     *UpdateRecipeJSONRequestBody
 }
 
-type PatchApiV1RecipesRecipeIdResponseObject interface {
-	VisitPatchApiV1RecipesRecipeIdResponse(w http.ResponseWriter) error
+type UpdateRecipeResponseObject interface {
+	VisitUpdateRecipeResponse(w http.ResponseWriter) error
 }
 
-type PatchApiV1RecipesRecipeId200JSONResponse externalRef0.Recipe
+type UpdateRecipe200JSONResponse externalRef0.Recipe
 
-func (response PatchApiV1RecipesRecipeId200JSONResponse) VisitPatchApiV1RecipesRecipeIdResponse(w http.ResponseWriter) error {
+func (response UpdateRecipe200JSONResponse) VisitUpdateRecipeResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type PatchApiV1RecipesRecipeId400JSONResponse externalRef0.ApiErrorResponse
+type UpdateRecipe400JSONResponse externalRef0.ApiErrorResponse
 
-func (response PatchApiV1RecipesRecipeId400JSONResponse) VisitPatchApiV1RecipesRecipeIdResponse(w http.ResponseWriter) error {
+func (response UpdateRecipe400JSONResponse) VisitUpdateRecipeResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(400)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type PatchApiV1RecipesRecipeId403JSONResponse externalRef0.ApiErrorResponse
+type UpdateRecipe403JSONResponse externalRef0.ApiErrorResponse
 
-func (response PatchApiV1RecipesRecipeId403JSONResponse) VisitPatchApiV1RecipesRecipeIdResponse(w http.ResponseWriter) error {
+func (response UpdateRecipe403JSONResponse) VisitUpdateRecipeResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(403)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type PatchApiV1RecipesRecipeId404JSONResponse externalRef0.ApiErrorResponse
+type UpdateRecipe404JSONResponse externalRef0.ApiErrorResponse
 
-func (response PatchApiV1RecipesRecipeId404JSONResponse) VisitPatchApiV1RecipesRecipeIdResponse(w http.ResponseWriter) error {
+func (response UpdateRecipe404JSONResponse) VisitUpdateRecipeResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type PutApiV1RecipesRecipeIdRequestObject struct {
-	RecipeId string `json:"recipe_id"`
-	Body     *PutApiV1RecipesRecipeIdJSONRequestBody
-}
-
-type PutApiV1RecipesRecipeIdResponseObject interface {
-	VisitPutApiV1RecipesRecipeIdResponse(w http.ResponseWriter) error
-}
-
-type PutApiV1RecipesRecipeId200JSONResponse UpdateRecipeResponse
-
-func (response PutApiV1RecipesRecipeId200JSONResponse) VisitPutApiV1RecipesRecipeIdResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type PutApiV1RecipesRecipeId400JSONResponse externalRef0.ApiErrorResponse
-
-func (response PutApiV1RecipesRecipeId400JSONResponse) VisitPutApiV1RecipesRecipeIdResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(400)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type PutApiV1RecipesRecipeId403JSONResponse externalRef0.ApiErrorResponse
-
-func (response PutApiV1RecipesRecipeId403JSONResponse) VisitPutApiV1RecipesRecipeIdResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(403)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type PutApiV1RecipesRecipeId404JSONResponse externalRef0.ApiErrorResponse
-
-func (response PutApiV1RecipesRecipeId404JSONResponse) VisitPutApiV1RecipesRecipeIdResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(404)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type PostApiV1UploadsImagesRequestObject struct {
+type UploadImageRequestObject struct {
 	Body *multipart.Reader
 }
 
-type PostApiV1UploadsImagesResponseObject interface {
-	VisitPostApiV1UploadsImagesResponse(w http.ResponseWriter) error
+type UploadImageResponseObject interface {
+	VisitUploadImageResponse(w http.ResponseWriter) error
 }
 
-type PostApiV1UploadsImages201JSONResponse externalRef0.Image
+type UploadImage201JSONResponse externalRef0.Image
 
-func (response PostApiV1UploadsImages201JSONResponse) VisitPostApiV1UploadsImagesResponse(w http.ResponseWriter) error {
+func (response UploadImage201JSONResponse) VisitUploadImageResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(201)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type PostApiV1UploadsImages400Response struct {
+type UploadImage400Response struct {
 }
 
-func (response PostApiV1UploadsImages400Response) VisitPostApiV1UploadsImagesResponse(w http.ResponseWriter) error {
+func (response UploadImage400Response) VisitUploadImageResponse(w http.ResponseWriter) error {
 	w.WriteHeader(400)
 	return nil
 }
 
-type PostApiV1UploadsImages413Response struct {
+type UploadImage413Response struct {
 }
 
-func (response PostApiV1UploadsImages413Response) VisitPostApiV1UploadsImagesResponse(w http.ResponseWriter) error {
+func (response UploadImage413Response) VisitUploadImageResponse(w http.ResponseWriter) error {
 	w.WriteHeader(413)
 	return nil
 }
 
-type PostApiV1UploadsImages500Response struct {
+type UploadImage500Response struct {
 }
 
-func (response PostApiV1UploadsImages500Response) VisitPostApiV1UploadsImagesResponse(w http.ResponseWriter) error {
+func (response UploadImage500Response) VisitUploadImageResponse(w http.ResponseWriter) error {
 	w.WriteHeader(500)
 	return nil
 }
 
-type GetApiV1UploadsImagesImageIdRequestObject struct {
+type GetImageRequestObject struct {
 	ImageId string `json:"image_id"`
 }
 
-type GetApiV1UploadsImagesImageIdResponseObject interface {
-	VisitGetApiV1UploadsImagesImageIdResponse(w http.ResponseWriter) error
+type GetImageResponseObject interface {
+	VisitGetImageResponse(w http.ResponseWriter) error
 }
 
-type GetApiV1UploadsImagesImageId200ImageResponse struct {
+type GetImage200ImageResponse struct {
 	Body          io.Reader
 	ContentType   string
 	ContentLength int64
 }
 
-func (response GetApiV1UploadsImagesImageId200ImageResponse) VisitGetApiV1UploadsImagesImageIdResponse(w http.ResponseWriter) error {
+func (response GetImage200ImageResponse) VisitGetImageResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", response.ContentType)
 	if response.ContentLength != 0 {
 		w.Header().Set("Content-Length", fmt.Sprint(response.ContentLength))
@@ -1124,32 +1029,32 @@ func (response GetApiV1UploadsImagesImageId200ImageResponse) VisitGetApiV1Upload
 	return err
 }
 
-type GetApiV1UploadsImagesImageId404Response struct {
+type GetImage404Response struct {
 }
 
-func (response GetApiV1UploadsImagesImageId404Response) VisitGetApiV1UploadsImagesImageIdResponse(w http.ResponseWriter) error {
+func (response GetImage404Response) VisitGetImageResponse(w http.ResponseWriter) error {
 	w.WriteHeader(404)
 	return nil
 }
 
-type GetApiV1UploadsImagesImageId500Response struct {
+type GetImage500Response struct {
 }
 
-func (response GetApiV1UploadsImagesImageId500Response) VisitGetApiV1UploadsImagesImageIdResponse(w http.ResponseWriter) error {
+func (response GetImage500Response) VisitGetImageResponse(w http.ResponseWriter) error {
 	w.WriteHeader(500)
 	return nil
 }
 
-type GetHealthRequestObject struct {
+type HealthCheckRequestObject struct {
 }
 
-type GetHealthResponseObject interface {
-	VisitGetHealthResponse(w http.ResponseWriter) error
+type HealthCheckResponseObject interface {
+	VisitHealthCheckResponse(w http.ResponseWriter) error
 }
 
-type GetHealth200TextResponse string
+type HealthCheck200TextResponse string
 
-func (response GetHealth200TextResponse) VisitGetHealthResponse(w http.ResponseWriter) error {
+func (response HealthCheck200TextResponse) VisitHealthCheckResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(200)
 
@@ -1161,46 +1066,43 @@ func (response GetHealth200TextResponse) VisitGetHealthResponse(w http.ResponseW
 type StrictServerInterface interface {
 	// Login with username and password
 	// (POST /api/v1/auth/login)
-	PostApiV1AuthLogin(ctx context.Context, request PostApiV1AuthLoginRequestObject) (PostApiV1AuthLoginResponseObject, error)
+	LoginUser(ctx context.Context, request LoginUserRequestObject) (LoginUserResponseObject, error)
 	// Logout user
 	// (POST /api/v1/auth/logout)
-	PostApiV1AuthLogout(ctx context.Context, request PostApiV1AuthLogoutRequestObject) (PostApiV1AuthLogoutResponseObject, error)
+	LogoutUser(ctx context.Context, request LogoutUserRequestObject) (LogoutUserResponseObject, error)
 	// Refresh access token
 	// (POST /api/v1/auth/refresh)
-	PostApiV1AuthRefresh(ctx context.Context, request PostApiV1AuthRefreshRequestObject) (PostApiV1AuthRefreshResponseObject, error)
+	RefreshToken(ctx context.Context, request RefreshTokenRequestObject) (RefreshTokenResponseObject, error)
 	// Register a new user
 	// (POST /api/v1/auth/register)
-	PostApiV1AuthRegister(ctx context.Context, request PostApiV1AuthRegisterRequestObject) (PostApiV1AuthRegisterResponseObject, error)
+	RegisterUser(ctx context.Context, request RegisterUserRequestObject) (RegisterUserResponseObject, error)
 	// Get current user profile
 	// (GET /api/v1/profiles/me)
-	GetApiV1ProfilesMe(ctx context.Context, request GetApiV1ProfilesMeRequestObject) (GetApiV1ProfilesMeResponseObject, error)
+	GetMyProfile(ctx context.Context, request GetMyProfileRequestObject) (GetMyProfileResponseObject, error)
 	// List recipes
 	// (GET /api/v1/recipes)
-	GetApiV1Recipes(ctx context.Context, request GetApiV1RecipesRequestObject) (GetApiV1RecipesResponseObject, error)
+	ListRecipes(ctx context.Context, request ListRecipesRequestObject) (ListRecipesResponseObject, error)
 	// Create recipe
 	// (POST /api/v1/recipes)
-	PostApiV1Recipes(ctx context.Context, request PostApiV1RecipesRequestObject) (PostApiV1RecipesResponseObject, error)
+	CreateRecipe(ctx context.Context, request CreateRecipeRequestObject) (CreateRecipeResponseObject, error)
 	// Delete recipe
 	// (DELETE /api/v1/recipes/{recipe_id})
-	DeleteApiV1RecipesRecipeId(ctx context.Context, request DeleteApiV1RecipesRecipeIdRequestObject) (DeleteApiV1RecipesRecipeIdResponseObject, error)
+	DeleteRecipe(ctx context.Context, request DeleteRecipeRequestObject) (DeleteRecipeResponseObject, error)
 	// Get recipe by ID
 	// (GET /api/v1/recipes/{recipe_id})
-	GetApiV1RecipesRecipeId(ctx context.Context, request GetApiV1RecipesRecipeIdRequestObject) (GetApiV1RecipesRecipeIdResponseObject, error)
-	// Partially update recipe
-	// (PATCH /api/v1/recipes/{recipe_id})
-	PatchApiV1RecipesRecipeId(ctx context.Context, request PatchApiV1RecipesRecipeIdRequestObject) (PatchApiV1RecipesRecipeIdResponseObject, error)
+	GetRecipe(ctx context.Context, request GetRecipeRequestObject) (GetRecipeResponseObject, error)
 	// Update recipe
 	// (PUT /api/v1/recipes/{recipe_id})
-	PutApiV1RecipesRecipeId(ctx context.Context, request PutApiV1RecipesRecipeIdRequestObject) (PutApiV1RecipesRecipeIdResponseObject, error)
+	UpdateRecipe(ctx context.Context, request UpdateRecipeRequestObject) (UpdateRecipeResponseObject, error)
 	// Upload an image
 	// (POST /api/v1/uploads/images)
-	PostApiV1UploadsImages(ctx context.Context, request PostApiV1UploadsImagesRequestObject) (PostApiV1UploadsImagesResponseObject, error)
+	UploadImage(ctx context.Context, request UploadImageRequestObject) (UploadImageResponseObject, error)
 	// Get image by ID
 	// (GET /api/v1/uploads/images/{image_id})
-	GetApiV1UploadsImagesImageId(ctx context.Context, request GetApiV1UploadsImagesImageIdRequestObject) (GetApiV1UploadsImagesImageIdResponseObject, error)
-
+	GetImage(ctx context.Context, request GetImageRequestObject) (GetImageResponseObject, error)
+	// Health check
 	// (GET /health)
-	GetHealth(ctx context.Context, request GetHealthRequestObject) (GetHealthResponseObject, error)
+	HealthCheck(ctx context.Context, request HealthCheckRequestObject) (HealthCheckResponseObject, error)
 }
 
 type StrictHandlerFunc = strictnethttp.StrictHTTPHandlerFunc
@@ -1232,11 +1134,11 @@ type strictHandler struct {
 	options     StrictHTTPServerOptions
 }
 
-// PostApiV1AuthLogin operation middleware
-func (sh *strictHandler) PostApiV1AuthLogin(w http.ResponseWriter, r *http.Request) {
-	var request PostApiV1AuthLoginRequestObject
+// LoginUser operation middleware
+func (sh *strictHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
+	var request LoginUserRequestObject
 
-	var body PostApiV1AuthLoginJSONRequestBody
+	var body LoginUserJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
 		return
@@ -1244,18 +1146,18 @@ func (sh *strictHandler) PostApiV1AuthLogin(w http.ResponseWriter, r *http.Reque
 	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.PostApiV1AuthLogin(ctx, request.(PostApiV1AuthLoginRequestObject))
+		return sh.ssi.LoginUser(ctx, request.(LoginUserRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PostApiV1AuthLogin")
+		handler = middleware(handler, "LoginUser")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(PostApiV1AuthLoginResponseObject); ok {
-		if err := validResponse.VisitPostApiV1AuthLoginResponse(w); err != nil {
+	} else if validResponse, ok := response.(LoginUserResponseObject); ok {
+		if err := validResponse.VisitLoginUserResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -1263,11 +1165,11 @@ func (sh *strictHandler) PostApiV1AuthLogin(w http.ResponseWriter, r *http.Reque
 	}
 }
 
-// PostApiV1AuthLogout operation middleware
-func (sh *strictHandler) PostApiV1AuthLogout(w http.ResponseWriter, r *http.Request) {
-	var request PostApiV1AuthLogoutRequestObject
+// LogoutUser operation middleware
+func (sh *strictHandler) LogoutUser(w http.ResponseWriter, r *http.Request) {
+	var request LogoutUserRequestObject
 
-	var body PostApiV1AuthLogoutJSONRequestBody
+	var body LogoutUserJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
 		return
@@ -1275,18 +1177,18 @@ func (sh *strictHandler) PostApiV1AuthLogout(w http.ResponseWriter, r *http.Requ
 	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.PostApiV1AuthLogout(ctx, request.(PostApiV1AuthLogoutRequestObject))
+		return sh.ssi.LogoutUser(ctx, request.(LogoutUserRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PostApiV1AuthLogout")
+		handler = middleware(handler, "LogoutUser")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(PostApiV1AuthLogoutResponseObject); ok {
-		if err := validResponse.VisitPostApiV1AuthLogoutResponse(w); err != nil {
+	} else if validResponse, ok := response.(LogoutUserResponseObject); ok {
+		if err := validResponse.VisitLogoutUserResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -1294,11 +1196,11 @@ func (sh *strictHandler) PostApiV1AuthLogout(w http.ResponseWriter, r *http.Requ
 	}
 }
 
-// PostApiV1AuthRefresh operation middleware
-func (sh *strictHandler) PostApiV1AuthRefresh(w http.ResponseWriter, r *http.Request) {
-	var request PostApiV1AuthRefreshRequestObject
+// RefreshToken operation middleware
+func (sh *strictHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
+	var request RefreshTokenRequestObject
 
-	var body PostApiV1AuthRefreshJSONRequestBody
+	var body RefreshTokenJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
 		return
@@ -1306,18 +1208,18 @@ func (sh *strictHandler) PostApiV1AuthRefresh(w http.ResponseWriter, r *http.Req
 	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.PostApiV1AuthRefresh(ctx, request.(PostApiV1AuthRefreshRequestObject))
+		return sh.ssi.RefreshToken(ctx, request.(RefreshTokenRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PostApiV1AuthRefresh")
+		handler = middleware(handler, "RefreshToken")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(PostApiV1AuthRefreshResponseObject); ok {
-		if err := validResponse.VisitPostApiV1AuthRefreshResponse(w); err != nil {
+	} else if validResponse, ok := response.(RefreshTokenResponseObject); ok {
+		if err := validResponse.VisitRefreshTokenResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -1325,11 +1227,11 @@ func (sh *strictHandler) PostApiV1AuthRefresh(w http.ResponseWriter, r *http.Req
 	}
 }
 
-// PostApiV1AuthRegister operation middleware
-func (sh *strictHandler) PostApiV1AuthRegister(w http.ResponseWriter, r *http.Request) {
-	var request PostApiV1AuthRegisterRequestObject
+// RegisterUser operation middleware
+func (sh *strictHandler) RegisterUser(w http.ResponseWriter, r *http.Request) {
+	var request RegisterUserRequestObject
 
-	var body PostApiV1AuthRegisterJSONRequestBody
+	var body RegisterUserJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
 		return
@@ -1337,18 +1239,18 @@ func (sh *strictHandler) PostApiV1AuthRegister(w http.ResponseWriter, r *http.Re
 	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.PostApiV1AuthRegister(ctx, request.(PostApiV1AuthRegisterRequestObject))
+		return sh.ssi.RegisterUser(ctx, request.(RegisterUserRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PostApiV1AuthRegister")
+		handler = middleware(handler, "RegisterUser")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(PostApiV1AuthRegisterResponseObject); ok {
-		if err := validResponse.VisitPostApiV1AuthRegisterResponse(w); err != nil {
+	} else if validResponse, ok := response.(RegisterUserResponseObject); ok {
+		if err := validResponse.VisitRegisterUserResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -1356,23 +1258,23 @@ func (sh *strictHandler) PostApiV1AuthRegister(w http.ResponseWriter, r *http.Re
 	}
 }
 
-// GetApiV1ProfilesMe operation middleware
-func (sh *strictHandler) GetApiV1ProfilesMe(w http.ResponseWriter, r *http.Request) {
-	var request GetApiV1ProfilesMeRequestObject
+// GetMyProfile operation middleware
+func (sh *strictHandler) GetMyProfile(w http.ResponseWriter, r *http.Request) {
+	var request GetMyProfileRequestObject
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.GetApiV1ProfilesMe(ctx, request.(GetApiV1ProfilesMeRequestObject))
+		return sh.ssi.GetMyProfile(ctx, request.(GetMyProfileRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetApiV1ProfilesMe")
+		handler = middleware(handler, "GetMyProfile")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(GetApiV1ProfilesMeResponseObject); ok {
-		if err := validResponse.VisitGetApiV1ProfilesMeResponse(w); err != nil {
+	} else if validResponse, ok := response.(GetMyProfileResponseObject); ok {
+		if err := validResponse.VisitGetMyProfileResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -1380,25 +1282,25 @@ func (sh *strictHandler) GetApiV1ProfilesMe(w http.ResponseWriter, r *http.Reque
 	}
 }
 
-// GetApiV1Recipes operation middleware
-func (sh *strictHandler) GetApiV1Recipes(w http.ResponseWriter, r *http.Request, params GetApiV1RecipesParams) {
-	var request GetApiV1RecipesRequestObject
+// ListRecipes operation middleware
+func (sh *strictHandler) ListRecipes(w http.ResponseWriter, r *http.Request, params ListRecipesParams) {
+	var request ListRecipesRequestObject
 
 	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.GetApiV1Recipes(ctx, request.(GetApiV1RecipesRequestObject))
+		return sh.ssi.ListRecipes(ctx, request.(ListRecipesRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetApiV1Recipes")
+		handler = middleware(handler, "ListRecipes")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(GetApiV1RecipesResponseObject); ok {
-		if err := validResponse.VisitGetApiV1RecipesResponse(w); err != nil {
+	} else if validResponse, ok := response.(ListRecipesResponseObject); ok {
+		if err := validResponse.VisitListRecipesResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -1406,11 +1308,11 @@ func (sh *strictHandler) GetApiV1Recipes(w http.ResponseWriter, r *http.Request,
 	}
 }
 
-// PostApiV1Recipes operation middleware
-func (sh *strictHandler) PostApiV1Recipes(w http.ResponseWriter, r *http.Request) {
-	var request PostApiV1RecipesRequestObject
+// CreateRecipe operation middleware
+func (sh *strictHandler) CreateRecipe(w http.ResponseWriter, r *http.Request) {
+	var request CreateRecipeRequestObject
 
-	var body PostApiV1RecipesJSONRequestBody
+	var body CreateRecipeJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
 		return
@@ -1418,18 +1320,18 @@ func (sh *strictHandler) PostApiV1Recipes(w http.ResponseWriter, r *http.Request
 	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.PostApiV1Recipes(ctx, request.(PostApiV1RecipesRequestObject))
+		return sh.ssi.CreateRecipe(ctx, request.(CreateRecipeRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PostApiV1Recipes")
+		handler = middleware(handler, "CreateRecipe")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(PostApiV1RecipesResponseObject); ok {
-		if err := validResponse.VisitPostApiV1RecipesResponse(w); err != nil {
+	} else if validResponse, ok := response.(CreateRecipeResponseObject); ok {
+		if err := validResponse.VisitCreateRecipeResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -1437,25 +1339,25 @@ func (sh *strictHandler) PostApiV1Recipes(w http.ResponseWriter, r *http.Request
 	}
 }
 
-// DeleteApiV1RecipesRecipeId operation middleware
-func (sh *strictHandler) DeleteApiV1RecipesRecipeId(w http.ResponseWriter, r *http.Request, recipeId string) {
-	var request DeleteApiV1RecipesRecipeIdRequestObject
+// DeleteRecipe operation middleware
+func (sh *strictHandler) DeleteRecipe(w http.ResponseWriter, r *http.Request, recipeId string) {
+	var request DeleteRecipeRequestObject
 
 	request.RecipeId = recipeId
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.DeleteApiV1RecipesRecipeId(ctx, request.(DeleteApiV1RecipesRecipeIdRequestObject))
+		return sh.ssi.DeleteRecipe(ctx, request.(DeleteRecipeRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "DeleteApiV1RecipesRecipeId")
+		handler = middleware(handler, "DeleteRecipe")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(DeleteApiV1RecipesRecipeIdResponseObject); ok {
-		if err := validResponse.VisitDeleteApiV1RecipesRecipeIdResponse(w); err != nil {
+	} else if validResponse, ok := response.(DeleteRecipeResponseObject); ok {
+		if err := validResponse.VisitDeleteRecipeResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -1463,25 +1365,25 @@ func (sh *strictHandler) DeleteApiV1RecipesRecipeId(w http.ResponseWriter, r *ht
 	}
 }
 
-// GetApiV1RecipesRecipeId operation middleware
-func (sh *strictHandler) GetApiV1RecipesRecipeId(w http.ResponseWriter, r *http.Request, recipeId string) {
-	var request GetApiV1RecipesRecipeIdRequestObject
+// GetRecipe operation middleware
+func (sh *strictHandler) GetRecipe(w http.ResponseWriter, r *http.Request, recipeId string) {
+	var request GetRecipeRequestObject
 
 	request.RecipeId = recipeId
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.GetApiV1RecipesRecipeId(ctx, request.(GetApiV1RecipesRecipeIdRequestObject))
+		return sh.ssi.GetRecipe(ctx, request.(GetRecipeRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetApiV1RecipesRecipeId")
+		handler = middleware(handler, "GetRecipe")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(GetApiV1RecipesRecipeIdResponseObject); ok {
-		if err := validResponse.VisitGetApiV1RecipesRecipeIdResponse(w); err != nil {
+	} else if validResponse, ok := response.(GetRecipeResponseObject); ok {
+		if err := validResponse.VisitGetRecipeResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -1489,13 +1391,13 @@ func (sh *strictHandler) GetApiV1RecipesRecipeId(w http.ResponseWriter, r *http.
 	}
 }
 
-// PatchApiV1RecipesRecipeId operation middleware
-func (sh *strictHandler) PatchApiV1RecipesRecipeId(w http.ResponseWriter, r *http.Request, recipeId string) {
-	var request PatchApiV1RecipesRecipeIdRequestObject
+// UpdateRecipe operation middleware
+func (sh *strictHandler) UpdateRecipe(w http.ResponseWriter, r *http.Request, recipeId string) {
+	var request UpdateRecipeRequestObject
 
 	request.RecipeId = recipeId
 
-	var body PatchApiV1RecipesRecipeIdJSONRequestBody
+	var body UpdateRecipeJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
 		return
@@ -1503,18 +1405,18 @@ func (sh *strictHandler) PatchApiV1RecipesRecipeId(w http.ResponseWriter, r *htt
 	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.PatchApiV1RecipesRecipeId(ctx, request.(PatchApiV1RecipesRecipeIdRequestObject))
+		return sh.ssi.UpdateRecipe(ctx, request.(UpdateRecipeRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PatchApiV1RecipesRecipeId")
+		handler = middleware(handler, "UpdateRecipe")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(PatchApiV1RecipesRecipeIdResponseObject); ok {
-		if err := validResponse.VisitPatchApiV1RecipesRecipeIdResponse(w); err != nil {
+	} else if validResponse, ok := response.(UpdateRecipeResponseObject); ok {
+		if err := validResponse.VisitUpdateRecipeResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -1522,42 +1424,9 @@ func (sh *strictHandler) PatchApiV1RecipesRecipeId(w http.ResponseWriter, r *htt
 	}
 }
 
-// PutApiV1RecipesRecipeId operation middleware
-func (sh *strictHandler) PutApiV1RecipesRecipeId(w http.ResponseWriter, r *http.Request, recipeId string) {
-	var request PutApiV1RecipesRecipeIdRequestObject
-
-	request.RecipeId = recipeId
-
-	var body PutApiV1RecipesRecipeIdJSONRequestBody
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.PutApiV1RecipesRecipeId(ctx, request.(PutApiV1RecipesRecipeIdRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PutApiV1RecipesRecipeId")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(PutApiV1RecipesRecipeIdResponseObject); ok {
-		if err := validResponse.VisitPutApiV1RecipesRecipeIdResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// PostApiV1UploadsImages operation middleware
-func (sh *strictHandler) PostApiV1UploadsImages(w http.ResponseWriter, r *http.Request) {
-	var request PostApiV1UploadsImagesRequestObject
+// UploadImage operation middleware
+func (sh *strictHandler) UploadImage(w http.ResponseWriter, r *http.Request) {
+	var request UploadImageRequestObject
 
 	if reader, err := r.MultipartReader(); err != nil {
 		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode multipart body: %w", err))
@@ -1567,18 +1436,18 @@ func (sh *strictHandler) PostApiV1UploadsImages(w http.ResponseWriter, r *http.R
 	}
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.PostApiV1UploadsImages(ctx, request.(PostApiV1UploadsImagesRequestObject))
+		return sh.ssi.UploadImage(ctx, request.(UploadImageRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PostApiV1UploadsImages")
+		handler = middleware(handler, "UploadImage")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(PostApiV1UploadsImagesResponseObject); ok {
-		if err := validResponse.VisitPostApiV1UploadsImagesResponse(w); err != nil {
+	} else if validResponse, ok := response.(UploadImageResponseObject); ok {
+		if err := validResponse.VisitUploadImageResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -1586,25 +1455,25 @@ func (sh *strictHandler) PostApiV1UploadsImages(w http.ResponseWriter, r *http.R
 	}
 }
 
-// GetApiV1UploadsImagesImageId operation middleware
-func (sh *strictHandler) GetApiV1UploadsImagesImageId(w http.ResponseWriter, r *http.Request, imageId string) {
-	var request GetApiV1UploadsImagesImageIdRequestObject
+// GetImage operation middleware
+func (sh *strictHandler) GetImage(w http.ResponseWriter, r *http.Request, imageId string) {
+	var request GetImageRequestObject
 
 	request.ImageId = imageId
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.GetApiV1UploadsImagesImageId(ctx, request.(GetApiV1UploadsImagesImageIdRequestObject))
+		return sh.ssi.GetImage(ctx, request.(GetImageRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetApiV1UploadsImagesImageId")
+		handler = middleware(handler, "GetImage")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(GetApiV1UploadsImagesImageIdResponseObject); ok {
-		if err := validResponse.VisitGetApiV1UploadsImagesImageIdResponse(w); err != nil {
+	} else if validResponse, ok := response.(GetImageResponseObject); ok {
+		if err := validResponse.VisitGetImageResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -1612,23 +1481,23 @@ func (sh *strictHandler) GetApiV1UploadsImagesImageId(w http.ResponseWriter, r *
 	}
 }
 
-// GetHealth operation middleware
-func (sh *strictHandler) GetHealth(w http.ResponseWriter, r *http.Request) {
-	var request GetHealthRequestObject
+// HealthCheck operation middleware
+func (sh *strictHandler) HealthCheck(w http.ResponseWriter, r *http.Request) {
+	var request HealthCheckRequestObject
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.GetHealth(ctx, request.(GetHealthRequestObject))
+		return sh.ssi.HealthCheck(ctx, request.(HealthCheckRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetHealth")
+		handler = middleware(handler, "HealthCheck")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(GetHealthResponseObject); ok {
-		if err := validResponse.VisitGetHealthResponse(w); err != nil {
+	} else if validResponse, ok := response.(HealthCheckResponseObject); ok {
+		if err := validResponse.VisitHealthCheckResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -1639,56 +1508,54 @@ func (sh *strictHandler) GetHealth(w http.ResponseWriter, r *http.Request) {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"AAD//7q8s4cpPwAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

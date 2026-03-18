@@ -15,8 +15,8 @@ import (
 
 func SeedRecipes(ctx context.Context, recipeService *recipe.Service, userID string, filePath string) error {
 	recipes, err := recipeService.ListRecipes(ctx, userID, models.ListRecipesParams{
-		Page:  new(int32(1)),
-		Limit: new(int32(1)),
+		Page:  new(models.PageParam(1)),
+		Limit: new(models.LimitParam(1)),
 	})
 	if err != nil {
 		return fmt.Errorf("list recipes: %w", err)

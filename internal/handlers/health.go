@@ -4,6 +4,6 @@ import (
 	"context"
 )
 
-func (s *ServerHandler) GetHealth(ctx context.Context, request GetHealthRequestObject) (GetHealthResponseObject, error) {
-	return GetHealth200TextResponse("OK"), nil
+func (s *ServerHandler) HealthCheck(ctx context.Context, request HealthCheckRequestObject) (HealthCheckResponseObject, error) {
+	return HealthCheck200TextResponse("OK"), nil
 }

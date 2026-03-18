@@ -369,43 +369,6 @@ func scanRecipe(s scanner) (models.Recipe, error) {
 	return recipe, err
 }
 
-func (r *Repository) PatchRecipe(ctx context.Context, userID, recipeID string, request models.PatchRecipeRequest) (models.Recipe, error) {
-	update := r.psql.Update(recipesTable).Where(sq.Eq{"id": recipeID})
-
-	if request.Title != nil {
-		update = update.Set("title", *request.Title)
-	}
-	if request.Description != nil {
-		update = update.Set("description", *request.Description)
-	}
-	if request.ImageId != nil {
-		update = update.Set("image_id", *request.ImageId)
-	}
-	if request.BrewMethod != nil {
-		update = update.Set("brew_method", *request.BrewMethod)
-	}
-	if request.Difficulty != nil {
-		update = update.Set("difficulty", *request.Difficulty)
-	}
-	if request.RoastLevel != nil {
-		update = update.Set("roast_level", *request.RoastLevel)
-	}
-	if request.Beans != nil {
-		update = update.Set("beans", *request.Beans)
-	}
-	if request.Public != nil {
-		update = update.Set("public", *request.Public)
-	}
-
-	update.Set("updated_at", time.Now().UTC())
-
-	if _, err := update.RunWith(r.runner).ExecContext(ctx); err != nil {
-		return models.Recipe{}, err
-	}
-
-	return r.GetRecipeByID(ctx, recipeID)
-}
-
 func (r *Repository) DeleteRecipe(ctx context.Context, userID, recipeID string) error {
 	query := r.psql.Delete(recipesTable).Where(sq.And{
 		sq.Eq{"author_id": userID},

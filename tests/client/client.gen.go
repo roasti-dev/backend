@@ -22,14 +22,14 @@ const (
 	BearerAuthScopes = "BearerAuth.Scopes"
 )
 
-// Defines values for GetApiV1RecipesParamsListRecipesSortDirection.
+// Defines values for ListRecipesParamsListRecipesSortDirection.
 const (
-	Asc  GetApiV1RecipesParamsListRecipesSortDirection = "asc"
-	Desc GetApiV1RecipesParamsListRecipesSortDirection = "desc"
+	Asc  ListRecipesParamsListRecipesSortDirection = "asc"
+	Desc ListRecipesParamsListRecipesSortDirection = "desc"
 )
 
-// Valid indicates whether the value is a known member of the GetApiV1RecipesParamsListRecipesSortDirection enum.
-func (e GetApiV1RecipesParamsListRecipesSortDirection) Valid() bool {
+// Valid indicates whether the value is a known member of the ListRecipesParamsListRecipesSortDirection enum.
+func (e ListRecipesParamsListRecipesSortDirection) Valid() bool {
 	switch e {
 	case Asc:
 		return true
@@ -40,14 +40,14 @@ func (e GetApiV1RecipesParamsListRecipesSortDirection) Valid() bool {
 	}
 }
 
-// Defines values for GetApiV1RecipesParamsListRecipesSortField.
+// Defines values for ListRecipesParamsListRecipesSortField.
 const (
-	CreatedAt GetApiV1RecipesParamsListRecipesSortField = "created_at"
-	Title     GetApiV1RecipesParamsListRecipesSortField = "title"
+	CreatedAt ListRecipesParamsListRecipesSortField = "created_at"
+	Title     ListRecipesParamsListRecipesSortField = "title"
 )
 
-// Valid indicates whether the value is a known member of the GetApiV1RecipesParamsListRecipesSortField enum.
-func (e GetApiV1RecipesParamsListRecipesSortField) Valid() bool {
+// Valid indicates whether the value is a known member of the ListRecipesParamsListRecipesSortField enum.
+func (e ListRecipesParamsListRecipesSortField) Valid() bool {
 	switch e {
 	case CreatedAt:
 		return true
@@ -58,57 +58,48 @@ func (e GetApiV1RecipesParamsListRecipesSortField) Valid() bool {
 	}
 }
 
-// CreateRecipeResponse Coffee brewing recipe
-type CreateRecipeResponse = externalRef0.Recipe
-
 // RecipePage defines model for RecipePage.
 type RecipePage struct {
 	Items      []externalRef0.Recipe       `json:"items"`
 	Pagination externalRef0.PaginationMeta `json:"pagination"`
 }
 
-// UpdateRecipeResponse Coffee brewing recipe
-type UpdateRecipeResponse = externalRef0.Recipe
-
-// GetApiV1RecipesParams defines parameters for GetApiV1Recipes.
-type GetApiV1RecipesParams struct {
+// ListRecipesParams defines parameters for ListRecipes.
+type ListRecipesParams struct {
 	ListRecipes *externalRef0.ListRecipesParams `form:"listRecipes,omitempty" json:"listRecipes,omitempty"`
 }
 
-// GetApiV1RecipesParamsListRecipesSortDirection defines parameters for GetApiV1Recipes.
-type GetApiV1RecipesParamsListRecipesSortDirection string
+// ListRecipesParamsListRecipesSortDirection defines parameters for ListRecipes.
+type ListRecipesParamsListRecipesSortDirection string
 
-// GetApiV1RecipesParamsListRecipesSortField defines parameters for GetApiV1Recipes.
-type GetApiV1RecipesParamsListRecipesSortField string
+// ListRecipesParamsListRecipesSortField defines parameters for ListRecipes.
+type ListRecipesParamsListRecipesSortField string
 
-// PostApiV1UploadsImagesMultipartBody defines parameters for PostApiV1UploadsImages.
-type PostApiV1UploadsImagesMultipartBody struct {
+// UploadImageMultipartBody defines parameters for UploadImage.
+type UploadImageMultipartBody struct {
 	File openapi_types.File `json:"file"`
 }
 
-// PostApiV1AuthLoginJSONRequestBody defines body for PostApiV1AuthLogin for application/json ContentType.
-type PostApiV1AuthLoginJSONRequestBody = externalRef0.LoginRequest
+// LoginUserJSONRequestBody defines body for LoginUser for application/json ContentType.
+type LoginUserJSONRequestBody = externalRef0.LoginRequest
 
-// PostApiV1AuthLogoutJSONRequestBody defines body for PostApiV1AuthLogout for application/json ContentType.
-type PostApiV1AuthLogoutJSONRequestBody = externalRef0.LogoutRequest
+// LogoutUserJSONRequestBody defines body for LogoutUser for application/json ContentType.
+type LogoutUserJSONRequestBody = externalRef0.LogoutRequest
 
-// PostApiV1AuthRefreshJSONRequestBody defines body for PostApiV1AuthRefresh for application/json ContentType.
-type PostApiV1AuthRefreshJSONRequestBody = externalRef0.RefreshRequest
+// RefreshTokenJSONRequestBody defines body for RefreshToken for application/json ContentType.
+type RefreshTokenJSONRequestBody = externalRef0.RefreshRequest
 
-// PostApiV1AuthRegisterJSONRequestBody defines body for PostApiV1AuthRegister for application/json ContentType.
-type PostApiV1AuthRegisterJSONRequestBody = externalRef0.RegisterRequest
+// RegisterUserJSONRequestBody defines body for RegisterUser for application/json ContentType.
+type RegisterUserJSONRequestBody = externalRef0.RegisterRequest
 
-// PostApiV1RecipesJSONRequestBody defines body for PostApiV1Recipes for application/json ContentType.
-type PostApiV1RecipesJSONRequestBody = externalRef0.CreateRecipeRequest
+// CreateRecipeJSONRequestBody defines body for CreateRecipe for application/json ContentType.
+type CreateRecipeJSONRequestBody = externalRef0.CreateRecipeRequest
 
-// PatchApiV1RecipesRecipeIdJSONRequestBody defines body for PatchApiV1RecipesRecipeId for application/json ContentType.
-type PatchApiV1RecipesRecipeIdJSONRequestBody = externalRef0.PatchRecipeRequest
+// UpdateRecipeJSONRequestBody defines body for UpdateRecipe for application/json ContentType.
+type UpdateRecipeJSONRequestBody = externalRef0.UpdateRecipeRequest
 
-// PutApiV1RecipesRecipeIdJSONRequestBody defines body for PutApiV1RecipesRecipeId for application/json ContentType.
-type PutApiV1RecipesRecipeIdJSONRequestBody = externalRef0.UpdateRecipeRequest
-
-// PostApiV1UploadsImagesMultipartRequestBody defines body for PostApiV1UploadsImages for multipart/form-data ContentType.
-type PostApiV1UploadsImagesMultipartRequestBody PostApiV1UploadsImagesMultipartBody
+// UploadImageMultipartRequestBody defines body for UploadImage for multipart/form-data ContentType.
+type UploadImageMultipartRequestBody UploadImageMultipartBody
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -183,65 +174,60 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
-	// PostApiV1AuthLoginWithBody request with any body
-	PostApiV1AuthLoginWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// LoginUserWithBody request with any body
+	LoginUserWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	PostApiV1AuthLogin(ctx context.Context, body PostApiV1AuthLoginJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	LoginUser(ctx context.Context, body LoginUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// PostApiV1AuthLogoutWithBody request with any body
-	PostApiV1AuthLogoutWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// LogoutUserWithBody request with any body
+	LogoutUserWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	PostApiV1AuthLogout(ctx context.Context, body PostApiV1AuthLogoutJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	LogoutUser(ctx context.Context, body LogoutUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// PostApiV1AuthRefreshWithBody request with any body
-	PostApiV1AuthRefreshWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// RefreshTokenWithBody request with any body
+	RefreshTokenWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	PostApiV1AuthRefresh(ctx context.Context, body PostApiV1AuthRefreshJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	RefreshToken(ctx context.Context, body RefreshTokenJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// PostApiV1AuthRegisterWithBody request with any body
-	PostApiV1AuthRegisterWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// RegisterUserWithBody request with any body
+	RegisterUserWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	PostApiV1AuthRegister(ctx context.Context, body PostApiV1AuthRegisterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	RegisterUser(ctx context.Context, body RegisterUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetApiV1ProfilesMe request
-	GetApiV1ProfilesMe(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetMyProfile request
+	GetMyProfile(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetApiV1Recipes request
-	GetApiV1Recipes(ctx context.Context, params *GetApiV1RecipesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// ListRecipes request
+	ListRecipes(ctx context.Context, params *ListRecipesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// PostApiV1RecipesWithBody request with any body
-	PostApiV1RecipesWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// CreateRecipeWithBody request with any body
+	CreateRecipeWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	PostApiV1Recipes(ctx context.Context, body PostApiV1RecipesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CreateRecipe(ctx context.Context, body CreateRecipeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// DeleteApiV1RecipesRecipeId request
-	DeleteApiV1RecipesRecipeId(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// DeleteRecipe request
+	DeleteRecipe(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetApiV1RecipesRecipeId request
-	GetApiV1RecipesRecipeId(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetRecipe request
+	GetRecipe(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// PatchApiV1RecipesRecipeIdWithBody request with any body
-	PatchApiV1RecipesRecipeIdWithBody(ctx context.Context, recipeId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// UpdateRecipeWithBody request with any body
+	UpdateRecipeWithBody(ctx context.Context, recipeId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	PatchApiV1RecipesRecipeId(ctx context.Context, recipeId string, body PatchApiV1RecipesRecipeIdJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateRecipe(ctx context.Context, recipeId string, body UpdateRecipeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// PutApiV1RecipesRecipeIdWithBody request with any body
-	PutApiV1RecipesRecipeIdWithBody(ctx context.Context, recipeId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// UploadImageWithBody request with any body
+	UploadImageWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	PutApiV1RecipesRecipeId(ctx context.Context, recipeId string, body PutApiV1RecipesRecipeIdJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetImage request
+	GetImage(ctx context.Context, imageId string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// PostApiV1UploadsImagesWithBody request with any body
-	PostApiV1UploadsImagesWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetApiV1UploadsImagesImageId request
-	GetApiV1UploadsImagesImageId(ctx context.Context, imageId string, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetHealth request
-	GetHealth(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// HealthCheck request
+	HealthCheck(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
-func (c *Client) PostApiV1AuthLoginWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostApiV1AuthLoginRequestWithBody(c.Server, contentType, body)
+func (c *Client) LoginUserWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewLoginUserRequestWithBody(c.Server, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -252,8 +238,8 @@ func (c *Client) PostApiV1AuthLoginWithBody(ctx context.Context, contentType str
 	return c.Client.Do(req)
 }
 
-func (c *Client) PostApiV1AuthLogin(ctx context.Context, body PostApiV1AuthLoginJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostApiV1AuthLoginRequest(c.Server, body)
+func (c *Client) LoginUser(ctx context.Context, body LoginUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewLoginUserRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -264,8 +250,8 @@ func (c *Client) PostApiV1AuthLogin(ctx context.Context, body PostApiV1AuthLogin
 	return c.Client.Do(req)
 }
 
-func (c *Client) PostApiV1AuthLogoutWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostApiV1AuthLogoutRequestWithBody(c.Server, contentType, body)
+func (c *Client) LogoutUserWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewLogoutUserRequestWithBody(c.Server, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -276,8 +262,8 @@ func (c *Client) PostApiV1AuthLogoutWithBody(ctx context.Context, contentType st
 	return c.Client.Do(req)
 }
 
-func (c *Client) PostApiV1AuthLogout(ctx context.Context, body PostApiV1AuthLogoutJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostApiV1AuthLogoutRequest(c.Server, body)
+func (c *Client) LogoutUser(ctx context.Context, body LogoutUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewLogoutUserRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -288,8 +274,8 @@ func (c *Client) PostApiV1AuthLogout(ctx context.Context, body PostApiV1AuthLogo
 	return c.Client.Do(req)
 }
 
-func (c *Client) PostApiV1AuthRefreshWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostApiV1AuthRefreshRequestWithBody(c.Server, contentType, body)
+func (c *Client) RefreshTokenWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRefreshTokenRequestWithBody(c.Server, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -300,8 +286,8 @@ func (c *Client) PostApiV1AuthRefreshWithBody(ctx context.Context, contentType s
 	return c.Client.Do(req)
 }
 
-func (c *Client) PostApiV1AuthRefresh(ctx context.Context, body PostApiV1AuthRefreshJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostApiV1AuthRefreshRequest(c.Server, body)
+func (c *Client) RefreshToken(ctx context.Context, body RefreshTokenJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRefreshTokenRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -312,8 +298,8 @@ func (c *Client) PostApiV1AuthRefresh(ctx context.Context, body PostApiV1AuthRef
 	return c.Client.Do(req)
 }
 
-func (c *Client) PostApiV1AuthRegisterWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostApiV1AuthRegisterRequestWithBody(c.Server, contentType, body)
+func (c *Client) RegisterUserWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRegisterUserRequestWithBody(c.Server, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -324,8 +310,8 @@ func (c *Client) PostApiV1AuthRegisterWithBody(ctx context.Context, contentType 
 	return c.Client.Do(req)
 }
 
-func (c *Client) PostApiV1AuthRegister(ctx context.Context, body PostApiV1AuthRegisterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostApiV1AuthRegisterRequest(c.Server, body)
+func (c *Client) RegisterUser(ctx context.Context, body RegisterUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRegisterUserRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -336,8 +322,8 @@ func (c *Client) PostApiV1AuthRegister(ctx context.Context, body PostApiV1AuthRe
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetApiV1ProfilesMe(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetApiV1ProfilesMeRequest(c.Server)
+func (c *Client) GetMyProfile(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetMyProfileRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -348,8 +334,8 @@ func (c *Client) GetApiV1ProfilesMe(ctx context.Context, reqEditors ...RequestEd
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetApiV1Recipes(ctx context.Context, params *GetApiV1RecipesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetApiV1RecipesRequest(c.Server, params)
+func (c *Client) ListRecipes(ctx context.Context, params *ListRecipesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListRecipesRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -360,8 +346,8 @@ func (c *Client) GetApiV1Recipes(ctx context.Context, params *GetApiV1RecipesPar
 	return c.Client.Do(req)
 }
 
-func (c *Client) PostApiV1RecipesWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostApiV1RecipesRequestWithBody(c.Server, contentType, body)
+func (c *Client) CreateRecipeWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateRecipeRequestWithBody(c.Server, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -372,8 +358,8 @@ func (c *Client) PostApiV1RecipesWithBody(ctx context.Context, contentType strin
 	return c.Client.Do(req)
 }
 
-func (c *Client) PostApiV1Recipes(ctx context.Context, body PostApiV1RecipesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostApiV1RecipesRequest(c.Server, body)
+func (c *Client) CreateRecipe(ctx context.Context, body CreateRecipeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateRecipeRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -384,8 +370,8 @@ func (c *Client) PostApiV1Recipes(ctx context.Context, body PostApiV1RecipesJSON
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteApiV1RecipesRecipeId(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteApiV1RecipesRecipeIdRequest(c.Server, recipeId)
+func (c *Client) DeleteRecipe(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteRecipeRequest(c.Server, recipeId)
 	if err != nil {
 		return nil, err
 	}
@@ -396,8 +382,8 @@ func (c *Client) DeleteApiV1RecipesRecipeId(ctx context.Context, recipeId string
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetApiV1RecipesRecipeId(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetApiV1RecipesRecipeIdRequest(c.Server, recipeId)
+func (c *Client) GetRecipe(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetRecipeRequest(c.Server, recipeId)
 	if err != nil {
 		return nil, err
 	}
@@ -408,8 +394,8 @@ func (c *Client) GetApiV1RecipesRecipeId(ctx context.Context, recipeId string, r
 	return c.Client.Do(req)
 }
 
-func (c *Client) PatchApiV1RecipesRecipeIdWithBody(ctx context.Context, recipeId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPatchApiV1RecipesRecipeIdRequestWithBody(c.Server, recipeId, contentType, body)
+func (c *Client) UpdateRecipeWithBody(ctx context.Context, recipeId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateRecipeRequestWithBody(c.Server, recipeId, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -420,8 +406,8 @@ func (c *Client) PatchApiV1RecipesRecipeIdWithBody(ctx context.Context, recipeId
 	return c.Client.Do(req)
 }
 
-func (c *Client) PatchApiV1RecipesRecipeId(ctx context.Context, recipeId string, body PatchApiV1RecipesRecipeIdJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPatchApiV1RecipesRecipeIdRequest(c.Server, recipeId, body)
+func (c *Client) UpdateRecipe(ctx context.Context, recipeId string, body UpdateRecipeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateRecipeRequest(c.Server, recipeId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -432,8 +418,8 @@ func (c *Client) PatchApiV1RecipesRecipeId(ctx context.Context, recipeId string,
 	return c.Client.Do(req)
 }
 
-func (c *Client) PutApiV1RecipesRecipeIdWithBody(ctx context.Context, recipeId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPutApiV1RecipesRecipeIdRequestWithBody(c.Server, recipeId, contentType, body)
+func (c *Client) UploadImageWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUploadImageRequestWithBody(c.Server, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -444,8 +430,8 @@ func (c *Client) PutApiV1RecipesRecipeIdWithBody(ctx context.Context, recipeId s
 	return c.Client.Do(req)
 }
 
-func (c *Client) PutApiV1RecipesRecipeId(ctx context.Context, recipeId string, body PutApiV1RecipesRecipeIdJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPutApiV1RecipesRecipeIdRequest(c.Server, recipeId, body)
+func (c *Client) GetImage(ctx context.Context, imageId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetImageRequest(c.Server, imageId)
 	if err != nil {
 		return nil, err
 	}
@@ -456,8 +442,8 @@ func (c *Client) PutApiV1RecipesRecipeId(ctx context.Context, recipeId string, b
 	return c.Client.Do(req)
 }
 
-func (c *Client) PostApiV1UploadsImagesWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostApiV1UploadsImagesRequestWithBody(c.Server, contentType, body)
+func (c *Client) HealthCheck(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewHealthCheckRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -468,43 +454,19 @@ func (c *Client) PostApiV1UploadsImagesWithBody(ctx context.Context, contentType
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetApiV1UploadsImagesImageId(ctx context.Context, imageId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetApiV1UploadsImagesImageIdRequest(c.Server, imageId)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) GetHealth(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetHealthRequest(c.Server)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-// NewPostApiV1AuthLoginRequest calls the generic PostApiV1AuthLogin builder with application/json body
-func NewPostApiV1AuthLoginRequest(server string, body PostApiV1AuthLoginJSONRequestBody) (*http.Request, error) {
+// NewLoginUserRequest calls the generic LoginUser builder with application/json body
+func NewLoginUserRequest(server string, body LoginUserJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewPostApiV1AuthLoginRequestWithBody(server, "application/json", bodyReader)
+	return NewLoginUserRequestWithBody(server, "application/json", bodyReader)
 }
 
-// NewPostApiV1AuthLoginRequestWithBody generates requests for PostApiV1AuthLogin with any type of body
-func NewPostApiV1AuthLoginRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+// NewLoginUserRequestWithBody generates requests for LoginUser with any type of body
+func NewLoginUserRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -532,19 +494,19 @@ func NewPostApiV1AuthLoginRequestWithBody(server string, contentType string, bod
 	return req, nil
 }
 
-// NewPostApiV1AuthLogoutRequest calls the generic PostApiV1AuthLogout builder with application/json body
-func NewPostApiV1AuthLogoutRequest(server string, body PostApiV1AuthLogoutJSONRequestBody) (*http.Request, error) {
+// NewLogoutUserRequest calls the generic LogoutUser builder with application/json body
+func NewLogoutUserRequest(server string, body LogoutUserJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewPostApiV1AuthLogoutRequestWithBody(server, "application/json", bodyReader)
+	return NewLogoutUserRequestWithBody(server, "application/json", bodyReader)
 }
 
-// NewPostApiV1AuthLogoutRequestWithBody generates requests for PostApiV1AuthLogout with any type of body
-func NewPostApiV1AuthLogoutRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+// NewLogoutUserRequestWithBody generates requests for LogoutUser with any type of body
+func NewLogoutUserRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -572,19 +534,19 @@ func NewPostApiV1AuthLogoutRequestWithBody(server string, contentType string, bo
 	return req, nil
 }
 
-// NewPostApiV1AuthRefreshRequest calls the generic PostApiV1AuthRefresh builder with application/json body
-func NewPostApiV1AuthRefreshRequest(server string, body PostApiV1AuthRefreshJSONRequestBody) (*http.Request, error) {
+// NewRefreshTokenRequest calls the generic RefreshToken builder with application/json body
+func NewRefreshTokenRequest(server string, body RefreshTokenJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewPostApiV1AuthRefreshRequestWithBody(server, "application/json", bodyReader)
+	return NewRefreshTokenRequestWithBody(server, "application/json", bodyReader)
 }
 
-// NewPostApiV1AuthRefreshRequestWithBody generates requests for PostApiV1AuthRefresh with any type of body
-func NewPostApiV1AuthRefreshRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+// NewRefreshTokenRequestWithBody generates requests for RefreshToken with any type of body
+func NewRefreshTokenRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -612,19 +574,19 @@ func NewPostApiV1AuthRefreshRequestWithBody(server string, contentType string, b
 	return req, nil
 }
 
-// NewPostApiV1AuthRegisterRequest calls the generic PostApiV1AuthRegister builder with application/json body
-func NewPostApiV1AuthRegisterRequest(server string, body PostApiV1AuthRegisterJSONRequestBody) (*http.Request, error) {
+// NewRegisterUserRequest calls the generic RegisterUser builder with application/json body
+func NewRegisterUserRequest(server string, body RegisterUserJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewPostApiV1AuthRegisterRequestWithBody(server, "application/json", bodyReader)
+	return NewRegisterUserRequestWithBody(server, "application/json", bodyReader)
 }
 
-// NewPostApiV1AuthRegisterRequestWithBody generates requests for PostApiV1AuthRegister with any type of body
-func NewPostApiV1AuthRegisterRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+// NewRegisterUserRequestWithBody generates requests for RegisterUser with any type of body
+func NewRegisterUserRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -652,8 +614,8 @@ func NewPostApiV1AuthRegisterRequestWithBody(server string, contentType string, 
 	return req, nil
 }
 
-// NewGetApiV1ProfilesMeRequest generates requests for GetApiV1ProfilesMe
-func NewGetApiV1ProfilesMeRequest(server string) (*http.Request, error) {
+// NewGetMyProfileRequest generates requests for GetMyProfile
+func NewGetMyProfileRequest(server string) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -679,8 +641,8 @@ func NewGetApiV1ProfilesMeRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
-// NewGetApiV1RecipesRequest generates requests for GetApiV1Recipes
-func NewGetApiV1RecipesRequest(server string, params *GetApiV1RecipesParams) (*http.Request, error) {
+// NewListRecipesRequest generates requests for ListRecipes
+func NewListRecipesRequest(server string, params *ListRecipesParams) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -728,19 +690,19 @@ func NewGetApiV1RecipesRequest(server string, params *GetApiV1RecipesParams) (*h
 	return req, nil
 }
 
-// NewPostApiV1RecipesRequest calls the generic PostApiV1Recipes builder with application/json body
-func NewPostApiV1RecipesRequest(server string, body PostApiV1RecipesJSONRequestBody) (*http.Request, error) {
+// NewCreateRecipeRequest calls the generic CreateRecipe builder with application/json body
+func NewCreateRecipeRequest(server string, body CreateRecipeJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewPostApiV1RecipesRequestWithBody(server, "application/json", bodyReader)
+	return NewCreateRecipeRequestWithBody(server, "application/json", bodyReader)
 }
 
-// NewPostApiV1RecipesRequestWithBody generates requests for PostApiV1Recipes with any type of body
-func NewPostApiV1RecipesRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+// NewCreateRecipeRequestWithBody generates requests for CreateRecipe with any type of body
+func NewCreateRecipeRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -768,8 +730,8 @@ func NewPostApiV1RecipesRequestWithBody(server string, contentType string, body 
 	return req, nil
 }
 
-// NewDeleteApiV1RecipesRecipeIdRequest generates requests for DeleteApiV1RecipesRecipeId
-func NewDeleteApiV1RecipesRecipeIdRequest(server string, recipeId string) (*http.Request, error) {
+// NewDeleteRecipeRequest generates requests for DeleteRecipe
+func NewDeleteRecipeRequest(server string, recipeId string) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -802,8 +764,8 @@ func NewDeleteApiV1RecipesRecipeIdRequest(server string, recipeId string) (*http
 	return req, nil
 }
 
-// NewGetApiV1RecipesRecipeIdRequest generates requests for GetApiV1RecipesRecipeId
-func NewGetApiV1RecipesRecipeIdRequest(server string, recipeId string) (*http.Request, error) {
+// NewGetRecipeRequest generates requests for GetRecipe
+func NewGetRecipeRequest(server string, recipeId string) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -836,66 +798,19 @@ func NewGetApiV1RecipesRecipeIdRequest(server string, recipeId string) (*http.Re
 	return req, nil
 }
 
-// NewPatchApiV1RecipesRecipeIdRequest calls the generic PatchApiV1RecipesRecipeId builder with application/json body
-func NewPatchApiV1RecipesRecipeIdRequest(server string, recipeId string, body PatchApiV1RecipesRecipeIdJSONRequestBody) (*http.Request, error) {
+// NewUpdateRecipeRequest calls the generic UpdateRecipe builder with application/json body
+func NewUpdateRecipeRequest(server string, recipeId string, body UpdateRecipeJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewPatchApiV1RecipesRecipeIdRequestWithBody(server, recipeId, "application/json", bodyReader)
+	return NewUpdateRecipeRequestWithBody(server, recipeId, "application/json", bodyReader)
 }
 
-// NewPatchApiV1RecipesRecipeIdRequestWithBody generates requests for PatchApiV1RecipesRecipeId with any type of body
-func NewPatchApiV1RecipesRecipeIdRequestWithBody(server string, recipeId string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "recipe_id", recipeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api/v1/recipes/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("PATCH", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewPutApiV1RecipesRecipeIdRequest calls the generic PutApiV1RecipesRecipeId builder with application/json body
-func NewPutApiV1RecipesRecipeIdRequest(server string, recipeId string, body PutApiV1RecipesRecipeIdJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewPutApiV1RecipesRecipeIdRequestWithBody(server, recipeId, "application/json", bodyReader)
-}
-
-// NewPutApiV1RecipesRecipeIdRequestWithBody generates requests for PutApiV1RecipesRecipeId with any type of body
-func NewPutApiV1RecipesRecipeIdRequestWithBody(server string, recipeId string, contentType string, body io.Reader) (*http.Request, error) {
+// NewUpdateRecipeRequestWithBody generates requests for UpdateRecipe with any type of body
+func NewUpdateRecipeRequestWithBody(server string, recipeId string, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -930,8 +845,8 @@ func NewPutApiV1RecipesRecipeIdRequestWithBody(server string, recipeId string, c
 	return req, nil
 }
 
-// NewPostApiV1UploadsImagesRequestWithBody generates requests for PostApiV1UploadsImages with any type of body
-func NewPostApiV1UploadsImagesRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+// NewUploadImageRequestWithBody generates requests for UploadImage with any type of body
+func NewUploadImageRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -959,8 +874,8 @@ func NewPostApiV1UploadsImagesRequestWithBody(server string, contentType string,
 	return req, nil
 }
 
-// NewGetApiV1UploadsImagesImageIdRequest generates requests for GetApiV1UploadsImagesImageId
-func NewGetApiV1UploadsImagesImageIdRequest(server string, imageId string) (*http.Request, error) {
+// NewGetImageRequest generates requests for GetImage
+func NewGetImageRequest(server string, imageId string) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -993,8 +908,8 @@ func NewGetApiV1UploadsImagesImageIdRequest(server string, imageId string) (*htt
 	return req, nil
 }
 
-// NewGetHealthRequest generates requests for GetHealth
-func NewGetHealthRequest(server string) (*http.Request, error) {
+// NewHealthCheckRequest generates requests for HealthCheck
+func NewHealthCheckRequest(server string) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -1063,64 +978,59 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
-	// PostApiV1AuthLoginWithBodyWithResponse request with any body
-	PostApiV1AuthLoginWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1AuthLoginResponse, error)
+	// LoginUserWithBodyWithResponse request with any body
+	LoginUserWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*LoginUserResponse, error)
 
-	PostApiV1AuthLoginWithResponse(ctx context.Context, body PostApiV1AuthLoginJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiV1AuthLoginResponse, error)
+	LoginUserWithResponse(ctx context.Context, body LoginUserJSONRequestBody, reqEditors ...RequestEditorFn) (*LoginUserResponse, error)
 
-	// PostApiV1AuthLogoutWithBodyWithResponse request with any body
-	PostApiV1AuthLogoutWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1AuthLogoutResponse, error)
+	// LogoutUserWithBodyWithResponse request with any body
+	LogoutUserWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*LogoutUserResponse, error)
 
-	PostApiV1AuthLogoutWithResponse(ctx context.Context, body PostApiV1AuthLogoutJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiV1AuthLogoutResponse, error)
+	LogoutUserWithResponse(ctx context.Context, body LogoutUserJSONRequestBody, reqEditors ...RequestEditorFn) (*LogoutUserResponse, error)
 
-	// PostApiV1AuthRefreshWithBodyWithResponse request with any body
-	PostApiV1AuthRefreshWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1AuthRefreshResponse, error)
+	// RefreshTokenWithBodyWithResponse request with any body
+	RefreshTokenWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RefreshTokenResponse, error)
 
-	PostApiV1AuthRefreshWithResponse(ctx context.Context, body PostApiV1AuthRefreshJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiV1AuthRefreshResponse, error)
+	RefreshTokenWithResponse(ctx context.Context, body RefreshTokenJSONRequestBody, reqEditors ...RequestEditorFn) (*RefreshTokenResponse, error)
 
-	// PostApiV1AuthRegisterWithBodyWithResponse request with any body
-	PostApiV1AuthRegisterWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1AuthRegisterResponse, error)
+	// RegisterUserWithBodyWithResponse request with any body
+	RegisterUserWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RegisterUserResponse, error)
 
-	PostApiV1AuthRegisterWithResponse(ctx context.Context, body PostApiV1AuthRegisterJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiV1AuthRegisterResponse, error)
+	RegisterUserWithResponse(ctx context.Context, body RegisterUserJSONRequestBody, reqEditors ...RequestEditorFn) (*RegisterUserResponse, error)
 
-	// GetApiV1ProfilesMeWithResponse request
-	GetApiV1ProfilesMeWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1ProfilesMeResponse, error)
+	// GetMyProfileWithResponse request
+	GetMyProfileWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetMyProfileResponse, error)
 
-	// GetApiV1RecipesWithResponse request
-	GetApiV1RecipesWithResponse(ctx context.Context, params *GetApiV1RecipesParams, reqEditors ...RequestEditorFn) (*GetApiV1RecipesResponse, error)
+	// ListRecipesWithResponse request
+	ListRecipesWithResponse(ctx context.Context, params *ListRecipesParams, reqEditors ...RequestEditorFn) (*ListRecipesResponse, error)
 
-	// PostApiV1RecipesWithBodyWithResponse request with any body
-	PostApiV1RecipesWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1RecipesResponse, error)
+	// CreateRecipeWithBodyWithResponse request with any body
+	CreateRecipeWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateRecipeResponse, error)
 
-	PostApiV1RecipesWithResponse(ctx context.Context, body PostApiV1RecipesJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiV1RecipesResponse, error)
+	CreateRecipeWithResponse(ctx context.Context, body CreateRecipeJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateRecipeResponse, error)
 
-	// DeleteApiV1RecipesRecipeIdWithResponse request
-	DeleteApiV1RecipesRecipeIdWithResponse(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*DeleteApiV1RecipesRecipeIdResponse, error)
+	// DeleteRecipeWithResponse request
+	DeleteRecipeWithResponse(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*DeleteRecipeResponse, error)
 
-	// GetApiV1RecipesRecipeIdWithResponse request
-	GetApiV1RecipesRecipeIdWithResponse(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*GetApiV1RecipesRecipeIdResponse, error)
+	// GetRecipeWithResponse request
+	GetRecipeWithResponse(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*GetRecipeResponse, error)
 
-	// PatchApiV1RecipesRecipeIdWithBodyWithResponse request with any body
-	PatchApiV1RecipesRecipeIdWithBodyWithResponse(ctx context.Context, recipeId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchApiV1RecipesRecipeIdResponse, error)
+	// UpdateRecipeWithBodyWithResponse request with any body
+	UpdateRecipeWithBodyWithResponse(ctx context.Context, recipeId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRecipeResponse, error)
 
-	PatchApiV1RecipesRecipeIdWithResponse(ctx context.Context, recipeId string, body PatchApiV1RecipesRecipeIdJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchApiV1RecipesRecipeIdResponse, error)
+	UpdateRecipeWithResponse(ctx context.Context, recipeId string, body UpdateRecipeJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRecipeResponse, error)
 
-	// PutApiV1RecipesRecipeIdWithBodyWithResponse request with any body
-	PutApiV1RecipesRecipeIdWithBodyWithResponse(ctx context.Context, recipeId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutApiV1RecipesRecipeIdResponse, error)
+	// UploadImageWithBodyWithResponse request with any body
+	UploadImageWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadImageResponse, error)
 
-	PutApiV1RecipesRecipeIdWithResponse(ctx context.Context, recipeId string, body PutApiV1RecipesRecipeIdJSONRequestBody, reqEditors ...RequestEditorFn) (*PutApiV1RecipesRecipeIdResponse, error)
+	// GetImageWithResponse request
+	GetImageWithResponse(ctx context.Context, imageId string, reqEditors ...RequestEditorFn) (*GetImageResponse, error)
 
-	// PostApiV1UploadsImagesWithBodyWithResponse request with any body
-	PostApiV1UploadsImagesWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1UploadsImagesResponse, error)
-
-	// GetApiV1UploadsImagesImageIdWithResponse request
-	GetApiV1UploadsImagesImageIdWithResponse(ctx context.Context, imageId string, reqEditors ...RequestEditorFn) (*GetApiV1UploadsImagesImageIdResponse, error)
-
-	// GetHealthWithResponse request
-	GetHealthWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetHealthResponse, error)
+	// HealthCheckWithResponse request
+	HealthCheckWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*HealthCheckResponse, error)
 }
 
-type PostApiV1AuthLoginResponse struct {
+type LoginUserResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *externalRef0.AuthResponse
@@ -1129,7 +1039,7 @@ type PostApiV1AuthLoginResponse struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r PostApiV1AuthLoginResponse) Status() string {
+func (r LoginUserResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -1137,20 +1047,20 @@ func (r PostApiV1AuthLoginResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r PostApiV1AuthLoginResponse) StatusCode() int {
+func (r LoginUserResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type PostApiV1AuthLogoutResponse struct {
+type LogoutUserResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 }
 
 // Status returns HTTPResponse.Status
-func (r PostApiV1AuthLogoutResponse) Status() string {
+func (r LogoutUserResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -1158,14 +1068,14 @@ func (r PostApiV1AuthLogoutResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r PostApiV1AuthLogoutResponse) StatusCode() int {
+func (r LogoutUserResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type PostApiV1AuthRefreshResponse struct {
+type RefreshTokenResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *externalRef0.TokensResponse
@@ -1173,7 +1083,7 @@ type PostApiV1AuthRefreshResponse struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r PostApiV1AuthRefreshResponse) Status() string {
+func (r RefreshTokenResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -1181,14 +1091,14 @@ func (r PostApiV1AuthRefreshResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r PostApiV1AuthRefreshResponse) StatusCode() int {
+func (r RefreshTokenResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type PostApiV1AuthRegisterResponse struct {
+type RegisterUserResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON201      *externalRef0.AuthResponse
@@ -1198,7 +1108,7 @@ type PostApiV1AuthRegisterResponse struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r PostApiV1AuthRegisterResponse) Status() string {
+func (r RegisterUserResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -1206,21 +1116,21 @@ func (r PostApiV1AuthRegisterResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r PostApiV1AuthRegisterResponse) StatusCode() int {
+func (r RegisterUserResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type GetApiV1ProfilesMeResponse struct {
+type GetMyProfileResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *externalRef0.MyProfile
 }
 
 // Status returns HTTPResponse.Status
-func (r GetApiV1ProfilesMeResponse) Status() string {
+func (r GetMyProfileResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -1228,21 +1138,21 @@ func (r GetApiV1ProfilesMeResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r GetApiV1ProfilesMeResponse) StatusCode() int {
+func (r GetMyProfileResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type GetApiV1RecipesResponse struct {
+type ListRecipesResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *RecipePage
 }
 
 // Status returns HTTPResponse.Status
-func (r GetApiV1RecipesResponse) Status() string {
+func (r ListRecipesResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -1250,21 +1160,21 @@ func (r GetApiV1RecipesResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r GetApiV1RecipesResponse) StatusCode() int {
+func (r ListRecipesResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type PostApiV1RecipesResponse struct {
+type CreateRecipeResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON201      *CreateRecipeResponse
+	JSON201      *externalRef0.Recipe
 }
 
 // Status returns HTTPResponse.Status
-func (r PostApiV1RecipesResponse) Status() string {
+func (r CreateRecipeResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -1272,20 +1182,20 @@ func (r PostApiV1RecipesResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r PostApiV1RecipesResponse) StatusCode() int {
+func (r CreateRecipeResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type DeleteApiV1RecipesRecipeIdResponse struct {
+type DeleteRecipeResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 }
 
 // Status returns HTTPResponse.Status
-func (r DeleteApiV1RecipesRecipeIdResponse) Status() string {
+func (r DeleteRecipeResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -1293,14 +1203,14 @@ func (r DeleteApiV1RecipesRecipeIdResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r DeleteApiV1RecipesRecipeIdResponse) StatusCode() int {
+func (r DeleteRecipeResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type GetApiV1RecipesRecipeIdResponse struct {
+type GetRecipeResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *externalRef0.Recipe
@@ -1309,7 +1219,7 @@ type GetApiV1RecipesRecipeIdResponse struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r GetApiV1RecipesRecipeIdResponse) Status() string {
+func (r GetRecipeResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -1317,14 +1227,14 @@ func (r GetApiV1RecipesRecipeIdResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r GetApiV1RecipesRecipeIdResponse) StatusCode() int {
+func (r GetRecipeResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type PatchApiV1RecipesRecipeIdResponse struct {
+type UpdateRecipeResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *externalRef0.Recipe
@@ -1334,7 +1244,7 @@ type PatchApiV1RecipesRecipeIdResponse struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r PatchApiV1RecipesRecipeIdResponse) Status() string {
+func (r UpdateRecipeResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -1342,46 +1252,21 @@ func (r PatchApiV1RecipesRecipeIdResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r PatchApiV1RecipesRecipeIdResponse) StatusCode() int {
+func (r UpdateRecipeResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type PutApiV1RecipesRecipeIdResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *UpdateRecipeResponse
-	JSON400      *externalRef0.ApiErrorResponse
-	JSON403      *externalRef0.ApiErrorResponse
-	JSON404      *externalRef0.ApiErrorResponse
-}
-
-// Status returns HTTPResponse.Status
-func (r PutApiV1RecipesRecipeIdResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r PutApiV1RecipesRecipeIdResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type PostApiV1UploadsImagesResponse struct {
+type UploadImageResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON201      *externalRef0.Image
 }
 
 // Status returns HTTPResponse.Status
-func (r PostApiV1UploadsImagesResponse) Status() string {
+func (r UploadImageResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -1389,20 +1274,20 @@ func (r PostApiV1UploadsImagesResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r PostApiV1UploadsImagesResponse) StatusCode() int {
+func (r UploadImageResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type GetApiV1UploadsImagesImageIdResponse struct {
+type GetImageResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 }
 
 // Status returns HTTPResponse.Status
-func (r GetApiV1UploadsImagesImageIdResponse) Status() string {
+func (r GetImageResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -1410,20 +1295,20 @@ func (r GetApiV1UploadsImagesImageIdResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r GetApiV1UploadsImagesImageIdResponse) StatusCode() int {
+func (r GetImageResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type GetHealthResponse struct {
+type HealthCheckResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 }
 
 // Status returns HTTPResponse.Status
-func (r GetHealthResponse) Status() string {
+func (r HealthCheckResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -1431,204 +1316,187 @@ func (r GetHealthResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r GetHealthResponse) StatusCode() int {
+func (r HealthCheckResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-// PostApiV1AuthLoginWithBodyWithResponse request with arbitrary body returning *PostApiV1AuthLoginResponse
-func (c *ClientWithResponses) PostApiV1AuthLoginWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1AuthLoginResponse, error) {
-	rsp, err := c.PostApiV1AuthLoginWithBody(ctx, contentType, body, reqEditors...)
+// LoginUserWithBodyWithResponse request with arbitrary body returning *LoginUserResponse
+func (c *ClientWithResponses) LoginUserWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*LoginUserResponse, error) {
+	rsp, err := c.LoginUserWithBody(ctx, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePostApiV1AuthLoginResponse(rsp)
+	return ParseLoginUserResponse(rsp)
 }
 
-func (c *ClientWithResponses) PostApiV1AuthLoginWithResponse(ctx context.Context, body PostApiV1AuthLoginJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiV1AuthLoginResponse, error) {
-	rsp, err := c.PostApiV1AuthLogin(ctx, body, reqEditors...)
+func (c *ClientWithResponses) LoginUserWithResponse(ctx context.Context, body LoginUserJSONRequestBody, reqEditors ...RequestEditorFn) (*LoginUserResponse, error) {
+	rsp, err := c.LoginUser(ctx, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePostApiV1AuthLoginResponse(rsp)
+	return ParseLoginUserResponse(rsp)
 }
 
-// PostApiV1AuthLogoutWithBodyWithResponse request with arbitrary body returning *PostApiV1AuthLogoutResponse
-func (c *ClientWithResponses) PostApiV1AuthLogoutWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1AuthLogoutResponse, error) {
-	rsp, err := c.PostApiV1AuthLogoutWithBody(ctx, contentType, body, reqEditors...)
+// LogoutUserWithBodyWithResponse request with arbitrary body returning *LogoutUserResponse
+func (c *ClientWithResponses) LogoutUserWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*LogoutUserResponse, error) {
+	rsp, err := c.LogoutUserWithBody(ctx, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePostApiV1AuthLogoutResponse(rsp)
+	return ParseLogoutUserResponse(rsp)
 }
 
-func (c *ClientWithResponses) PostApiV1AuthLogoutWithResponse(ctx context.Context, body PostApiV1AuthLogoutJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiV1AuthLogoutResponse, error) {
-	rsp, err := c.PostApiV1AuthLogout(ctx, body, reqEditors...)
+func (c *ClientWithResponses) LogoutUserWithResponse(ctx context.Context, body LogoutUserJSONRequestBody, reqEditors ...RequestEditorFn) (*LogoutUserResponse, error) {
+	rsp, err := c.LogoutUser(ctx, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePostApiV1AuthLogoutResponse(rsp)
+	return ParseLogoutUserResponse(rsp)
 }
 
-// PostApiV1AuthRefreshWithBodyWithResponse request with arbitrary body returning *PostApiV1AuthRefreshResponse
-func (c *ClientWithResponses) PostApiV1AuthRefreshWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1AuthRefreshResponse, error) {
-	rsp, err := c.PostApiV1AuthRefreshWithBody(ctx, contentType, body, reqEditors...)
+// RefreshTokenWithBodyWithResponse request with arbitrary body returning *RefreshTokenResponse
+func (c *ClientWithResponses) RefreshTokenWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RefreshTokenResponse, error) {
+	rsp, err := c.RefreshTokenWithBody(ctx, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePostApiV1AuthRefreshResponse(rsp)
+	return ParseRefreshTokenResponse(rsp)
 }
 
-func (c *ClientWithResponses) PostApiV1AuthRefreshWithResponse(ctx context.Context, body PostApiV1AuthRefreshJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiV1AuthRefreshResponse, error) {
-	rsp, err := c.PostApiV1AuthRefresh(ctx, body, reqEditors...)
+func (c *ClientWithResponses) RefreshTokenWithResponse(ctx context.Context, body RefreshTokenJSONRequestBody, reqEditors ...RequestEditorFn) (*RefreshTokenResponse, error) {
+	rsp, err := c.RefreshToken(ctx, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePostApiV1AuthRefreshResponse(rsp)
+	return ParseRefreshTokenResponse(rsp)
 }
 
-// PostApiV1AuthRegisterWithBodyWithResponse request with arbitrary body returning *PostApiV1AuthRegisterResponse
-func (c *ClientWithResponses) PostApiV1AuthRegisterWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1AuthRegisterResponse, error) {
-	rsp, err := c.PostApiV1AuthRegisterWithBody(ctx, contentType, body, reqEditors...)
+// RegisterUserWithBodyWithResponse request with arbitrary body returning *RegisterUserResponse
+func (c *ClientWithResponses) RegisterUserWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RegisterUserResponse, error) {
+	rsp, err := c.RegisterUserWithBody(ctx, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePostApiV1AuthRegisterResponse(rsp)
+	return ParseRegisterUserResponse(rsp)
 }
 
-func (c *ClientWithResponses) PostApiV1AuthRegisterWithResponse(ctx context.Context, body PostApiV1AuthRegisterJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiV1AuthRegisterResponse, error) {
-	rsp, err := c.PostApiV1AuthRegister(ctx, body, reqEditors...)
+func (c *ClientWithResponses) RegisterUserWithResponse(ctx context.Context, body RegisterUserJSONRequestBody, reqEditors ...RequestEditorFn) (*RegisterUserResponse, error) {
+	rsp, err := c.RegisterUser(ctx, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePostApiV1AuthRegisterResponse(rsp)
+	return ParseRegisterUserResponse(rsp)
 }
 
-// GetApiV1ProfilesMeWithResponse request returning *GetApiV1ProfilesMeResponse
-func (c *ClientWithResponses) GetApiV1ProfilesMeWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1ProfilesMeResponse, error) {
-	rsp, err := c.GetApiV1ProfilesMe(ctx, reqEditors...)
+// GetMyProfileWithResponse request returning *GetMyProfileResponse
+func (c *ClientWithResponses) GetMyProfileWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetMyProfileResponse, error) {
+	rsp, err := c.GetMyProfile(ctx, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseGetApiV1ProfilesMeResponse(rsp)
+	return ParseGetMyProfileResponse(rsp)
 }
 
-// GetApiV1RecipesWithResponse request returning *GetApiV1RecipesResponse
-func (c *ClientWithResponses) GetApiV1RecipesWithResponse(ctx context.Context, params *GetApiV1RecipesParams, reqEditors ...RequestEditorFn) (*GetApiV1RecipesResponse, error) {
-	rsp, err := c.GetApiV1Recipes(ctx, params, reqEditors...)
+// ListRecipesWithResponse request returning *ListRecipesResponse
+func (c *ClientWithResponses) ListRecipesWithResponse(ctx context.Context, params *ListRecipesParams, reqEditors ...RequestEditorFn) (*ListRecipesResponse, error) {
+	rsp, err := c.ListRecipes(ctx, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseGetApiV1RecipesResponse(rsp)
+	return ParseListRecipesResponse(rsp)
 }
 
-// PostApiV1RecipesWithBodyWithResponse request with arbitrary body returning *PostApiV1RecipesResponse
-func (c *ClientWithResponses) PostApiV1RecipesWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1RecipesResponse, error) {
-	rsp, err := c.PostApiV1RecipesWithBody(ctx, contentType, body, reqEditors...)
+// CreateRecipeWithBodyWithResponse request with arbitrary body returning *CreateRecipeResponse
+func (c *ClientWithResponses) CreateRecipeWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateRecipeResponse, error) {
+	rsp, err := c.CreateRecipeWithBody(ctx, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePostApiV1RecipesResponse(rsp)
+	return ParseCreateRecipeResponse(rsp)
 }
 
-func (c *ClientWithResponses) PostApiV1RecipesWithResponse(ctx context.Context, body PostApiV1RecipesJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiV1RecipesResponse, error) {
-	rsp, err := c.PostApiV1Recipes(ctx, body, reqEditors...)
+func (c *ClientWithResponses) CreateRecipeWithResponse(ctx context.Context, body CreateRecipeJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateRecipeResponse, error) {
+	rsp, err := c.CreateRecipe(ctx, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePostApiV1RecipesResponse(rsp)
+	return ParseCreateRecipeResponse(rsp)
 }
 
-// DeleteApiV1RecipesRecipeIdWithResponse request returning *DeleteApiV1RecipesRecipeIdResponse
-func (c *ClientWithResponses) DeleteApiV1RecipesRecipeIdWithResponse(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*DeleteApiV1RecipesRecipeIdResponse, error) {
-	rsp, err := c.DeleteApiV1RecipesRecipeId(ctx, recipeId, reqEditors...)
+// DeleteRecipeWithResponse request returning *DeleteRecipeResponse
+func (c *ClientWithResponses) DeleteRecipeWithResponse(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*DeleteRecipeResponse, error) {
+	rsp, err := c.DeleteRecipe(ctx, recipeId, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseDeleteApiV1RecipesRecipeIdResponse(rsp)
+	return ParseDeleteRecipeResponse(rsp)
 }
 
-// GetApiV1RecipesRecipeIdWithResponse request returning *GetApiV1RecipesRecipeIdResponse
-func (c *ClientWithResponses) GetApiV1RecipesRecipeIdWithResponse(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*GetApiV1RecipesRecipeIdResponse, error) {
-	rsp, err := c.GetApiV1RecipesRecipeId(ctx, recipeId, reqEditors...)
+// GetRecipeWithResponse request returning *GetRecipeResponse
+func (c *ClientWithResponses) GetRecipeWithResponse(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*GetRecipeResponse, error) {
+	rsp, err := c.GetRecipe(ctx, recipeId, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseGetApiV1RecipesRecipeIdResponse(rsp)
+	return ParseGetRecipeResponse(rsp)
 }
 
-// PatchApiV1RecipesRecipeIdWithBodyWithResponse request with arbitrary body returning *PatchApiV1RecipesRecipeIdResponse
-func (c *ClientWithResponses) PatchApiV1RecipesRecipeIdWithBodyWithResponse(ctx context.Context, recipeId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchApiV1RecipesRecipeIdResponse, error) {
-	rsp, err := c.PatchApiV1RecipesRecipeIdWithBody(ctx, recipeId, contentType, body, reqEditors...)
+// UpdateRecipeWithBodyWithResponse request with arbitrary body returning *UpdateRecipeResponse
+func (c *ClientWithResponses) UpdateRecipeWithBodyWithResponse(ctx context.Context, recipeId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRecipeResponse, error) {
+	rsp, err := c.UpdateRecipeWithBody(ctx, recipeId, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePatchApiV1RecipesRecipeIdResponse(rsp)
+	return ParseUpdateRecipeResponse(rsp)
 }
 
-func (c *ClientWithResponses) PatchApiV1RecipesRecipeIdWithResponse(ctx context.Context, recipeId string, body PatchApiV1RecipesRecipeIdJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchApiV1RecipesRecipeIdResponse, error) {
-	rsp, err := c.PatchApiV1RecipesRecipeId(ctx, recipeId, body, reqEditors...)
+func (c *ClientWithResponses) UpdateRecipeWithResponse(ctx context.Context, recipeId string, body UpdateRecipeJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRecipeResponse, error) {
+	rsp, err := c.UpdateRecipe(ctx, recipeId, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePatchApiV1RecipesRecipeIdResponse(rsp)
+	return ParseUpdateRecipeResponse(rsp)
 }
 
-// PutApiV1RecipesRecipeIdWithBodyWithResponse request with arbitrary body returning *PutApiV1RecipesRecipeIdResponse
-func (c *ClientWithResponses) PutApiV1RecipesRecipeIdWithBodyWithResponse(ctx context.Context, recipeId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutApiV1RecipesRecipeIdResponse, error) {
-	rsp, err := c.PutApiV1RecipesRecipeIdWithBody(ctx, recipeId, contentType, body, reqEditors...)
+// UploadImageWithBodyWithResponse request with arbitrary body returning *UploadImageResponse
+func (c *ClientWithResponses) UploadImageWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadImageResponse, error) {
+	rsp, err := c.UploadImageWithBody(ctx, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePutApiV1RecipesRecipeIdResponse(rsp)
+	return ParseUploadImageResponse(rsp)
 }
 
-func (c *ClientWithResponses) PutApiV1RecipesRecipeIdWithResponse(ctx context.Context, recipeId string, body PutApiV1RecipesRecipeIdJSONRequestBody, reqEditors ...RequestEditorFn) (*PutApiV1RecipesRecipeIdResponse, error) {
-	rsp, err := c.PutApiV1RecipesRecipeId(ctx, recipeId, body, reqEditors...)
+// GetImageWithResponse request returning *GetImageResponse
+func (c *ClientWithResponses) GetImageWithResponse(ctx context.Context, imageId string, reqEditors ...RequestEditorFn) (*GetImageResponse, error) {
+	rsp, err := c.GetImage(ctx, imageId, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePutApiV1RecipesRecipeIdResponse(rsp)
+	return ParseGetImageResponse(rsp)
 }
 
-// PostApiV1UploadsImagesWithBodyWithResponse request with arbitrary body returning *PostApiV1UploadsImagesResponse
-func (c *ClientWithResponses) PostApiV1UploadsImagesWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1UploadsImagesResponse, error) {
-	rsp, err := c.PostApiV1UploadsImagesWithBody(ctx, contentType, body, reqEditors...)
+// HealthCheckWithResponse request returning *HealthCheckResponse
+func (c *ClientWithResponses) HealthCheckWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*HealthCheckResponse, error) {
+	rsp, err := c.HealthCheck(ctx, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePostApiV1UploadsImagesResponse(rsp)
+	return ParseHealthCheckResponse(rsp)
 }
 
-// GetApiV1UploadsImagesImageIdWithResponse request returning *GetApiV1UploadsImagesImageIdResponse
-func (c *ClientWithResponses) GetApiV1UploadsImagesImageIdWithResponse(ctx context.Context, imageId string, reqEditors ...RequestEditorFn) (*GetApiV1UploadsImagesImageIdResponse, error) {
-	rsp, err := c.GetApiV1UploadsImagesImageId(ctx, imageId, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetApiV1UploadsImagesImageIdResponse(rsp)
-}
-
-// GetHealthWithResponse request returning *GetHealthResponse
-func (c *ClientWithResponses) GetHealthWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetHealthResponse, error) {
-	rsp, err := c.GetHealth(ctx, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetHealthResponse(rsp)
-}
-
-// ParsePostApiV1AuthLoginResponse parses an HTTP response from a PostApiV1AuthLoginWithResponse call
-func ParsePostApiV1AuthLoginResponse(rsp *http.Response) (*PostApiV1AuthLoginResponse, error) {
+// ParseLoginUserResponse parses an HTTP response from a LoginUserWithResponse call
+func ParseLoginUserResponse(rsp *http.Response) (*LoginUserResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &PostApiV1AuthLoginResponse{
+	response := &LoginUserResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -1660,15 +1528,15 @@ func ParsePostApiV1AuthLoginResponse(rsp *http.Response) (*PostApiV1AuthLoginRes
 	return response, nil
 }
 
-// ParsePostApiV1AuthLogoutResponse parses an HTTP response from a PostApiV1AuthLogoutWithResponse call
-func ParsePostApiV1AuthLogoutResponse(rsp *http.Response) (*PostApiV1AuthLogoutResponse, error) {
+// ParseLogoutUserResponse parses an HTTP response from a LogoutUserWithResponse call
+func ParseLogoutUserResponse(rsp *http.Response) (*LogoutUserResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &PostApiV1AuthLogoutResponse{
+	response := &LogoutUserResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -1676,15 +1544,15 @@ func ParsePostApiV1AuthLogoutResponse(rsp *http.Response) (*PostApiV1AuthLogoutR
 	return response, nil
 }
 
-// ParsePostApiV1AuthRefreshResponse parses an HTTP response from a PostApiV1AuthRefreshWithResponse call
-func ParsePostApiV1AuthRefreshResponse(rsp *http.Response) (*PostApiV1AuthRefreshResponse, error) {
+// ParseRefreshTokenResponse parses an HTTP response from a RefreshTokenWithResponse call
+func ParseRefreshTokenResponse(rsp *http.Response) (*RefreshTokenResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &PostApiV1AuthRefreshResponse{
+	response := &RefreshTokenResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -1709,15 +1577,15 @@ func ParsePostApiV1AuthRefreshResponse(rsp *http.Response) (*PostApiV1AuthRefres
 	return response, nil
 }
 
-// ParsePostApiV1AuthRegisterResponse parses an HTTP response from a PostApiV1AuthRegisterWithResponse call
-func ParsePostApiV1AuthRegisterResponse(rsp *http.Response) (*PostApiV1AuthRegisterResponse, error) {
+// ParseRegisterUserResponse parses an HTTP response from a RegisterUserWithResponse call
+func ParseRegisterUserResponse(rsp *http.Response) (*RegisterUserResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &PostApiV1AuthRegisterResponse{
+	response := &RegisterUserResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -1756,15 +1624,15 @@ func ParsePostApiV1AuthRegisterResponse(rsp *http.Response) (*PostApiV1AuthRegis
 	return response, nil
 }
 
-// ParseGetApiV1ProfilesMeResponse parses an HTTP response from a GetApiV1ProfilesMeWithResponse call
-func ParseGetApiV1ProfilesMeResponse(rsp *http.Response) (*GetApiV1ProfilesMeResponse, error) {
+// ParseGetMyProfileResponse parses an HTTP response from a GetMyProfileWithResponse call
+func ParseGetMyProfileResponse(rsp *http.Response) (*GetMyProfileResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &GetApiV1ProfilesMeResponse{
+	response := &GetMyProfileResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -1782,15 +1650,15 @@ func ParseGetApiV1ProfilesMeResponse(rsp *http.Response) (*GetApiV1ProfilesMeRes
 	return response, nil
 }
 
-// ParseGetApiV1RecipesResponse parses an HTTP response from a GetApiV1RecipesWithResponse call
-func ParseGetApiV1RecipesResponse(rsp *http.Response) (*GetApiV1RecipesResponse, error) {
+// ParseListRecipesResponse parses an HTTP response from a ListRecipesWithResponse call
+func ParseListRecipesResponse(rsp *http.Response) (*ListRecipesResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &GetApiV1RecipesResponse{
+	response := &ListRecipesResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -1808,22 +1676,22 @@ func ParseGetApiV1RecipesResponse(rsp *http.Response) (*GetApiV1RecipesResponse,
 	return response, nil
 }
 
-// ParsePostApiV1RecipesResponse parses an HTTP response from a PostApiV1RecipesWithResponse call
-func ParsePostApiV1RecipesResponse(rsp *http.Response) (*PostApiV1RecipesResponse, error) {
+// ParseCreateRecipeResponse parses an HTTP response from a CreateRecipeWithResponse call
+func ParseCreateRecipeResponse(rsp *http.Response) (*CreateRecipeResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &PostApiV1RecipesResponse{
+	response := &CreateRecipeResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
-		var dest CreateRecipeResponse
+		var dest externalRef0.Recipe
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -1834,15 +1702,15 @@ func ParsePostApiV1RecipesResponse(rsp *http.Response) (*PostApiV1RecipesRespons
 	return response, nil
 }
 
-// ParseDeleteApiV1RecipesRecipeIdResponse parses an HTTP response from a DeleteApiV1RecipesRecipeIdWithResponse call
-func ParseDeleteApiV1RecipesRecipeIdResponse(rsp *http.Response) (*DeleteApiV1RecipesRecipeIdResponse, error) {
+// ParseDeleteRecipeResponse parses an HTTP response from a DeleteRecipeWithResponse call
+func ParseDeleteRecipeResponse(rsp *http.Response) (*DeleteRecipeResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &DeleteApiV1RecipesRecipeIdResponse{
+	response := &DeleteRecipeResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -1850,15 +1718,15 @@ func ParseDeleteApiV1RecipesRecipeIdResponse(rsp *http.Response) (*DeleteApiV1Re
 	return response, nil
 }
 
-// ParseGetApiV1RecipesRecipeIdResponse parses an HTTP response from a GetApiV1RecipesRecipeIdWithResponse call
-func ParseGetApiV1RecipesRecipeIdResponse(rsp *http.Response) (*GetApiV1RecipesRecipeIdResponse, error) {
+// ParseGetRecipeResponse parses an HTTP response from a GetRecipeWithResponse call
+func ParseGetRecipeResponse(rsp *http.Response) (*GetRecipeResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &GetApiV1RecipesRecipeIdResponse{
+	response := &GetRecipeResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -1890,15 +1758,15 @@ func ParseGetApiV1RecipesRecipeIdResponse(rsp *http.Response) (*GetApiV1RecipesR
 	return response, nil
 }
 
-// ParsePatchApiV1RecipesRecipeIdResponse parses an HTTP response from a PatchApiV1RecipesRecipeIdWithResponse call
-func ParsePatchApiV1RecipesRecipeIdResponse(rsp *http.Response) (*PatchApiV1RecipesRecipeIdResponse, error) {
+// ParseUpdateRecipeResponse parses an HTTP response from a UpdateRecipeWithResponse call
+func ParseUpdateRecipeResponse(rsp *http.Response) (*UpdateRecipeResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &PatchApiV1RecipesRecipeIdResponse{
+	response := &UpdateRecipeResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -1937,62 +1805,15 @@ func ParsePatchApiV1RecipesRecipeIdResponse(rsp *http.Response) (*PatchApiV1Reci
 	return response, nil
 }
 
-// ParsePutApiV1RecipesRecipeIdResponse parses an HTTP response from a PutApiV1RecipesRecipeIdWithResponse call
-func ParsePutApiV1RecipesRecipeIdResponse(rsp *http.Response) (*PutApiV1RecipesRecipeIdResponse, error) {
+// ParseUploadImageResponse parses an HTTP response from a UploadImageWithResponse call
+func ParseUploadImageResponse(rsp *http.Response) (*UploadImageResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &PutApiV1RecipesRecipeIdResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest UpdateRecipeResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
-		var dest externalRef0.ApiErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON400 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest externalRef0.ApiErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON403 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest externalRef0.ApiErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON404 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParsePostApiV1UploadsImagesResponse parses an HTTP response from a PostApiV1UploadsImagesWithResponse call
-func ParsePostApiV1UploadsImagesResponse(rsp *http.Response) (*PostApiV1UploadsImagesResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &PostApiV1UploadsImagesResponse{
+	response := &UploadImageResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -2010,15 +1831,15 @@ func ParsePostApiV1UploadsImagesResponse(rsp *http.Response) (*PostApiV1UploadsI
 	return response, nil
 }
 
-// ParseGetApiV1UploadsImagesImageIdResponse parses an HTTP response from a GetApiV1UploadsImagesImageIdWithResponse call
-func ParseGetApiV1UploadsImagesImageIdResponse(rsp *http.Response) (*GetApiV1UploadsImagesImageIdResponse, error) {
+// ParseGetImageResponse parses an HTTP response from a GetImageWithResponse call
+func ParseGetImageResponse(rsp *http.Response) (*GetImageResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &GetApiV1UploadsImagesImageIdResponse{
+	response := &GetImageResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -2026,15 +1847,15 @@ func ParseGetApiV1UploadsImagesImageIdResponse(rsp *http.Response) (*GetApiV1Upl
 	return response, nil
 }
 
-// ParseGetHealthResponse parses an HTTP response from a GetHealthWithResponse call
-func ParseGetHealthResponse(rsp *http.Response) (*GetHealthResponse, error) {
+// ParseHealthCheckResponse parses an HTTP response from a HealthCheckWithResponse call
+func ParseHealthCheckResponse(rsp *http.Response) (*HealthCheckResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &GetHealthResponse{
+	response := &HealthCheckResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}

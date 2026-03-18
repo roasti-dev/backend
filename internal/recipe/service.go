@@ -104,27 +104,6 @@ func (s *Service) UpdateRecipe(
 	return updated, nil
 }
 
-func (s *Service) PatchRecipe(
-	ctx context.Context, userID, recipeID string, requst models.PatchRecipeRequest,
-) (models.Recipe, error) {
-	if err := validatePatchRecipe(requst); err != nil {
-		return models.Recipe{}, err
-	}
-
-	recipe, err := s.repo.GetRecipeByID(ctx, recipeID)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return models.Recipe{}, ErrNotFound
-		}
-		return models.Recipe{}, err
-	}
-
-	if recipe.AuthorId != userID {
-		return models.Recipe{}, ErrForbidden
-	}
-	return s.repo.PatchRecipe(ctx, userID, recipeID, requst)
-}
-
 func (s *Service) DeleteRecipe(ctx context.Context, userID, recipeID string) error {
 	recipe, err := s.repo.GetRecipeByID(ctx, recipeID)
 	if err != nil {

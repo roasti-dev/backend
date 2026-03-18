@@ -59,7 +59,7 @@ func newAuthenticatedTestClient(t *testing.T, srv *httptest.Server) *authenticat
 	c := newTestClient(t, srv)
 
 	username := "user_" + randomString(5)
-	resp, err := c.PostApiV1AuthRegisterWithResponse(t.Context(), models.RegisterRequest{
+	resp, err := c.RegisterUserWithResponse(t.Context(), models.RegisterRequest{
 		Email:    openapi_types.Email(username + "@test.com"),
 		Password: "password123",
 		Username: username,

@@ -24,7 +24,7 @@ func TestRegister(t *testing.T) {
 		c := newTestClient(t, srv)
 		username, email, password := randomCredentials()
 
-		resp, err := c.PostApiV1AuthRegisterWithResponse(t.Context(), models.RegisterRequest{
+		resp, err := c.RegisterUserWithResponse(t.Context(), models.RegisterRequest{
 			Email:    openapi_types.Email(email),
 			Username: username,
 			Password: password,
@@ -41,14 +41,14 @@ func TestRegister(t *testing.T) {
 		c := newTestClient(t, srv)
 		username, email, password := randomCredentials()
 
-		_, err := c.PostApiV1AuthRegisterWithResponse(t.Context(), models.RegisterRequest{
+		_, err := c.RegisterUserWithResponse(t.Context(), models.RegisterRequest{
 			Email:    openapi_types.Email(email),
 			Username: username,
 			Password: password,
 		})
 		require.NoError(t, err)
 
-		resp, err := c.PostApiV1AuthRegisterWithResponse(t.Context(), models.RegisterRequest{
+		resp, err := c.RegisterUserWithResponse(t.Context(), models.RegisterRequest{
 			Email:    openapi_types.Email("other_" + email),
 			Username: username,
 			Password: password,
@@ -61,14 +61,14 @@ func TestRegister(t *testing.T) {
 		c := newTestClient(t, srv)
 		username, email, password := randomCredentials()
 
-		_, err := c.PostApiV1AuthRegisterWithResponse(t.Context(), models.RegisterRequest{
+		_, err := c.RegisterUserWithResponse(t.Context(), models.RegisterRequest{
 			Email:    openapi_types.Email(email),
 			Username: username,
 			Password: password,
 		})
 		require.NoError(t, err)
 
-		resp, err := c.PostApiV1AuthRegisterWithResponse(t.Context(), models.RegisterRequest{
+		resp, err := c.RegisterUserWithResponse(t.Context(), models.RegisterRequest{
 			Email:    openapi_types.Email(email),
 			Username: "f_" + username,
 			Password: password,
@@ -81,7 +81,7 @@ func TestRegister(t *testing.T) {
 		c := newTestClient(t, srv)
 		username, email, _ := randomCredentials()
 
-		resp, err := c.PostApiV1AuthRegisterWithResponse(t.Context(), models.RegisterRequest{
+		resp, err := c.RegisterUserWithResponse(t.Context(), models.RegisterRequest{
 			Email:    openapi_types.Email(email),
 			Username: username,
 			Password: "123",
@@ -94,7 +94,7 @@ func TestRegister(t *testing.T) {
 		c := newTestClient(t, srv)
 		_, email, password := randomCredentials()
 
-		resp, err := c.PostApiV1AuthRegisterWithResponse(t.Context(), models.RegisterRequest{
+		resp, err := c.RegisterUserWithResponse(t.Context(), models.RegisterRequest{
 			Email:    openapi_types.Email(email),
 			Username: "invalid username!",
 			Password: password,
@@ -111,14 +111,14 @@ func TestLogin(t *testing.T) {
 		c := newTestClient(t, srv)
 		username, email, password := randomCredentials()
 
-		_, err := c.PostApiV1AuthRegisterWithResponse(t.Context(), models.RegisterRequest{
+		_, err := c.RegisterUserWithResponse(t.Context(), models.RegisterRequest{
 			Email:    openapi_types.Email(email),
 			Username: username,
 			Password: password,
 		})
 		require.NoError(t, err)
 
-		resp, err := c.PostApiV1AuthLoginWithResponse(t.Context(), models.LoginRequest{
+		resp, err := c.LoginUserWithResponse(t.Context(), models.LoginRequest{
 			Username: username,
 			Password: password,
 		})
@@ -132,7 +132,7 @@ func TestLogin(t *testing.T) {
 		c := newTestClient(t, srv)
 		username, _, _ := randomCredentials()
 
-		resp, err := c.PostApiV1AuthLoginWithResponse(t.Context(), models.LoginRequest{
+		resp, err := c.LoginUserWithResponse(t.Context(), models.LoginRequest{
 			Username: username,
 			Password: "wrongpassword",
 		})
@@ -148,14 +148,14 @@ func TestRefresh(t *testing.T) {
 		c := newTestClient(t, srv)
 		username, email, password := randomCredentials()
 
-		reg, err := c.PostApiV1AuthRegisterWithResponse(t.Context(), models.RegisterRequest{
+		reg, err := c.RegisterUserWithResponse(t.Context(), models.RegisterRequest{
 			Email:    openapi_types.Email(email),
 			Username: username,
 			Password: password,
 		})
 		require.NoError(t, err)
 
-		resp, err := c.PostApiV1AuthRefreshWithResponse(t.Context(), models.RefreshRequest{
+		resp, err := c.RefreshTokenWithResponse(t.Context(), models.RefreshRequest{
 			RefreshToken: reg.JSON201.RefreshToken,
 		})
 		require.NoError(t, err)
@@ -167,7 +167,7 @@ func TestRefresh(t *testing.T) {
 	t.Run("refresh token rotates and new token is usable", func(t *testing.T) {
 		c := newAuthenticatedTestClient(t, srv)
 
-		first, err := c.PostApiV1AuthRefreshWithResponse(t.Context(), models.RefreshRequest{
+		first, err := c.RefreshTokenWithResponse(t.Context(), models.RefreshRequest{
 			RefreshToken: c.RefreshToken,
 		})
 		require.NoError(t, err)
@@ -176,7 +176,7 @@ func TestRefresh(t *testing.T) {
 		// NOTE: In the Firebase production environment, the token rotates, but the emulator returns the same one
 		// assert.NotEqual(t, c.RefreshToken, first.JSON200.RefreshToken)
 
-		second, err := c.PostApiV1AuthRefreshWithResponse(t.Context(), models.RefreshRequest{
+		second, err := c.RefreshTokenWithResponse(t.Context(), models.RefreshRequest{
 			RefreshToken: first.JSON200.RefreshToken,
 		})
 		require.NoError(t, err)
@@ -187,7 +187,7 @@ func TestRefresh(t *testing.T) {
 	t.Run("invalid refresh token", func(t *testing.T) {
 		c := newTestClient(t, srv)
 
-		resp, err := c.PostApiV1AuthRefreshWithResponse(t.Context(), models.RefreshRequest{
+		resp, err := c.RefreshTokenWithResponse(t.Context(), models.RefreshRequest{
 			RefreshToken: "invalid-token",
 		})
 		require.NoError(t, err)
@@ -201,7 +201,7 @@ func TestLogout(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		c := newAuthenticatedTestClient(t, srv)
 
-		resp, err := c.PostApiV1AuthLogoutWithResponse(t.Context(), models.LogoutRequest{
+		resp, err := c.LogoutUserWithResponse(t.Context(), models.LogoutRequest{
 			RefreshToken: c.RefreshToken,
 		})
 		require.NoError(t, err)
@@ -212,7 +212,7 @@ func TestLogout(t *testing.T) {
 		c := newAuthenticatedTestClient(t, srv)
 
 		for range 2 {
-			resp, err := c.PostApiV1AuthLogoutWithResponse(t.Context(), models.LogoutRequest{
+			resp, err := c.LogoutUserWithResponse(t.Context(), models.LogoutRequest{
 				RefreshToken: c.RefreshToken,
 			})
 			require.NoError(t, err)
@@ -223,12 +223,12 @@ func TestLogout(t *testing.T) {
 	t.Run("revoked token cannot be used to refresh", func(t *testing.T) {
 		c := newAuthenticatedTestClient(t, srv)
 
-		_, err := c.PostApiV1AuthLogoutWithResponse(t.Context(), models.LogoutRequest{
+		_, err := c.LogoutUserWithResponse(t.Context(), models.LogoutRequest{
 			RefreshToken: c.RefreshToken,
 		})
 		require.NoError(t, err)
 
-		refresh, err := c.PostApiV1AuthRefreshWithResponse(t.Context(), models.RefreshRequest{
+		refresh, err := c.RefreshTokenWithResponse(t.Context(), models.RefreshRequest{
 			RefreshToken: c.RefreshToken,
 		})
 		require.NoError(t, err)
