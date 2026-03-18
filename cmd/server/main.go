@@ -45,8 +45,13 @@ func run() error {
 		return fmt.Errorf("invalid port %q: must be a valid integer (e.g. 8080)", serverPort)
 	}
 
-	appEnv := getEnvOrDefault("APP_ENV", "development")
+	appEnv := log.Env(getEnvOrDefault("APP_ENV", string(log.EnvDevelopment)))
+	if !appEnv.IsValid() {
+		slog.Warn("unknown APP_ENV, falling back to development", "value", appEnv)
+		appEnv = log.EnvDevelopment
+	}
 	logger := log.InitLogger(appVersion, appEnv)
+
 	slog.SetDefault(logger)
 
 	emulatorHost := os.Getenv("FIREBASE_AUTH_EMULATOR_HOST")
