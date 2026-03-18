@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"database/sql"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -26,7 +25,6 @@ import (
 	"github.com/nikpivkin/roasti-app-backend/internal/log"
 	"github.com/nikpivkin/roasti-app-backend/internal/middleware"
 	"github.com/nikpivkin/roasti-app-backend/internal/recipe"
-	"github.com/nikpivkin/roasti-app-backend/internal/seed"
 	"github.com/nikpivkin/roasti-app-backend/internal/uploads"
 )
 
@@ -42,13 +40,11 @@ type Config struct {
 }
 
 type App struct {
-	handler       http.Handler
-	db            *sql.DB
-	recipeService *recipe.Service
+	handler http.Handler
 }
 
 func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
-	database, err := db.NewSQLite(cfg.DBPath)
+	database, err := db.NewSQLite(ctx, cfg.DBPath)
 	if err != nil {
 		return nil, fmt.Errorf("create db: %w", err)
 	}
@@ -138,20 +134,12 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 	})
 
 	return &App{
-		handler:       corsMiddleware(finalHandler),
-		db:            database,
-		recipeService: recipeService,
+		handler: corsMiddleware(finalHandler),
 	}, nil
 }
 
 func (a *App) Handler() http.Handler {
 	return a.handler
-}
-
-func (a *App) Seed(ctx context.Context) error {
-	return seed.Run(ctx, seed.Services{
-		RecipeService: a.recipeService,
-	})
 }
 
 func responseErrorHandler(w http.ResponseWriter, r *http.Request, err error) {

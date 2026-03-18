@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
 	"github.com/nikpivkin/roasti-app-backend/internal/recipe"
@@ -12,13 +13,8 @@ import (
 	_ "embed"
 )
 
-const seedUserID = "test-user"
-
-//go:embed recipes.json
-var recipesData []byte
-
-func seedRecipes(ctx context.Context, recipeService *recipe.Service) error {
-	recipes, err := recipeService.ListRecipes(ctx, seedUserID, models.ListRecipesParams{
+func SeedRecipes(ctx context.Context, recipeService *recipe.Service, userID string, filePath string) error {
+	recipes, err := recipeService.ListRecipes(ctx, userID, models.ListRecipesParams{
 		Page:  new(int32(1)),
 		Limit: new(int32(1)),
 	})
@@ -34,7 +30,12 @@ func seedRecipes(ctx context.Context, recipeService *recipe.Service) error {
 		Req []models.CreateRecipeRequest `json:"recipes"`
 	}
 
-	dec := json.NewDecoder(bytes.NewReader(recipesData))
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return err
+	}
+
+	dec := json.NewDecoder(bytes.NewReader(data))
 	dec.DisallowUnknownFields()
 
 	if err := dec.Decode(&seed); err != nil {
@@ -42,7 +43,7 @@ func seedRecipes(ctx context.Context, recipeService *recipe.Service) error {
 	}
 
 	for _, req := range seed.Req {
-		if _, err := recipeService.CreateRecipe(ctx, seedUserID, req); err != nil {
+		if _, err := recipeService.CreateRecipe(ctx, userID, req); err != nil {
 			return fmt.Errorf("create recipe: %w", err)
 		}
 	}

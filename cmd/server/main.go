@@ -76,10 +76,6 @@ func run() error {
 	serverAddr := ":" + serverPort
 	s := server.New(serverAddr, a.Handler())
 
-	if err := a.Seed(ctx); err != nil {
-		return err
-	}
-
 	errCh := make(chan error, 1)
 	go func() {
 		slog.Info("Server started", slog.String("addr", serverAddr))

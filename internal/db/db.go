@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"time"
@@ -8,7 +9,7 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-func NewSQLite(file string) (*sql.DB, error) {
+func NewSQLite(ctx context.Context, file string) (*sql.DB, error) {
 	db, err := sql.Open("sqlite", file)
 	if err != nil {
 		return nil, fmt.Errorf("open sqlite: %w", err)
@@ -18,7 +19,7 @@ func NewSQLite(file string) (*sql.DB, error) {
 	db.SetMaxIdleConns(1)
 	db.SetConnMaxLifetime(time.Minute)
 
-	if err := db.Ping(); err != nil {
+	if err := db.PingContext(ctx); err != nil {
 		return nil, fmt.Errorf("ping sqlite: %w", err)
 	}
 	return db, nil

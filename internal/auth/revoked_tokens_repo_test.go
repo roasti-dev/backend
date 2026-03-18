@@ -12,7 +12,7 @@ import (
 )
 
 func setupTestDB(t *testing.T) *sql.DB {
-	database, err := db.NewSQLite(":memory:")
+	database, err := db.NewSQLite(t.Context(), ":memory:")
 	require.NoError(t, err)
 	require.NoError(t, db.InitSchema(database))
 	t.Cleanup(func() { database.Close() }) //nolint: errcheck

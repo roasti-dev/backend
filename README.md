@@ -17,6 +17,13 @@ SERVER_PORT=9090 DEBUG=1 go run ./cmd/server
 
 Swagger documentation is available at `http://localhost:9090/docs`
 
+## Seeding data
+ 
+To populate the database with initial data for local development:
+```bash
+DATABASE_PATH=data.db go run ./cmd/seed --user=test --type recipes --file ./cmd/seed/data/recipes.json
+```
+
 ## Linting
 ```bash
 make lint
@@ -24,9 +31,8 @@ make lint
 
 ## E2E Testing
 
-Make sure the app and Firebase emulator are running before executing e2e tests.
 ```bash
-make e2e
+make test-e2e
 ```
 
 ## Deploy
