@@ -52,6 +52,10 @@ deploy: build-linux-amd64
 lint:
 	golangci-lint run
 
+openapi-lint:
+	REDOCLY_TELEMETRY=off REDOCLY_SUPPRESS_UPDATE_NOTICE=true \
+		pnpm --package=@redocly/cli@2.22.1 dlx openapi lint $(OAPI_SPEC)
+
 test-e2e: firebase-emulator wait-firebase
 	APP_ENV=development \
 	FIREBASE_PROJECT_ID=$(FIREBASE_PROJECT) \
