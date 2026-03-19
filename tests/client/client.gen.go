@@ -20,6 +20,7 @@ import (
 
 const (
 	BearerAuthScopes = "BearerAuth.Scopes"
+	CookieAuthScopes = "CookieAuth.Scopes"
 )
 
 // Defines values for ListRecipesParamsListRecipesSortDirection.

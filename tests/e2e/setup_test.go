@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"net/http/cookiejar"
 	"net/http/httptest"
 	"os"
 	"testing"
@@ -82,6 +83,22 @@ func newAuthenticatedTestClient(t *testing.T, srv *httptest.Server) *authenticat
 		AccessToken:         resp.JSON201.AccessToken,
 		RefreshToken:        resp.JSON201.RefreshToken,
 	}
+}
+
+func newCookieClient(t *testing.T, srv *httptest.Server) *client.ClientWithResponses {
+	t.Helper()
+
+	jar, err := cookiejar.New(nil)
+	require.NoError(t, err)
+
+	httpClient := &http.Client{Jar: jar}
+
+	c, err := client.NewClientWithResponses(srv.URL,
+		client.WithHTTPClient(httpClient),
+	)
+	require.NoError(t, err)
+
+	return c
 }
 
 func randomString(n int) string {

@@ -156,8 +156,8 @@ func (s *Service) Login(ctx context.Context, req models.LoginRequest) (models.Au
 	}, nil
 }
 
-func (s *Service) Refresh(ctx context.Context, req models.RefreshRequest) (models.TokensResponse, error) {
-	revoked, err := s.revokedTokens.IsRevoked(ctx, req.RefreshToken)
+func (s *Service) Refresh(ctx context.Context, token string) (models.TokensResponse, error) {
+	revoked, err := s.revokedTokens.IsRevoked(ctx, token)
 	if err != nil {
 		return models.TokensResponse{}, fmt.Errorf("check revoked token: %w", err)
 	}
@@ -165,7 +165,7 @@ func (s *Service) Refresh(ctx context.Context, req models.RefreshRequest) (model
 		return models.TokensResponse{}, ErrTokenRevoked
 	}
 
-	signIn, err := s.signer.RefreshToken(ctx, req.RefreshToken)
+	signIn, err := s.signer.RefreshToken(ctx, token)
 	if err != nil {
 		return models.TokensResponse{}, err
 	}

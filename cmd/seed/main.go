@@ -14,7 +14,6 @@ import (
 	"github.com/nikpivkin/roasti-app-backend/internal/uploads"
 )
 
-// cmd/seed/main.go
 func main() {
 	if err := realMain(); err != nil {
 		log.Fatal(err.Error())

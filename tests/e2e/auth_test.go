@@ -235,3 +235,64 @@ func TestLogout(t *testing.T) {
 		assert.Equal(t, 401, refresh.StatusCode())
 	})
 }
+
+func TestCookieAuth(t *testing.T) {
+	srv := setupTestServer(t)
+
+	t.Run("login sets cookies and cookie can be used for authenticated request", func(t *testing.T) {
+		c := newCookieClient(t, srv)
+		username, email, password := randomCredentials()
+
+		_, err := c.RegisterUserWithResponse(t.Context(), models.RegisterRequest{
+			Email:    openapi_types.Email(email),
+			Username: username,
+			Password: password,
+		})
+		require.NoError(t, err)
+
+		meResp, err := c.GetMyProfileWithResponse(t.Context())
+		require.NoError(t, err)
+		assert.Equal(t, 200, meResp.StatusCode())
+	})
+
+	t.Run("logout clears cookies and authenticated request fails", func(t *testing.T) {
+		c := newCookieClient(t, srv)
+		username, email, password := randomCredentials()
+
+		_, err := c.RegisterUserWithResponse(t.Context(), models.RegisterRequest{
+			Email:    openapi_types.Email(email),
+			Username: username,
+			Password: password,
+		})
+		require.NoError(t, err)
+
+		logoutResp, err := c.LogoutUserWithResponse(t.Context(), models.LogoutRequest{})
+		require.NoError(t, err)
+		require.Equal(t, 204, logoutResp.StatusCode())
+
+		meResp, err := c.GetMyProfileWithResponse(t.Context())
+		require.NoError(t, err)
+		assert.Equal(t, 401, meResp.StatusCode())
+	})
+
+	t.Run("refresh via cookie", func(t *testing.T) {
+		c := newCookieClient(t, srv)
+		username, email, password := randomCredentials()
+
+		_, err := c.RegisterUserWithResponse(t.Context(), models.RegisterRequest{
+			Email:    openapi_types.Email(email),
+			Username: username,
+			Password: password,
+		})
+		require.NoError(t, err)
+
+		refreshResp, err := c.RefreshTokenWithResponse(t.Context(), models.RefreshRequest{})
+		require.NoError(t, err)
+		require.Equal(t, 200, refreshResp.StatusCode())
+		assert.NotEmpty(t, refreshResp.JSON200.AccessToken)
+
+		meResp, err := c.GetMyProfileWithResponse(t.Context())
+		require.NoError(t, err)
+		assert.Equal(t, 200, meResp.StatusCode())
+	})
+}

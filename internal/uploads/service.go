@@ -85,12 +85,12 @@ func (s *Service) Upload(ctx context.Context, r io.Reader) (string, error) {
 	defer dst.Close()
 
 	if _, err := dst.Write(buf); err != nil {
-		os.Remove(path)
+		_ = os.Remove(path)
 		return "", fmt.Errorf("write file: %w", err)
 	}
 
 	if err := s.repo.Add(ctx, id, path, mimeType); err != nil {
-		os.Remove(path)
+		_ = os.Remove(path)
 		return "", fmt.Errorf("save upload: %w", err)
 	}
 

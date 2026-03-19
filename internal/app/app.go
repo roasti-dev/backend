@@ -121,6 +121,11 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 				AuthenticationFunc: middleware.Authenticate(firebaseAuth),
 			},
 		}),
+		middleware.ApplyForRoutes(
+			middleware.RefreshToken,
+			"/api/v1/auth/refresh",
+			"/api/v1/auth/logout",
+		),
 		middleware.RequestLogging(logger),
 		middleware.RequestID,
 	)

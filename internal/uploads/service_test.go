@@ -6,10 +6,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nikpivkin/roasti-app-backend/internal/db"
-	"github.com/nikpivkin/roasti-app-backend/internal/uploads"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/nikpivkin/roasti-app-backend/internal/db"
+	"github.com/nikpivkin/roasti-app-backend/internal/uploads"
 )
 
 func setupTestService(t *testing.T) *uploads.Service {
