@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
@@ -139,7 +140,7 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 	})
 
 	return &App{
-		handler: corsMiddleware(finalHandler),
+		handler: corsMiddleware(nil)(finalHandler),
 	}, nil
 }
 
@@ -179,19 +180,30 @@ func serveOpenAPIJSON(doc *openapi3.T) http.HandlerFunc {
 	}
 }
 
-func corsMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+func corsMiddleware(allowedOrigins []string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			origin := r.Header.Get("Origin")
+			if len(allowedOrigins) == 0 {
+				// dev mode
+				w.Header().Set("Access-Control-Allow-Origin", origin)
+			} else {
+				if slices.Contains(allowedOrigins, origin) {
+					w.Header().Set("Access-Control-Allow-Origin", origin)
+				}
+			}
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
 
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
+			if r.Method == http.MethodOptions {
+				w.WriteHeader(http.StatusOK)
+				return
+			}
 
-		next.ServeHTTP(w, r)
-	})
+			next.ServeHTTP(w, r)
+		})
+	}
 }
 
 func startRevokedTokenCleanup(ctx context.Context, repo *auth.RevokedTokenRepository) {

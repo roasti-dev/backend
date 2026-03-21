@@ -105,7 +105,7 @@ func setAuthCookies(w http.ResponseWriter, accessToken, refreshToken string) {
 		Name:     "access_token",
 		Value:    accessToken,
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   false, // TODO: set true for production
 		SameSite: http.SameSiteLaxMode,
 		Path:     "/",
 	})
@@ -113,7 +113,7 @@ func setAuthCookies(w http.ResponseWriter, accessToken, refreshToken string) {
 		Name:     "refresh_token",
 		Value:    refreshToken,
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   false, // TODO: set true for production
 		SameSite: http.SameSiteLaxMode,
 		Path:     "/api/v1/auth",
 	})
