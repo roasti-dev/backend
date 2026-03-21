@@ -40,6 +40,7 @@ var (
 		"public",
 		"created_at",
 		"updated_at",
+		"likes_count",
 	}
 
 	recipeSortableColumns = []string{
@@ -163,6 +164,7 @@ func (r *Repository) UpsertRecipe(ctx context.Context, recipe models.Recipe) err
 			recipe.Public,
 			now,
 			now,
+			0,
 		).
 		Suffix("ON CONFLICT (id) DO UPDATE SET " +
 			"title = EXCLUDED.title, " +
@@ -365,6 +367,7 @@ func scanRecipe(s scanner) (models.Recipe, error) {
 		&recipe.Public,
 		&recipe.CreatedAt,
 		&recipe.UpdatedAt,
+		&recipe.LikesCount,
 	)
 
 	return recipe, err
@@ -380,8 +383,14 @@ func (r *Repository) DeleteRecipe(ctx context.Context, userID, recipeID string) 
 }
 
 func (r *Repository) IncrementLikes(ctx context.Context, tx *sql.Tx, targetID string) (int, error) {
+	var repoDb sq.BaseRunner
+	if tx != nil {
+		repoDb = tx
+	} else {
+		repoDb = r.runner
+	}
 	var count int
-	err := sq.StatementBuilder.PlaceholderFormat(sq.Dollar).RunWith(tx).
+	err := sq.StatementBuilder.PlaceholderFormat(sq.Dollar).RunWith(repoDb).
 		Update("recipes").
 		Set("likes_count", sq.Expr("likes_count + 1")).
 		Where(sq.Eq{"id": targetID}).
@@ -398,8 +407,14 @@ func (r *Repository) IncrementLikes(ctx context.Context, tx *sql.Tx, targetID st
 }
 
 func (r *Repository) DecrementLikes(ctx context.Context, tx *sql.Tx, targetID string) (int, error) {
+	var repoDb sq.BaseRunner
+	if tx != nil {
+		repoDb = tx
+	} else {
+		repoDb = r.runner
+	}
 	var count int
-	err := sq.StatementBuilder.PlaceholderFormat(sq.Dollar).RunWith(tx).
+	err := sq.StatementBuilder.PlaceholderFormat(sq.Dollar).RunWith(repoDb).
 		Update("recipes").
 		Set("likes_count", sq.Expr("MAX(likes_count - 1, 0)")).
 		Where(sq.Eq{"id": targetID}).

@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/db"
+	"github.com/nikpivkin/roasti-app-backend/internal/likes"
 	"github.com/nikpivkin/roasti-app-backend/internal/recipe"
 	"github.com/nikpivkin/roasti-app-backend/internal/seed"
 	"github.com/nikpivkin/roasti-app-backend/internal/uploads"
@@ -50,7 +51,9 @@ func realMain() error {
 	uploadRepo := uploads.NewRepository(database)
 	uploader := uploads.NewService(os.TempDir(), uploadRepo)
 	recipeRepo := recipe.NewRepository(database, slog.Default())
-	recipeService := recipe.NewService(recipeRepo, uploader)
+	likeRepo := likes.NewRepository(database)
+	likeService := likes.NewService(database, likeRepo, recipeRepo)
+	recipeService := recipe.NewService(recipeRepo, uploader, likeService)
 
 	switch *entityType {
 	case "recipes":

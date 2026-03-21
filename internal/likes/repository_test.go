@@ -1,27 +1,18 @@
 package likes_test
 
 import (
-	"database/sql"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
-	"github.com/nikpivkin/roasti-app-backend/internal/db"
 	"github.com/nikpivkin/roasti-app-backend/internal/likes"
+	"github.com/nikpivkin/roasti-app-backend/internal/testutil"
 )
 
-func setupTestDB(t *testing.T) *sql.DB {
-	database, err := db.NewSQLite(t.Context(), ":memory:")
-	require.NoError(t, err)
-	require.NoError(t, db.InitSchema(database))
-	t.Cleanup(func() { database.Close() }) //nolint: errcheck
-	return database
-}
-
 func TestLikeRepository_Create(t *testing.T) {
-	repo := likes.NewRepository(setupTestDB(t))
+	repo := likes.NewRepository(testutil.SetupTestDB(t))
 
 	like := likes.Like{
 		ID:         "like-1",
@@ -39,7 +30,7 @@ func TestLikeRepository_Create(t *testing.T) {
 }
 
 func TestLikeRepository_Create_Duplicate(t *testing.T) {
-	repo := likes.NewRepository(setupTestDB(t))
+	repo := likes.NewRepository(testutil.SetupTestDB(t))
 
 	like := likes.Like{
 		ID:         "like-1",
@@ -57,7 +48,7 @@ func TestLikeRepository_Create_Duplicate(t *testing.T) {
 }
 
 func TestLikeRepository_Delete(t *testing.T) {
-	repo := likes.NewRepository(setupTestDB(t))
+	repo := likes.NewRepository(testutil.SetupTestDB(t))
 
 	like := likes.Like{
 		ID:         "like-1",
@@ -77,7 +68,7 @@ func TestLikeRepository_Delete(t *testing.T) {
 }
 
 func TestLikeRepository_Exists_NotFound(t *testing.T) {
-	repo := likes.NewRepository(setupTestDB(t))
+	repo := likes.NewRepository(testutil.SetupTestDB(t))
 
 	exists, err := repo.Exists(t.Context(), "user-1", "recipe-1", models.LikeTargetTypeRecipe)
 	require.NoError(t, err)
@@ -85,7 +76,7 @@ func TestLikeRepository_Exists_NotFound(t *testing.T) {
 }
 
 func TestLikeRepository_GetLikedIDs(t *testing.T) {
-	repo := likes.NewRepository(setupTestDB(t))
+	repo := likes.NewRepository(testutil.SetupTestDB(t))
 
 	require.NoError(t, repo.Create(t.Context(), likes.Like{ID: "like-1", UserID: "user-1", TargetID: "recipe-1", TargetType: models.LikeTargetTypeRecipe}))
 	require.NoError(t, repo.Create(t.Context(), likes.Like{ID: "like-2", UserID: "user-1", TargetID: "recipe-2", TargetType: models.LikeTargetTypeRecipe}))
@@ -99,7 +90,7 @@ func TestLikeRepository_GetLikedIDs(t *testing.T) {
 }
 
 func TestLikeRepository_GetLikedIDs_OtherUser(t *testing.T) {
-	repo := likes.NewRepository(setupTestDB(t))
+	repo := likes.NewRepository(testutil.SetupTestDB(t))
 
 	require.NoError(t, repo.Create(t.Context(), likes.Like{ID: "like-1", UserID: "user-1", TargetID: "recipe-1", TargetType: models.LikeTargetTypeRecipe}))
 

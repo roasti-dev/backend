@@ -11,10 +11,11 @@ import (
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
 	"github.com/nikpivkin/roasti-app-backend/internal/likes"
 	"github.com/nikpivkin/roasti-app-backend/internal/recipe"
+	"github.com/nikpivkin/roasti-app-backend/internal/testutil"
 )
 
 func setupLikeService(t *testing.T) (*likes.Service, *recipe.Repository) {
-	database := setupTestDB(t)
+	database := testutil.SetupTestDB(t)
 	likeRepo := likes.NewRepository(database)
 	recipeRepo := recipe.NewRepository(database, slog.Default())
 	svc := likes.NewService(database, likeRepo, recipeRepo)

@@ -86,7 +86,9 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 	startTmpCleanup(ctx, uploader)
 
 	recipeRepo := recipe.NewRepository(database, logger)
-	recipeService := recipe.NewService(recipeRepo, uploader)
+	likeRepo := likes.NewRepository(database)
+	likeService := likes.NewService(database, likeRepo, recipeRepo)
+	recipeService := recipe.NewService(recipeRepo, uploader, likeService)
 	userRepo := auth.NewUserRepository(database)
 
 	revokedTokenRepo := auth.NewRevokedTokenRepository(database)
@@ -101,9 +103,6 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	likeRepo := likes.NewRepository(database)
-	likeService := likes.NewService(database, likeRepo, recipeRepo)
 
 	strictHandler := handlers.NewServerHandler(recipeService, authService, uploader, likeService)
 	handler := handlers.NewStrictHandlerWithOptions(strictHandler, nil, handlers.StrictHTTPServerOptions{

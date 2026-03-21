@@ -233,6 +233,13 @@ components:
           description: Ordered list of brewing steps
           items:
             $ref: "#/components/schemas/BrewStep"
+        likes_count:
+          type: integer
+          format: int32
+          description: Total number of likes
+        is_liked:
+          type: boolean
+          description: Whether the current user has liked this recipe
       required:
         - id
         - author_id
@@ -244,6 +251,8 @@ components:
         - public
         - created_at
         - updated_at
+        - likes_count
+        - is_liked
 
     RecipePayload:
       type: object

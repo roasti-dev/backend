@@ -37,6 +37,10 @@ type ToggleResult struct {
 	LikesCount int
 }
 
+func (s *Service) IsLiked(ctx context.Context, userID, targetID string, targetType models.LikeTargetType) (bool, error) {
+	return s.repo.Exists(ctx, userID, targetID, targetType)
+}
+
 func (s *Service) Toggle(ctx context.Context, userID, targetID string, targetType models.LikeTargetType) (ToggleResult, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {

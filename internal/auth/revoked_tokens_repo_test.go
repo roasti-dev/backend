@@ -1,26 +1,17 @@
 package auth_test
 
 import (
-	"database/sql"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/auth"
-	"github.com/nikpivkin/roasti-app-backend/internal/db"
+	"github.com/nikpivkin/roasti-app-backend/internal/testutil"
 )
 
-func setupTestDB(t *testing.T) *sql.DB {
-	database, err := db.NewSQLite(t.Context(), ":memory:")
-	require.NoError(t, err)
-	require.NoError(t, db.InitSchema(database))
-	t.Cleanup(func() { database.Close() }) //nolint: errcheck
-	return database
-}
-
 func TestRevokedTokenRepository_Add(t *testing.T) {
-	repo := auth.NewRevokedTokenRepository(setupTestDB(t))
+	repo := auth.NewRevokedTokenRepository(testutil.SetupTestDB(t))
 
 	err := repo.Add(t.Context(), "some-token")
 	require.NoError(t, err)
@@ -31,7 +22,7 @@ func TestRevokedTokenRepository_Add(t *testing.T) {
 }
 
 func TestRevokedTokenRepository_IsRevoked_NotFound(t *testing.T) {
-	repo := auth.NewRevokedTokenRepository(setupTestDB(t))
+	repo := auth.NewRevokedTokenRepository(testutil.SetupTestDB(t))
 
 	revoked, err := repo.IsRevoked(t.Context(), "unknown-token")
 	require.NoError(t, err)
@@ -39,7 +30,7 @@ func TestRevokedTokenRepository_IsRevoked_NotFound(t *testing.T) {
 }
 
 func TestRevokedTokenRepository_DeleteExpired(t *testing.T) {
-	db := setupTestDB(t)
+	db := testutil.SetupTestDB(t)
 	repo := auth.NewRevokedTokenRepository(db)
 
 	_, err := db.Exec(`INSERT INTO revoked_tokens (token_hash, revoked_at) VALUES (?, datetime('now', '-91 days'))`, "oldhash")

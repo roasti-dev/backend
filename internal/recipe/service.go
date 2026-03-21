@@ -11,17 +11,24 @@ import (
 	"github.com/nikpivkin/roasti-app-backend/internal/uploads"
 )
 
-type Service struct {
-	logger   *slog.Logger
-	repo     *Repository
-	uploader *uploads.Service
+type LikeChecker interface {
+	IsLiked(ctx context.Context, userID, targetID string, targetType models.LikeTargetType) (bool, error)
+	GetLikedIDs(ctx context.Context, userID string, targetType models.LikeTargetType, targetIDs []string) (map[string]bool, error)
 }
 
-func NewService(repo *Repository, uploader *uploads.Service) *Service {
+type Service struct {
+	logger      *slog.Logger
+	repo        *Repository
+	uploader    *uploads.Service
+	likeChecker LikeChecker
+}
+
+func NewService(repo *Repository, uploader *uploads.Service, likeChecker LikeChecker) *Service {
 	return &Service{
-		logger:   slog.Default(),
-		repo:     repo,
-		uploader: uploader,
+		logger:      slog.Default(),
+		repo:        repo,
+		uploader:    uploader,
+		likeChecker: likeChecker,
 	}
 }
 
@@ -37,13 +44,38 @@ func (s *Service) GetRecipeByID(ctx context.Context, userID, recipeID string) (m
 	if !recipe.Public && recipe.AuthorId != userID {
 		return models.Recipe{}, ErrForbidden
 	}
+
+	recipe.IsLiked, err = s.likeChecker.IsLiked(ctx, userID, recipeID, models.LikeTargetTypeRecipe)
+	if err != nil {
+		return models.Recipe{}, err
+	}
+
 	return recipe, nil
 }
 
 func (s *Service) ListRecipes(
 	ctx context.Context, userID string, params models.ListRecipesParams,
 ) (models.GenericPage[models.Recipe], error) {
-	return s.repo.ListRecipes(ctx, userID, params)
+	page, err := s.repo.ListRecipes(ctx, userID, params)
+	if err != nil {
+		return models.GenericPage[models.Recipe]{}, err
+	}
+
+	ids := make([]string, len(page.Items))
+	for i, r := range page.Items {
+		ids[i] = r.Id
+	}
+
+	likedIDs, err := s.likeChecker.GetLikedIDs(ctx, userID, models.LikeTargetTypeRecipe, ids)
+	if err != nil {
+		return models.GenericPage[models.Recipe]{}, err
+	}
+
+	for i, r := range page.Items {
+		page.Items[i].IsLiked = likedIDs[r.Id]
+	}
+
+	return page, nil
 }
 
 func (s *Service) CreateRecipe(ctx context.Context, userID string, request models.CreateRecipeRequest) (models.Recipe, error) {
