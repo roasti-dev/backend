@@ -7,6 +7,7 @@ info:
 
 security:
   - BearerAuth: []
+  - CookieAuth: []
 tags:
   - name: recipes
     description: Coffee brewing recipes management
@@ -309,7 +310,7 @@ paths:
       security: []
       tags: [auth, public]
       requestBody:
-        required: true
+        required: false
         content:
           application/json:
             schema:
@@ -337,7 +338,7 @@ paths:
       description: Invalidates the provided refresh token, effectively logging the user out.
       tags: [auth]
       requestBody:
-        required: true
+        required: false
         content:
           application/json:
             schema:
@@ -373,6 +374,10 @@ components:
     BearerAuth:
       type: http
       scheme: bearer
+    CookieAuth:
+      type: apiKey
+      in: cookie
+      name: refresh_token
 
   schemas:
     RecipePage:
