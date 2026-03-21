@@ -7,7 +7,7 @@ import (
 )
 
 func (s *ServerHandler) UploadImage(ctx context.Context, request UploadImageRequestObject) (UploadImageResponseObject, error) {
-	id, err := s.uploadsService.UploadMultipart(ctx, request.Body)
+	id, err := s.uploadService.UploadMultipart(ctx, request.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -15,7 +15,7 @@ func (s *ServerHandler) UploadImage(ctx context.Context, request UploadImageRequ
 }
 
 func (s *ServerHandler) GetImage(ctx context.Context, request GetImageRequestObject) (GetImageResponseObject, error) {
-	img, err := s.uploadsService.Resolve(ctx, request.ImageId)
+	img, err := s.uploadService.Resolve(ctx, request.ImageId)
 	if err != nil {
 		return nil, err
 	}

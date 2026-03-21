@@ -175,7 +175,7 @@ func TestDeleteUnconfirmed(t *testing.T) {
 
 		f, err := svc.Resolve(t.Context(), id)
 		require.NoError(t, err)
-		f.Body.Close()
+		require.NoError(t, f.Body.Close())
 	})
 
 	t.Run("no unconfirmed files", func(t *testing.T) {

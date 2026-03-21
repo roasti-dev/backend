@@ -217,6 +217,9 @@ type ClientInterface interface {
 
 	UpdateRecipe(ctx context.Context, recipeId string, body UpdateRecipeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ToggleRecipeLike request
+	ToggleRecipeLike(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// UploadImageWithBody request with any body
 	UploadImageWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -409,6 +412,18 @@ func (c *Client) UpdateRecipeWithBody(ctx context.Context, recipeId string, cont
 
 func (c *Client) UpdateRecipe(ctx context.Context, recipeId string, body UpdateRecipeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateRecipeRequest(c.Server, recipeId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ToggleRecipeLike(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewToggleRecipeLikeRequest(c.Server, recipeId)
 	if err != nil {
 		return nil, err
 	}
@@ -846,6 +861,40 @@ func NewUpdateRecipeRequestWithBody(server string, recipeId string, contentType 
 	return req, nil
 }
 
+// NewToggleRecipeLikeRequest generates requests for ToggleRecipeLike
+func NewToggleRecipeLikeRequest(server string, recipeId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "recipe_id", recipeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/recipes/%s/like", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewUploadImageRequestWithBody generates requests for UploadImage with any type of body
 func NewUploadImageRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
@@ -1020,6 +1069,9 @@ type ClientWithResponsesInterface interface {
 	UpdateRecipeWithBodyWithResponse(ctx context.Context, recipeId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRecipeResponse, error)
 
 	UpdateRecipeWithResponse(ctx context.Context, recipeId string, body UpdateRecipeJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRecipeResponse, error)
+
+	// ToggleRecipeLikeWithResponse request
+	ToggleRecipeLikeWithResponse(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*ToggleRecipeLikeResponse, error)
 
 	// UploadImageWithBodyWithResponse request with any body
 	UploadImageWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadImageResponse, error)
@@ -1260,6 +1312,31 @@ func (r UpdateRecipeResponse) StatusCode() int {
 	return 0
 }
 
+type ToggleRecipeLikeResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *externalRef0.ToggleLikeResponse
+	JSON401      *externalRef0.ApiErrorResponse
+	JSON404      *externalRef0.ApiErrorResponse
+	JSON500      *externalRef0.ApiErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r ToggleRecipeLikeResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ToggleRecipeLikeResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type UploadImageResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -1460,6 +1537,15 @@ func (c *ClientWithResponses) UpdateRecipeWithResponse(ctx context.Context, reci
 		return nil, err
 	}
 	return ParseUpdateRecipeResponse(rsp)
+}
+
+// ToggleRecipeLikeWithResponse request returning *ToggleRecipeLikeResponse
+func (c *ClientWithResponses) ToggleRecipeLikeWithResponse(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*ToggleRecipeLikeResponse, error) {
+	rsp, err := c.ToggleRecipeLike(ctx, recipeId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseToggleRecipeLikeResponse(rsp)
 }
 
 // UploadImageWithBodyWithResponse request with arbitrary body returning *UploadImageResponse
@@ -1800,6 +1886,53 @@ func ParseUpdateRecipeResponse(rsp *http.Response) (*UpdateRecipeResponse, error
 			return nil, err
 		}
 		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseToggleRecipeLikeResponse parses an HTTP response from a ToggleRecipeLikeWithResponse call
+func ParseToggleRecipeLikeResponse(rsp *http.Response) (*ToggleRecipeLikeResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ToggleRecipeLikeResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest externalRef0.ToggleLikeResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
 
 	}
 

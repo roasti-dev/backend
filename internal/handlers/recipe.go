@@ -62,3 +62,17 @@ func (s *ServerHandler) DeleteRecipe(ctx context.Context, request DeleteRecipeRe
 	}
 	return DeleteRecipe204Response{}, nil
 }
+
+func (s *ServerHandler) ToggleRecipeLike(ctx context.Context, request ToggleRecipeLikeRequestObject) (ToggleRecipeLikeResponseObject, error) {
+	userID := requestctx.GetUserID(ctx)
+
+	result, err := s.likeService.Toggle(ctx, userID, request.RecipeId, models.LikeTargetTypeRecipe)
+	if err != nil {
+		return nil, err
+	}
+
+	return ToggleRecipeLike200JSONResponse(models.ToggleLikeResponse{
+		Liked:      result.Liked,
+		LikesCount: int32(result.LikesCount),
+	}), nil
+}

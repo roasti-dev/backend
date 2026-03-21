@@ -30,6 +30,13 @@ func createRecipe(t *testing.T, c *authenticatedClient, payload models.RecipePay
 	return resp.JSON201
 }
 
+func toggleRecipeLike(t *testing.T, c *authenticatedClient, recipeID string) {
+	t.Helper()
+	resp, err := c.ToggleRecipeLikeWithResponse(t.Context(), recipeID)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode())
+}
+
 func TestCreateRecipe(t *testing.T) {
 	srv := setupTestServer(t)
 
@@ -219,5 +226,79 @@ func TestRecipeWithImage(t *testing.T) {
 		resp, err := c.GetImageWithResponse(context.Background(), imageID)
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode())
+	})
+}
+
+func TestToggleRecipeLike(t *testing.T) {
+	srv := setupTestServer(t)
+
+	t.Run("like a recipe", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		recipe := createRecipe(t, c, defaultPayload)
+
+		resp, err := c.ToggleRecipeLikeWithResponse(t.Context(), recipe.Id)
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode())
+		assert.True(t, resp.JSON200.Liked)
+		assert.Equal(t, int(1), resp.JSON200.LikesCount)
+	})
+
+	t.Run("unlike a recipe", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		recipe := createRecipe(t, c, defaultPayload)
+
+		toggleRecipeLike(t, c, recipe.Id)
+
+		resp, err := c.ToggleRecipeLikeWithResponse(t.Context(), recipe.Id)
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode())
+		assert.False(t, resp.JSON200.Liked)
+		assert.Equal(t, int(0), resp.JSON200.LikesCount)
+	})
+
+	t.Run("two users like same recipe", func(t *testing.T) {
+		c1 := newAuthenticatedTestClient(t, srv)
+		c2 := newAuthenticatedTestClient(t, srv)
+		recipe := createRecipe(t, c1, defaultPayload)
+
+		toggleRecipeLike(t, c1, recipe.Id)
+
+		resp, err := c2.ToggleRecipeLikeWithResponse(t.Context(), recipe.Id)
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode())
+		assert.True(t, resp.JSON200.Liked)
+		assert.Equal(t, int(2), resp.JSON200.LikesCount)
+	})
+
+	t.Run("like does not affect other recipes", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		r1 := createRecipe(t, c, defaultPayload)
+		r2 := createRecipe(t, c, defaultPayload)
+
+		toggleRecipeLike(t, c, r1.Id)
+
+		resp, err := c.ToggleRecipeLikeWithResponse(t.Context(), r2.Id)
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode())
+		assert.True(t, resp.JSON200.Liked)
+		assert.Equal(t, int(1), resp.JSON200.LikesCount)
+	})
+
+	t.Run("unauthenticated returns 401", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		recipe := createRecipe(t, c, defaultPayload)
+
+		unauth := newTestClient(t, srv)
+		resp, err := unauth.ToggleRecipeLikeWithResponse(t.Context(), recipe.Id)
+		require.NoError(t, err)
+		assert.Equal(t, 401, resp.StatusCode())
+	})
+
+	t.Run("non-existent recipe returns 404", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+
+		resp, err := c.ToggleRecipeLikeWithResponse(t.Context(), ids.NewID())
+		require.NoError(t, err)
+		assert.Equal(t, 404, resp.StatusCode())
 	})
 }

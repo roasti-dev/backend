@@ -23,6 +23,7 @@ import (
 	"github.com/nikpivkin/roasti-app-backend/internal/auth"
 	"github.com/nikpivkin/roasti-app-backend/internal/db"
 	"github.com/nikpivkin/roasti-app-backend/internal/handlers"
+	"github.com/nikpivkin/roasti-app-backend/internal/likes"
 	"github.com/nikpivkin/roasti-app-backend/internal/log"
 	"github.com/nikpivkin/roasti-app-backend/internal/middleware"
 	"github.com/nikpivkin/roasti-app-backend/internal/recipe"
@@ -101,7 +102,10 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 		return nil, err
 	}
 
-	strictHandler := handlers.NewServerHandler(recipeService, authService, uploader)
+	likeRepo := likes.NewRepository(database)
+	likeService := likes.NewService(database, likeRepo, recipeRepo)
+
+	strictHandler := handlers.NewServerHandler(recipeService, authService, uploader, likeService)
 	handler := handlers.NewStrictHandlerWithOptions(strictHandler, nil, handlers.StrictHTTPServerOptions{
 		ResponseErrorHandlerFunc: responseErrorHandler,
 	})
@@ -187,10 +191,8 @@ func corsMiddleware(allowedOrigins []string) func(http.Handler) http.Handler {
 			if len(allowedOrigins) == 0 {
 				// dev mode
 				w.Header().Set("Access-Control-Allow-Origin", origin)
-			} else {
-				if slices.Contains(allowedOrigins, origin) {
-					w.Header().Set("Access-Control-Allow-Origin", origin)
-				}
+			} else if slices.Contains(allowedOrigins, origin) {
+				w.Header().Set("Access-Control-Allow-Origin", origin)
 			}
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")

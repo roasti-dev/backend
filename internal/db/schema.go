@@ -66,6 +66,17 @@ func InitSchema(db *sql.DB) error {
     	 	created_at DATETIME NOT NULL,
     	 	confirmed BOOLEAN NOT NULL DEFAULT 0
 		);`,
+		`CREATE TABLE IF NOT EXISTS likes (
+			id          TEXT PRIMARY KEY,
+			user_id     TEXT NOT NULL,
+			target_id   TEXT NOT NULL,
+			target_type TEXT NOT NULL,
+			created_at  DATETIME NOT NULL,
+			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+			UNIQUE (user_id, target_id, target_type)
+		);`,
+		`CREATE INDEX IF NOT EXISTS idx_likes_target ON likes (target_id, target_type);`,
+		`ALTER TABLE recipes ADD COLUMN likes_count INTEGER NOT NULL DEFAULT 0;`,
 	}
 
 	for _, q := range queries {

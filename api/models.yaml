@@ -446,3 +446,24 @@ components:
         refresh_token:
           type: string
           description: Token used to obtain a new access token
+
+    LikeTargetType:
+          type: string
+          enum:
+            - recipe
+          description: Type of the liked object
+
+    ToggleLikeResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - liked
+        - likes_count
+      properties:
+        liked:
+          type: boolean
+          description: True if like was added, false if removed
+        likes_count:
+          type: integer
+          format: int32
+          description: Updated total likes count

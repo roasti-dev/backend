@@ -13,6 +13,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
+	"github.com/nikpivkin/roasti-app-backend/internal/likes"
 	"github.com/nikpivkin/roasti-app-backend/internal/ptr"
 )
 
@@ -376,6 +377,42 @@ func (r *Repository) DeleteRecipe(ctx context.Context, userID, recipeID string) 
 	})
 	_, err := query.RunWith(r.runner).ExecContext(ctx)
 	return err
+}
+
+func (r *Repository) IncrementLikes(ctx context.Context, tx *sql.Tx, targetID string) (int, error) {
+	var count int
+	err := sq.StatementBuilder.PlaceholderFormat(sq.Dollar).RunWith(tx).
+		Update("recipes").
+		Set("likes_count", sq.Expr("likes_count + 1")).
+		Where(sq.Eq{"id": targetID}).
+		Suffix("RETURNING likes_count").
+		QueryRowContext(ctx).
+		Scan(&count)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, likes.ErrTargetNotFound
+		}
+		return 0, fmt.Errorf("increment likes: %w", err)
+	}
+	return count, nil
+}
+
+func (r *Repository) DecrementLikes(ctx context.Context, tx *sql.Tx, targetID string) (int, error) {
+	var count int
+	err := sq.StatementBuilder.PlaceholderFormat(sq.Dollar).RunWith(tx).
+		Update("recipes").
+		Set("likes_count", sq.Expr("MAX(likes_count - 1, 0)")).
+		Where(sq.Eq{"id": targetID}).
+		Suffix("RETURNING likes_count").
+		QueryRowContext(ctx).
+		Scan(&count)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, likes.ErrTargetNotFound
+		}
+		return 0, fmt.Errorf("decrement likes: %w", err)
+	}
+	return count, nil
 }
 
 func (r *Repository) getBrewStepsByRecipeIDs(
