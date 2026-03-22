@@ -14,5 +14,13 @@ RestartSec=3
 StartLimitIntervalSec=60
 StartLimitBurst=5
 
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=roasti
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/roasti
+
 [Install]
 WantedBy=multi-user.target
