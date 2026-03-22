@@ -49,9 +49,6 @@ setup-server:
 deploy:
 	ansible-playbook -i deploy/inventory.ini deploy/deploy.yaml
 
-deploy-ci:
-	ansible-playbook -i "$${ANSIBLE_HOST}," deploy/deploy.yaml
-
 lint:
 	golangci-lint run
 

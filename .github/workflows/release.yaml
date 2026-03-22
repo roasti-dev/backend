@@ -47,7 +47,12 @@ jobs:
       - name: Write .env.production
         run: echo "${{ secrets.ENV_PRODUCTION }}" > .env.production
 
+
+      - name: Write inventory
+        run: |
+          echo "[all]" > deploy/inventory.ini
+          echo "${{ secrets.VPS_HOST }} ansible_user=roasti ansible_ssh_private_key_file=~/.ssh/id_rsa" >> deploy/inventory.ini
+
       - name: Deploy
-        run: make deploy-ci
-        env:
-          ANSIBLE_HOST: "${{ secrets.VPS_HOST }} ansible_user=roasti ansible_ssh_private_key_file=~/.ssh/id_rsa"
+        run: make deploy
+
