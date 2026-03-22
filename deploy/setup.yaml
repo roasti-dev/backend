@@ -1,20 +1,48 @@
 - name: Setup
   hosts: vps
+  become: yes
+  vars:
+    app_user: roasti
+    app_dir: /var/lib/roasti
+
   tasks:
-    - name: update apt repository
+    - name: Update apt repository
       ansible.builtin.apt:
         update_cache: yes
 
     - name: Create user
       user:
-        name: roasti
+        name: "{{ app_user }}"
         system: yes
-        shell: /usr/sbin/nologin
+        shell: /bin/bash
 
     - name: Create directories
       file:
-        path: /var/lib/roasti/uploads
+        path: "{{ app_dir }}/uploads"
         state: directory
-        owner: roasti
+        owner: "{{ app_user }}"
         recurse: yes
 
+    - name: Setup sudoers
+      copy:
+        content: "{{ app_user }} ALL=(ALL) NOPASSWD: ALL\n"
+        dest: "/etc/sudoers.d/{{ app_user }}"
+        mode: '0440'
+        validate: /usr/sbin/visudo -cf %s
+
+    - name: Create .ssh directory
+      file:
+        path: "/home/{{ app_user }}/.ssh"
+        state: directory
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+        mode: '0700'
+
+    - name: Copy authorized_keys from root
+      copy:
+        src: /root/.ssh/authorized_keys
+        dest: "/home/{{ app_user }}/.ssh/authorized_keys"
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+        mode: '0600'
+        remote_src: yes
