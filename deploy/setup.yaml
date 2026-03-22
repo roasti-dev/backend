@@ -30,19 +30,8 @@
         mode: '0440'
         validate: /usr/sbin/visudo -cf %s
 
-    - name: Create .ssh directory
-      file:
-        path: "/home/{{ app_user }}/.ssh"
-        state: directory
-        owner: "{{ app_user }}"
-        group: "{{ app_user }}"
-        mode: '0700'
-
-    - name: Copy authorized_keys from root
-      copy:
-        src: /root/.ssh/authorized_keys
-        dest: "/home/{{ app_user }}/.ssh/authorized_keys"
-        owner: "{{ app_user }}"
-        group: "{{ app_user }}"
-        mode: '0600'
-        remote_src: yes
+    - name: Add CI deploy key
+      authorized_key:
+        user: "{{ app_user }}"
+        key: "{{ lookup('file', '~/.ssh/roasti_deploy.pub') }}"
+        state: present

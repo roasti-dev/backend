@@ -50,4 +50,4 @@ jobs:
       - name: Deploy
         run: make deploy-ci
         env:
-          ANSIBLE_HOST: "${{ secrets.VPS_HOST }} ansible_user=roasti"
+          ANSIBLE_HOST: "${{ secrets.VPS_HOST }} ansible_user=roasti ansible_ssh_private_key_file=~/.ssh/id_rsa"
