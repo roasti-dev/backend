@@ -28,10 +28,20 @@ jobs:
       - name: Build
         run: make build-linux-amd64
 
+      - name: Generate changelog
+        id: changelog
+        uses: TriPSs/conventional-changelog-action@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          release-count: 0
+          preset: conventionalcommits
+          skip-tag: true
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          generate_release_notes: true
+          body: ${{ steps.changelog.outputs.clean_changelog }}
+          name: Release ${{ steps.changelog.outputs.tag }}
           files: app-linux-amd64
 
       - name: Install Ansible
