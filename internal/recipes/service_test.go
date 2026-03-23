@@ -1,4 +1,4 @@
-package recipe_test
+package recipes_test
 
 import (
 	"context"
@@ -10,11 +10,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
-	"github.com/nikpivkin/roasti-app-backend/internal/recipe"
+	"github.com/nikpivkin/roasti-app-backend/internal/recipes"
 	"github.com/nikpivkin/roasti-app-backend/internal/testutil"
 )
 
-func createTestRecipe(t *testing.T, repo *recipe.Repository) models.Recipe {
+func createTestRecipe(t *testing.T, repo *recipes.Repository) models.Recipe {
 	t.Helper()
 	r := models.Recipe{
 		Id:          "recipe-1",
@@ -49,10 +49,10 @@ func (m *mockLikeChecker) GetLikedIDs(_ context.Context, _ string, _ models.Like
 	return result, nil
 }
 
-func setupRecipeService(t *testing.T, likeChecker recipe.LikeChecker) (*recipe.Service, *recipe.Repository) {
+func setupRecipeService(t *testing.T, likeChecker recipes.LikeChecker) (*recipes.Service, *recipes.Repository) {
 	database := testutil.SetupTestDB(t)
-	repo := recipe.NewRepository(database, slog.Default())
-	svc := recipe.NewService(repo, nil, likeChecker)
+	repo := recipes.NewRepository(database, slog.Default())
+	svc := recipes.NewService(repo, nil, likeChecker)
 	return svc, repo
 }
 
@@ -72,7 +72,7 @@ func TestRecipeService_GetRecipeByID(t *testing.T) {
 		svc, _ := setupRecipeService(t, &mockLikeChecker{})
 
 		_, err := svc.GetRecipeByID(t.Context(), "user-1", "non-existent")
-		assert.ErrorIs(t, err, recipe.ErrNotFound)
+		assert.ErrorIs(t, err, recipes.ErrNotFound)
 	})
 
 	t.Run("returns forbidden for private recipe", func(t *testing.T) {
@@ -82,7 +82,7 @@ func TestRecipeService_GetRecipeByID(t *testing.T) {
 		require.NoError(t, repo.UpsertRecipe(t.Context(), private))
 
 		_, err := svc.GetRecipeByID(t.Context(), "other-user", private.Id)
-		assert.ErrorIs(t, err, recipe.ErrForbidden)
+		assert.ErrorIs(t, err, recipes.ErrForbidden)
 	})
 }
 

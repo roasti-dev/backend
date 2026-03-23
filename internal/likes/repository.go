@@ -111,3 +111,30 @@ func (r *Repository) GetLikedIDs(ctx context.Context, userID string, targetType 
 	}
 	return result, nil
 }
+
+func (r *Repository) ListByUser(ctx context.Context, userID string, targetType models.LikeTargetType, limit, offset int) ([]Like, error) {
+	rows, err := r.psql.Select(likeColumns...).
+		From(likesTable).
+		Where(sq.Eq{"user_id": userID, "target_type": targetType}).
+		OrderBy("created_at DESC").
+		Limit(uint64(limit)).
+		Offset(uint64(offset)).
+		QueryContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list likes by user: %w", err)
+	}
+	defer rows.Close()
+
+	var likes []Like
+	for rows.Next() {
+		var like Like
+		if err := rows.Scan(&like.ID, &like.UserID, &like.TargetID, &like.TargetType, &like.CreatedAt); err != nil {
+			return nil, fmt.Errorf("scan like: %w", err)
+		}
+		likes = append(likes, like)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows error: %w", err)
+	}
+	return likes, nil
+}

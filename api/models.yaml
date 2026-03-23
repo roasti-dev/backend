@@ -36,6 +36,30 @@ components:
                   - desc
                 description: "Sort direction"
 
+    ListMyLikesParams:
+      name: listMyLikes
+      in: query
+      style: form
+      explode: true
+      schema:
+        allOf:
+          - $ref: "#/components/schemas/PaginationParams"
+          - type: object
+            required:
+              - type
+            properties:
+              type:
+                type: string
+                enum:
+                  - recipe
+                description: Type of liked resource
+              sort_direction:
+                type: string
+                enum:
+                  - asc
+                  - desc
+                description: Sort direction by liked_at
+
   schemas:
     LimitParam:
       description: Number of items per page
@@ -254,6 +278,50 @@ components:
         - likes_count
         - is_liked
 
+    RecipePreview:
+      type: object
+      description: Lightweight recipe representation for lists and cards
+      properties:
+        id:
+          type: string
+          description: Unique recipe identifier
+        author_id:
+          type: string
+          description: ID of the user who created the recipe
+        title:
+          type: string
+          description: Recipe title
+        image_id:
+          type: string
+          nullable: true
+          description: ID of the uploaded image. Can be resolved via the image upload endpoint.
+        brew_method:
+          $ref: "#/components/schemas/BrewMethod"
+        difficulty:
+          $ref: "#/components/schemas/Difficulty"
+        roast_level:
+          $ref: "#/components/schemas/RoastLevel"
+        likes_count:
+          type: integer
+          format: int32
+          description: Total number of likes
+        is_liked:
+          type: boolean
+          description: Whether the current user has liked this recipe
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when the recipe was created
+      required:
+        - id
+        - author_id
+        - title
+        - brew_method
+        - difficulty
+        - likes_count
+        - is_liked
+        - created_at
+
     RecipePayload:
       type: object
       additionalProperties: false
@@ -455,3 +523,15 @@ components:
           type: integer
           format: int32
           description: Updated total likes count
+
+    LikedRecipe:
+      type: object
+      required:
+        - liked_at
+        - recipe
+      properties:
+        liked_at:
+          type: string
+          format: date-time
+        recipe:
+          $ref: "#/components/schemas/RecipePreview"

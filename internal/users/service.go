@@ -3,17 +3,31 @@ package users
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
+	"github.com/nikpivkin/roasti-app-backend/internal/likes"
 )
 
-type Service struct {
-	repo *UserRepository
+type RecipeService interface {
+	GetPreviewsByIDs(ctx context.Context, currentUserID string, ids []string) ([]models.RecipePreview, error)
 }
 
-func NewUserService(repo *UserRepository) *Service {
+type LikesRepository interface {
+	ListByUser(ctx context.Context, userID string, targetType models.LikeTargetType, limit, offset int) ([]likes.Like, error)
+}
+
+type Service struct {
+	repo    *UserRepository
+	recipes RecipeService
+	likes   LikesRepository
+}
+
+func NewUserService(repo *UserRepository, recipes RecipeService, likes LikesRepository) *Service {
 	return &Service{
-		repo: repo,
+		repo:    repo,
+		recipes: recipes,
+		likes:   likes,
 	}
 }
 
@@ -51,4 +65,40 @@ func (s *Service) ExistsByUsername(ctx context.Context, username string) (bool, 
 
 func (s *Service) ExistsByEmail(ctx context.Context, email string) (bool, error) {
 	return s.repo.ExistsByEmail(ctx, email)
+}
+
+func (s *Service) ListLikedRecipes(ctx context.Context, currentUserID string, params models.ListMyLikesParams) (models.GenericPage[models.LikedRecipe], error) {
+	pag := params.Pagination()
+
+	likedList, err := s.likes.ListByUser(ctx,
+		currentUserID, models.LikeTargetTypeRecipe, int(pag.GetLimit()), int(pag.Offset()))
+	if err != nil {
+		return models.GenericPage[models.LikedRecipe]{}, fmt.Errorf("list liked recipes: %w", err)
+	}
+
+	if len(likedList) == 0 {
+		return models.NewPage([]models.LikedRecipe{}, pag, 0), nil
+	}
+
+	ids := make([]string, len(likedList))
+	likedAtMap := make(map[string]time.Time, len(likedList))
+	for i, l := range likedList {
+		ids[i] = l.TargetID
+		likedAtMap[l.TargetID] = l.CreatedAt
+	}
+
+	previews, err := s.recipes.GetPreviewsByIDs(ctx, currentUserID, ids)
+	if err != nil {
+		return models.GenericPage[models.LikedRecipe]{}, fmt.Errorf("get recipe previews: %w", err)
+	}
+
+	result := make([]models.LikedRecipe, len(previews))
+	for i, p := range previews {
+		result[i] = models.LikedRecipe{
+			LikedAt: likedAtMap[p.Id],
+			Recipe:  p,
+		}
+	}
+
+	return models.NewPage(result, pag, len(likedList)), nil
 }

@@ -1,9 +1,10 @@
-package recipe
+package recipes
 
 import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log/slog"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
@@ -76,6 +77,29 @@ func (s *Service) ListRecipes(
 	}
 
 	return page, nil
+}
+
+func (s *Service) GetPreviewsByIDs(ctx context.Context, currentUserID string, ids []string) ([]models.RecipePreview, error) {
+	previews, err := s.repo.GetPreviewsByIDs(ctx, currentUserID, ids)
+	if err != nil {
+		return nil, fmt.Errorf("get recipe previews: %w", err)
+	}
+
+	likedIDs := make([]string, len(previews))
+	for i, p := range previews {
+		likedIDs[i] = p.Id
+	}
+
+	likedMap, err := s.likeChecker.GetLikedIDs(ctx, currentUserID, models.LikeTargetTypeRecipe, likedIDs)
+	if err != nil {
+		return nil, fmt.Errorf("get liked ids: %w", err)
+	}
+
+	for i := range previews {
+		previews[i].IsLiked = likedMap[previews[i].Id]
+	}
+
+	return previews, nil
 }
 
 func (s *Service) CreateRecipe(ctx context.Context, userID string, request models.CreateRecipeRequest) (models.Recipe, error) {

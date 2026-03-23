@@ -26,7 +26,7 @@ import (
 	"github.com/nikpivkin/roasti-app-backend/internal/likes"
 	"github.com/nikpivkin/roasti-app-backend/internal/log"
 	"github.com/nikpivkin/roasti-app-backend/internal/middleware"
-	"github.com/nikpivkin/roasti-app-backend/internal/recipe"
+	"github.com/nikpivkin/roasti-app-backend/internal/recipes"
 	"github.com/nikpivkin/roasti-app-backend/internal/uploads"
 	"github.com/nikpivkin/roasti-app-backend/internal/users"
 )
@@ -86,12 +86,12 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 	uploader := uploads.NewService(cfg.UploadsPath, uploadRepo)
 	startTmpCleanup(ctx, uploader)
 
-	recipeRepo := recipe.NewRepository(database, logger)
+	recipeRepo := recipes.NewRepository(database, logger)
 	likeRepo := likes.NewRepository(database)
 	likeService := likes.NewService(database, likeRepo, recipeRepo)
-	recipeService := recipe.NewService(recipeRepo, uploader, likeService)
+	recipeService := recipes.NewService(recipeRepo, uploader, likeService)
 	userRepo := users.NewUserRepository(database)
-	userService := users.NewUserService(userRepo)
+	userService := users.NewUserService(userRepo, recipeService, likeRepo)
 
 	revokedTokenRepo := auth.NewRevokedTokenRepository(database)
 	startRevokedTokenCleanup(ctx, revokedTokenRepo)

@@ -25,16 +25,16 @@ const (
 
 // Defines values for ListRecipesParamsListRecipesSortDirection.
 const (
-	Asc  ListRecipesParamsListRecipesSortDirection = "asc"
-	Desc ListRecipesParamsListRecipesSortDirection = "desc"
+	ListRecipesParamsListRecipesSortDirectionAsc  ListRecipesParamsListRecipesSortDirection = "asc"
+	ListRecipesParamsListRecipesSortDirectionDesc ListRecipesParamsListRecipesSortDirection = "desc"
 )
 
 // Valid indicates whether the value is a known member of the ListRecipesParamsListRecipesSortDirection enum.
 func (e ListRecipesParamsListRecipesSortDirection) Valid() bool {
 	switch e {
-	case Asc:
+	case ListRecipesParamsListRecipesSortDirectionAsc:
 		return true
-	case Desc:
+	case ListRecipesParamsListRecipesSortDirectionDesc:
 		return true
 	default:
 		return false
@@ -59,6 +59,45 @@ func (e ListRecipesParamsListRecipesSortField) Valid() bool {
 	}
 }
 
+// Defines values for ListMyLikesParamsListMyLikesSortDirection.
+const (
+	ListMyLikesParamsListMyLikesSortDirectionAsc  ListMyLikesParamsListMyLikesSortDirection = "asc"
+	ListMyLikesParamsListMyLikesSortDirectionDesc ListMyLikesParamsListMyLikesSortDirection = "desc"
+)
+
+// Valid indicates whether the value is a known member of the ListMyLikesParamsListMyLikesSortDirection enum.
+func (e ListMyLikesParamsListMyLikesSortDirection) Valid() bool {
+	switch e {
+	case ListMyLikesParamsListMyLikesSortDirectionAsc:
+		return true
+	case ListMyLikesParamsListMyLikesSortDirectionDesc:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ListMyLikesParamsListMyLikesType.
+const (
+	Recipe ListMyLikesParamsListMyLikesType = "recipe"
+)
+
+// Valid indicates whether the value is a known member of the ListMyLikesParamsListMyLikesType enum.
+func (e ListMyLikesParamsListMyLikesType) Valid() bool {
+	switch e {
+	case Recipe:
+		return true
+	default:
+		return false
+	}
+}
+
+// LikedRecipePage defines model for LikedRecipePage.
+type LikedRecipePage struct {
+	Items      []externalRef0.LikedRecipe  `json:"items"`
+	Pagination externalRef0.PaginationMeta `json:"pagination"`
+}
+
 // RecipePage defines model for RecipePage.
 type RecipePage struct {
 	Items      []externalRef0.Recipe       `json:"items"`
@@ -80,6 +119,17 @@ type ListRecipesParamsListRecipesSortField string
 type UploadImageMultipartBody struct {
 	File openapi_types.File `json:"file"`
 }
+
+// ListMyLikesParams defines parameters for ListMyLikes.
+type ListMyLikesParams struct {
+	ListMyLikes *externalRef0.ListMyLikesParams `form:"listMyLikes,omitempty" json:"listMyLikes,omitempty"`
+}
+
+// ListMyLikesParamsListMyLikesSortDirection defines parameters for ListMyLikes.
+type ListMyLikesParamsListMyLikesSortDirection string
+
+// ListMyLikesParamsListMyLikesType defines parameters for ListMyLikes.
+type ListMyLikesParamsListMyLikesType string
 
 // LoginUserJSONRequestBody defines body for LoginUser for application/json ContentType.
 type LoginUserJSONRequestBody = externalRef0.LoginRequest
@@ -225,6 +275,9 @@ type ClientInterface interface {
 
 	// GetCurrentUser request
 	GetCurrentUser(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListMyLikes request
+	ListMyLikes(ctx context.Context, params *ListMyLikesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// HealthCheck request
 	HealthCheck(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -448,6 +501,18 @@ func (c *Client) GetImage(ctx context.Context, imageId string, reqEditors ...Req
 
 func (c *Client) GetCurrentUser(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetCurrentUserRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListMyLikes(ctx context.Context, params *ListMyLikesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListMyLikesRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -958,6 +1023,55 @@ func NewGetCurrentUserRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewListMyLikesRequest generates requests for ListMyLikes
+func NewListMyLikesRequest(server string, params *ListMyLikesParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/users/me/likes")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.ListMyLikes != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "listMyLikes", *params.ListMyLikes, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "", Format: ""}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewHealthCheckRequest generates requests for HealthCheck
 func NewHealthCheckRequest(server string) (*http.Request, error) {
 	var err error
@@ -1078,6 +1192,9 @@ type ClientWithResponsesInterface interface {
 
 	// GetCurrentUserWithResponse request
 	GetCurrentUserWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetCurrentUserResponse, error)
+
+	// ListMyLikesWithResponse request
+	ListMyLikesWithResponse(ctx context.Context, params *ListMyLikesParams, reqEditors ...RequestEditorFn) (*ListMyLikesResponse, error)
 
 	// HealthCheckWithResponse request
 	HealthCheckWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*HealthCheckResponse, error)
@@ -1380,6 +1497,28 @@ func (r GetCurrentUserResponse) StatusCode() int {
 	return 0
 }
 
+type ListMyLikesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *LikedRecipePage
+}
+
+// Status returns HTTPResponse.Status
+func (r ListMyLikesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListMyLikesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type HealthCheckResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -1564,6 +1703,15 @@ func (c *ClientWithResponses) GetCurrentUserWithResponse(ctx context.Context, re
 		return nil, err
 	}
 	return ParseGetCurrentUserResponse(rsp)
+}
+
+// ListMyLikesWithResponse request returning *ListMyLikesResponse
+func (c *ClientWithResponses) ListMyLikesWithResponse(ctx context.Context, params *ListMyLikesParams, reqEditors ...RequestEditorFn) (*ListMyLikesResponse, error) {
+	rsp, err := c.ListMyLikes(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListMyLikesResponse(rsp)
 }
 
 // HealthCheckWithResponse request returning *HealthCheckResponse
@@ -1971,6 +2119,32 @@ func ParseGetCurrentUserResponse(rsp *http.Response) (*GetCurrentUserResponse, e
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest externalRef0.CurrentUser
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListMyLikesResponse parses an HTTP response from a ListMyLikesWithResponse call
+func ParseListMyLikesResponse(rsp *http.Response) (*ListMyLikesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListMyLikesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest LikedRecipePage
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

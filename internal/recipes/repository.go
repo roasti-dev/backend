@@ -1,4 +1,4 @@
-package recipe
+package recipes
 
 import (
 	"context"
@@ -46,6 +46,12 @@ var (
 	recipeSortableColumns = []string{
 		"created_at",
 		"title",
+	}
+
+	recipePreviewColumns = []string{
+		"id", "author_id", "title", "image_id",
+		"brew_method", "difficulty", "roast_level",
+		"likes_count", "created_at",
 	}
 
 	brewStepsColumns = []string{
@@ -281,6 +287,40 @@ func (r *Repository) ListRecipes(
 		return models.GenericPage[models.Recipe]{}, err
 	}
 	return models.NewPage(recipes, pag, total), nil
+}
+
+func (r *Repository) GetPreviewsByIDs(ctx context.Context, currentUserID string, ids []string) ([]models.RecipePreview, error) {
+	rows, err := r.psql.
+		Select(recipePreviewColumns...).
+		From(recipesTable).
+		Where(sq.Eq{"id": ids}).
+		Where(sq.Or{
+			sq.Eq{"public": true},
+			sq.Eq{"author_id": currentUserID},
+		}).
+		RunWith(r.runner).
+		QueryContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("get recipe previews by ids: %w", err)
+	}
+	defer rows.Close()
+
+	var previews []models.RecipePreview
+	for rows.Next() {
+		var p models.RecipePreview
+		if err := rows.Scan(
+			&p.Id, &p.AuthorId, &p.Title, &p.ImageId,
+			&p.BrewMethod, &p.Difficulty, &p.RoastLevel,
+			&p.LikesCount, &p.CreatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("scan recipe preview: %w", err)
+		}
+		previews = append(previews, p)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows error: %w", err)
+	}
+	return previews, nil
 }
 
 func applyListRecipesFilter(

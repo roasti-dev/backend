@@ -1,4 +1,4 @@
-package recipe_test
+package recipes_test
 
 import (
 	"log/slog"
@@ -10,12 +10,12 @@ import (
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
 	"github.com/nikpivkin/roasti-app-backend/internal/likes"
-	"github.com/nikpivkin/roasti-app-backend/internal/recipe"
+	"github.com/nikpivkin/roasti-app-backend/internal/recipes"
 	"github.com/nikpivkin/roasti-app-backend/internal/testutil"
 )
 
-func setupRecipeRepo(t *testing.T) *recipe.Repository {
-	return recipe.NewRepository(testutil.SetupTestDB(t), slog.Default())
+func setupRecipeRepo(t *testing.T) *recipes.Repository {
+	return recipes.NewRepository(testutil.SetupTestDB(t), slog.Default())
 }
 
 func defaultTestRecipe() models.Recipe {
@@ -64,7 +64,7 @@ func TestRecipeRepository_GetRecipeByID_NotFound(t *testing.T) {
 	repo := setupRecipeRepo(t)
 
 	_, err := repo.GetRecipeByID(t.Context(), "non-existent")
-	assert.ErrorIs(t, err, recipe.ErrNotFound)
+	assert.ErrorIs(t, err, recipes.ErrNotFound)
 }
 
 func TestRecipeRepository_ListRecipes(t *testing.T) {
@@ -104,7 +104,7 @@ func TestRecipeRepository_DeleteRecipe(t *testing.T) {
 	require.NoError(t, repo.DeleteRecipe(t.Context(), r.AuthorId, r.Id))
 
 	_, err := repo.GetRecipeByID(t.Context(), r.Id)
-	assert.ErrorIs(t, err, recipe.ErrNotFound)
+	assert.ErrorIs(t, err, recipes.ErrNotFound)
 }
 
 func TestRecipeRepository_IncrementLikes(t *testing.T) {

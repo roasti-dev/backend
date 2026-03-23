@@ -10,7 +10,7 @@ import (
 
 	"github.com/nikpivkin/roasti-app-backend/internal/db"
 	"github.com/nikpivkin/roasti-app-backend/internal/likes"
-	"github.com/nikpivkin/roasti-app-backend/internal/recipe"
+	"github.com/nikpivkin/roasti-app-backend/internal/recipes"
 	"github.com/nikpivkin/roasti-app-backend/internal/seed"
 	"github.com/nikpivkin/roasti-app-backend/internal/uploads"
 )
@@ -42,7 +42,7 @@ func realMain() error {
 	if err != nil {
 		return fmt.Errorf("create db: %w", err)
 	}
-	defer database.Close()
+	defer database.Close() //nolint:errcheck
 
 	if err := db.InitSchema(database); err != nil {
 		return fmt.Errorf("init schema: %w", err)
@@ -50,10 +50,10 @@ func realMain() error {
 
 	uploadRepo := uploads.NewRepository(database)
 	uploader := uploads.NewService(os.TempDir(), uploadRepo)
-	recipeRepo := recipe.NewRepository(database, slog.Default())
+	recipeRepo := recipes.NewRepository(database, slog.Default())
 	likeRepo := likes.NewRepository(database)
 	likeService := likes.NewService(database, likeRepo, recipeRepo)
-	recipeService := recipe.NewService(recipeRepo, uploader, likeService)
+	recipeService := recipes.NewService(recipeRepo, uploader, likeService)
 
 	switch *entityType {
 	case "recipes":

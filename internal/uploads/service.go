@@ -85,15 +85,18 @@ func (s *Service) Upload(ctx context.Context, r io.Reader) (string, error) {
 	defer dst.Close()
 
 	if _, err := dst.Write(buf); err != nil {
-		_ = os.Remove(path)
+		if err := os.Remove(path); err != nil {
+			slog.WarnContext(ctx, "failed to remove temp file", "path", path, "error", err)
+		}
 		return "", fmt.Errorf("write file: %w", err)
 	}
 
 	if err := s.repo.Add(ctx, id, path, mimeType); err != nil {
-		_ = os.Remove(path)
+		if err := os.Remove(path); err != nil {
+			slog.WarnContext(ctx, "failed to remove temp file", "path", path, "error", err)
+		}
 		return "", fmt.Errorf("save upload: %w", err)
 	}
-
 	return id, nil
 }
 

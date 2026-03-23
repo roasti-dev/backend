@@ -22,7 +22,8 @@ func (s *ServerHandler) ListRecipes(ctx context.Context, request ListRecipesRequ
 	s.logger.DebugContext(ctx, "list recipes request")
 
 	userID := requestctx.GetUserID(ctx)
-	recipePage, err := s.recipeService.ListRecipes(ctx, userID, ptr.GetOr(request.Params.ListRecipes, models.ListRecipesParams{}))
+	params := ptr.GetOr(request.Params.ListRecipes, models.ListRecipesParams{})
+	recipePage, err := s.recipeService.ListRecipes(ctx, userID, params)
 	if err != nil {
 		return nil, err
 	}

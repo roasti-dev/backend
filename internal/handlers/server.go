@@ -5,7 +5,7 @@ import (
 
 	"github.com/nikpivkin/roasti-app-backend/internal/auth"
 	"github.com/nikpivkin/roasti-app-backend/internal/likes"
-	"github.com/nikpivkin/roasti-app-backend/internal/recipe"
+	"github.com/nikpivkin/roasti-app-backend/internal/recipes"
 	"github.com/nikpivkin/roasti-app-backend/internal/uploads"
 	"github.com/nikpivkin/roasti-app-backend/internal/users"
 )
@@ -17,12 +17,12 @@ type ServerHandler struct {
 	authService   *auth.Service
 	uploadService *uploads.Service
 	userService   *users.Service
-	recipeService *recipe.Service
+	recipeService *recipes.Service
 	likeService   *likes.Service
 }
 
 func NewServerHandler(
-	recipeService *recipe.Service,
+	recipeService *recipes.Service,
 	authService *auth.Service,
 	userService *users.Service,
 	uploader *uploads.Service,
