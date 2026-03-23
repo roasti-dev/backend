@@ -8,6 +8,6 @@ func (p ListRecipesParams) Pagination() PaginationParams {
 	return NewPaginationParams(ptr.FromPtr(p.Page), ptr.FromPtr(p.Limit))
 }
 
-func (p ListMyLikesParams) Pagination() PaginationParams {
+func (p ListUserLikesParams) Pagination() PaginationParams {
 	return NewPaginationParams(ptr.FromPtr(p.Page), ptr.FromPtr(p.Limit))
 }

@@ -79,7 +79,7 @@ func (s *Service) ListRecipes(
 	return page, nil
 }
 
-func (s *Service) GetPreviewsByIDs(ctx context.Context, currentUserID string, ids []string) ([]models.RecipePreview, error) {
+func (s *Service) GetPreviewsByIDs(ctx context.Context, currentUserID, ownerID string, ids []string) ([]models.RecipePreview, error) {
 	previews, err := s.repo.GetPreviewsByIDs(ctx, currentUserID, ids)
 	if err != nil {
 		return nil, fmt.Errorf("get recipe previews: %w", err)

@@ -150,3 +150,45 @@ func TestRecipeRepository_IncrementLikes_NotFound(t *testing.T) {
 	_, err := repo.IncrementLikes(t.Context(), nil, "non-existent")
 	assert.ErrorIs(t, err, likes.ErrTargetNotFound)
 }
+
+func TestRecipeRepository_GetPreviewsByIDs(t *testing.T) {
+	repo := setupRecipeRepo(t)
+
+	r1 := defaultTestRecipe()
+	r2 := defaultTestRecipe()
+	r2.Id = "recipe-2"
+	r2.AuthorId = "user-2"
+	r2.Public = false
+
+	require.NoError(t, repo.UpsertRecipe(t.Context(), r1))
+	require.NoError(t, repo.UpsertRecipe(t.Context(), r2))
+
+	ids := []string{r1.Id, r2.Id}
+
+	t.Run("returns public recipes", func(t *testing.T) {
+		previews, err := repo.GetPreviewsByIDs(t.Context(), "user-1", ids)
+		require.NoError(t, err)
+		assert.Len(t, previews, 1)
+		assert.Equal(t, r1.Id, previews[0].Id)
+	})
+
+	t.Run("owner sees own private recipes", func(t *testing.T) {
+		previews, err := repo.GetPreviewsByIDs(t.Context(), "user-2", ids)
+		require.NoError(t, err)
+		assert.Len(t, previews, 2)
+	})
+
+	t.Run("does not return other user private recipes", func(t *testing.T) {
+		previews, err := repo.GetPreviewsByIDs(t.Context(), "user-1", ids)
+		require.NoError(t, err)
+		for _, p := range previews {
+			assert.NotEqual(t, r2.Id, p.Id)
+		}
+	})
+
+	t.Run("returns empty for unknown ids", func(t *testing.T) {
+		previews, err := repo.GetPreviewsByIDs(t.Context(), "user-1", []string{"unknown"})
+		require.NoError(t, err)
+		assert.Empty(t, previews)
+	})
+}

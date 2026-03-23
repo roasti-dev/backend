@@ -10,7 +10,7 @@ import (
 )
 
 type RecipeService interface {
-	GetPreviewsByIDs(ctx context.Context, currentUserID string, ids []string) ([]models.RecipePreview, error)
+	GetPreviewsByIDs(ctx context.Context, currentUserID, ownerID string, ids []string) ([]models.RecipePreview, error)
 }
 
 type LikesRepository interface {
@@ -67,11 +67,15 @@ func (s *Service) ExistsByEmail(ctx context.Context, email string) (bool, error)
 	return s.repo.ExistsByEmail(ctx, email)
 }
 
-func (s *Service) ListLikedRecipes(ctx context.Context, currentUserID string, params models.ListMyLikesParams) (models.GenericPage[models.LikedRecipe], error) {
+func (s *Service) ListLikedRecipes(ctx context.Context, currentUserID, userID string, params models.ListUserLikesParams) (models.GenericPage[models.LikedRecipe], error) {
+	_, err := s.repo.GetByID(ctx, userID)
+	if err != nil {
+		return models.GenericPage[models.LikedRecipe]{}, err
+	}
+
 	pag := params.Pagination()
 
-	likedList, err := s.likes.ListByUser(ctx,
-		currentUserID, models.LikeTargetTypeRecipe, int(pag.GetLimit()), int(pag.Offset()))
+	likedList, err := s.likes.ListByUser(ctx, userID, models.LikeTargetTypeRecipe, int(pag.GetLimit()), int(pag.Offset()))
 	if err != nil {
 		return models.GenericPage[models.LikedRecipe]{}, fmt.Errorf("list liked recipes: %w", err)
 	}
@@ -87,7 +91,7 @@ func (s *Service) ListLikedRecipes(ctx context.Context, currentUserID string, pa
 		likedAtMap[l.TargetID] = l.CreatedAt
 	}
 
-	previews, err := s.recipes.GetPreviewsByIDs(ctx, currentUserID, ids)
+	previews, err := s.recipes.GetPreviewsByIDs(ctx, currentUserID, userID, ids)
 	if err != nil {
 		return models.GenericPage[models.LikedRecipe]{}, fmt.Errorf("get recipe previews: %w", err)
 	}

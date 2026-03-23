@@ -59,31 +59,31 @@ func (e ListRecipesParamsListRecipesSortField) Valid() bool {
 	}
 }
 
-// Defines values for ListMyLikesParamsListMyLikesSortDirection.
+// Defines values for ListUserLikesParamsListUserLikesSortDirection.
 const (
-	ListMyLikesParamsListMyLikesSortDirectionAsc  ListMyLikesParamsListMyLikesSortDirection = "asc"
-	ListMyLikesParamsListMyLikesSortDirectionDesc ListMyLikesParamsListMyLikesSortDirection = "desc"
+	ListUserLikesParamsListUserLikesSortDirectionAsc  ListUserLikesParamsListUserLikesSortDirection = "asc"
+	ListUserLikesParamsListUserLikesSortDirectionDesc ListUserLikesParamsListUserLikesSortDirection = "desc"
 )
 
-// Valid indicates whether the value is a known member of the ListMyLikesParamsListMyLikesSortDirection enum.
-func (e ListMyLikesParamsListMyLikesSortDirection) Valid() bool {
+// Valid indicates whether the value is a known member of the ListUserLikesParamsListUserLikesSortDirection enum.
+func (e ListUserLikesParamsListUserLikesSortDirection) Valid() bool {
 	switch e {
-	case ListMyLikesParamsListMyLikesSortDirectionAsc:
+	case ListUserLikesParamsListUserLikesSortDirectionAsc:
 		return true
-	case ListMyLikesParamsListMyLikesSortDirectionDesc:
+	case ListUserLikesParamsListUserLikesSortDirectionDesc:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for ListMyLikesParamsListMyLikesType.
+// Defines values for ListUserLikesParamsListUserLikesType.
 const (
-	Recipe ListMyLikesParamsListMyLikesType = "recipe"
+	Recipe ListUserLikesParamsListUserLikesType = "recipe"
 )
 
-// Valid indicates whether the value is a known member of the ListMyLikesParamsListMyLikesType enum.
-func (e ListMyLikesParamsListMyLikesType) Valid() bool {
+// Valid indicates whether the value is a known member of the ListUserLikesParamsListUserLikesType enum.
+func (e ListUserLikesParamsListUserLikesType) Valid() bool {
 	switch e {
 	case Recipe:
 		return true
@@ -120,16 +120,16 @@ type UploadImageMultipartBody struct {
 	File openapi_types.File `json:"file"`
 }
 
-// ListMyLikesParams defines parameters for ListMyLikes.
-type ListMyLikesParams struct {
-	ListMyLikes *externalRef0.ListMyLikesParams `form:"listMyLikes,omitempty" json:"listMyLikes,omitempty"`
+// ListUserLikesParams defines parameters for ListUserLikes.
+type ListUserLikesParams struct {
+	ListUserLikes *externalRef0.ListUserLikesParams `form:"listUserLikes,omitempty" json:"listUserLikes,omitempty"`
 }
 
-// ListMyLikesParamsListMyLikesSortDirection defines parameters for ListMyLikes.
-type ListMyLikesParamsListMyLikesSortDirection string
+// ListUserLikesParamsListUserLikesSortDirection defines parameters for ListUserLikes.
+type ListUserLikesParamsListUserLikesSortDirection string
 
-// ListMyLikesParamsListMyLikesType defines parameters for ListMyLikes.
-type ListMyLikesParamsListMyLikesType string
+// ListUserLikesParamsListUserLikesType defines parameters for ListUserLikes.
+type ListUserLikesParamsListUserLikesType string
 
 // LoginUserJSONRequestBody defines body for LoginUser for application/json ContentType.
 type LoginUserJSONRequestBody = externalRef0.LoginRequest
@@ -276,8 +276,8 @@ type ClientInterface interface {
 	// GetCurrentUser request
 	GetCurrentUser(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// ListMyLikes request
-	ListMyLikes(ctx context.Context, params *ListMyLikesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// ListUserLikes request
+	ListUserLikes(ctx context.Context, userId string, params *ListUserLikesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// HealthCheck request
 	HealthCheck(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -511,8 +511,8 @@ func (c *Client) GetCurrentUser(ctx context.Context, reqEditors ...RequestEditor
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListMyLikes(ctx context.Context, params *ListMyLikesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListMyLikesRequest(c.Server, params)
+func (c *Client) ListUserLikes(ctx context.Context, userId string, params *ListUserLikesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListUserLikesRequest(c.Server, userId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -1023,16 +1023,23 @@ func NewGetCurrentUserRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
-// NewListMyLikesRequest generates requests for ListMyLikes
-func NewListMyLikesRequest(server string, params *ListMyLikesParams) (*http.Request, error) {
+// NewListUserLikesRequest generates requests for ListUserLikes
+func NewListUserLikesRequest(server string, userId string, params *ListUserLikesParams) (*http.Request, error) {
 	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "user_id", userId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
 
 	serverURL, err := url.Parse(server)
 	if err != nil {
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/api/v1/users/me/likes")
+	operationPath := fmt.Sprintf("/api/v1/users/%s/likes", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -1045,9 +1052,9 @@ func NewListMyLikesRequest(server string, params *ListMyLikesParams) (*http.Requ
 	if params != nil {
 		queryValues := queryURL.Query()
 
-		if params.ListMyLikes != nil {
+		if params.ListUserLikes != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "listMyLikes", *params.ListMyLikes, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "", Format: ""}); err != nil {
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "listUserLikes", *params.ListUserLikes, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "", Format: ""}); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -1193,8 +1200,8 @@ type ClientWithResponsesInterface interface {
 	// GetCurrentUserWithResponse request
 	GetCurrentUserWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetCurrentUserResponse, error)
 
-	// ListMyLikesWithResponse request
-	ListMyLikesWithResponse(ctx context.Context, params *ListMyLikesParams, reqEditors ...RequestEditorFn) (*ListMyLikesResponse, error)
+	// ListUserLikesWithResponse request
+	ListUserLikesWithResponse(ctx context.Context, userId string, params *ListUserLikesParams, reqEditors ...RequestEditorFn) (*ListUserLikesResponse, error)
 
 	// HealthCheckWithResponse request
 	HealthCheckWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*HealthCheckResponse, error)
@@ -1497,14 +1504,14 @@ func (r GetCurrentUserResponse) StatusCode() int {
 	return 0
 }
 
-type ListMyLikesResponse struct {
+type ListUserLikesResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *LikedRecipePage
 }
 
 // Status returns HTTPResponse.Status
-func (r ListMyLikesResponse) Status() string {
+func (r ListUserLikesResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -1512,7 +1519,7 @@ func (r ListMyLikesResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r ListMyLikesResponse) StatusCode() int {
+func (r ListUserLikesResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -1705,13 +1712,13 @@ func (c *ClientWithResponses) GetCurrentUserWithResponse(ctx context.Context, re
 	return ParseGetCurrentUserResponse(rsp)
 }
 
-// ListMyLikesWithResponse request returning *ListMyLikesResponse
-func (c *ClientWithResponses) ListMyLikesWithResponse(ctx context.Context, params *ListMyLikesParams, reqEditors ...RequestEditorFn) (*ListMyLikesResponse, error) {
-	rsp, err := c.ListMyLikes(ctx, params, reqEditors...)
+// ListUserLikesWithResponse request returning *ListUserLikesResponse
+func (c *ClientWithResponses) ListUserLikesWithResponse(ctx context.Context, userId string, params *ListUserLikesParams, reqEditors ...RequestEditorFn) (*ListUserLikesResponse, error) {
+	rsp, err := c.ListUserLikes(ctx, userId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseListMyLikesResponse(rsp)
+	return ParseListUserLikesResponse(rsp)
 }
 
 // HealthCheckWithResponse request returning *HealthCheckResponse
@@ -2129,15 +2136,15 @@ func ParseGetCurrentUserResponse(rsp *http.Response) (*GetCurrentUserResponse, e
 	return response, nil
 }
 
-// ParseListMyLikesResponse parses an HTTP response from a ListMyLikesWithResponse call
-func ParseListMyLikesResponse(rsp *http.Response) (*ListMyLikesResponse, error) {
+// ParseListUserLikesResponse parses an HTTP response from a ListUserLikesWithResponse call
+func ParseListUserLikesResponse(rsp *http.Response) (*ListUserLikesResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &ListMyLikesResponse{
+	response := &ListUserLikesResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}

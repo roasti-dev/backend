@@ -50,6 +50,7 @@ func newTestClient(t *testing.T, srv *httptest.Server) *client.ClientWithRespons
 type authenticatedClient struct {
 	*client.ClientWithResponses
 
+	ID           string
 	AccessToken  string
 	RefreshToken string
 }
@@ -80,6 +81,7 @@ func newAuthenticatedTestClient(t *testing.T, srv *httptest.Server) *authenticat
 
 	return &authenticatedClient{
 		ClientWithResponses: authenticated,
+		ID:                  resp.JSON201.User.Id,
 		AccessToken:         resp.JSON201.AccessToken,
 		RefreshToken:        resp.JSON201.RefreshToken,
 	}

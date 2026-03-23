@@ -409,14 +409,19 @@ paths:
         "401":
           description: Unauthorized
 
-  /api/v1/users/me/likes:
+  /api/v1/users/{user_id}/likes:
     get:
-      summary: List liked resources
-      operationId: listMyLikes
-      description: Returns a paginated list of resources liked by the currently authenticated user.
+      summary: List liked recipes
+      operationId: listUserLikes
+      description: Returns a paginated list of recipes liked by the specified user. Private recipes are only visible to their author.
       tags: [users, likes]
       parameters:
-        - $ref: "./models.yaml#/components/parameters/ListMyLikesParams"
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: "./models.yaml#/components/parameters/ListUserLikesParams"
       responses:
         "200":
           description: Paginated list of liked recipes
@@ -426,6 +431,8 @@ paths:
                 $ref: "#/components/schemas/LikedRecipePage"
         "401":
           description: Unauthorized
+        "404":
+          description: User not found
         "500":
           description: Internal server error
           

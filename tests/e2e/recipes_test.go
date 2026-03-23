@@ -17,6 +17,7 @@ var defaultPayload = models.RecipePayload{
 	Description: "A great V60 recipe",
 	BrewMethod:  models.V60,
 	Difficulty:  models.DifficultyEasy,
+	Public:      new(true),
 	Steps: []models.BrewStepPayload{
 		{Order: 1, Title: "Boil water"},
 	},

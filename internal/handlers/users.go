@@ -17,12 +17,12 @@ func (s *ServerHandler) GetCurrentUser(ctx context.Context, request GetCurrentUs
 	return GetCurrentUser200JSONResponse(user), nil
 }
 
-func (s *ServerHandler) ListMyLikes(ctx context.Context, request ListMyLikesRequestObject) (ListMyLikesResponseObject, error) {
-	userID := requestctx.GetUserID(ctx)
-	params := ptr.GetOr(request.Params.ListMyLikes, models.ListMyLikesParams{})
-	liked, err := s.userService.ListLikedRecipes(ctx, userID, params)
+func (s *ServerHandler) ListUserLikes(ctx context.Context, request ListUserLikesRequestObject) (ListUserLikesResponseObject, error) {
+	currentUserID := requestctx.GetUserID(ctx)
+	params := ptr.GetOr(request.Params.ListUserLikes, models.ListUserLikesParams{})
+	liked, err := s.userService.ListLikedRecipes(ctx, currentUserID, request.UserId, params)
 	if err != nil {
 		return nil, err
 	}
-	return ListMyLikes200JSONResponse(liked), nil
+	return ListUserLikes200JSONResponse(liked), nil
 }

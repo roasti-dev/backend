@@ -36,8 +36,8 @@ components:
                   - desc
                 description: "Sort direction"
 
-    ListMyLikesParams:
-      name: listMyLikes
+    ListUserLikesParams:
+      name: listUserLikes
       in: query
       style: form
       explode: true
