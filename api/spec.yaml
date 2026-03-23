@@ -279,6 +279,7 @@ paths:
       summary: Get image by ID
       operationId: getImage
       description: Returns an image file by its ID.
+      security: []
       tags: [uploads]
       parameters:
         - name: image_id
