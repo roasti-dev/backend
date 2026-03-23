@@ -264,6 +264,9 @@ type ClientInterface interface {
 
 	UpdateRecipe(ctx context.Context, recipeId string, body UpdateRecipeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// CloneRecipe request
+	CloneRecipe(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ToggleRecipeLike request
 	ToggleRecipeLike(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -453,6 +456,18 @@ func (c *Client) UpdateRecipeWithBody(ctx context.Context, recipeId string, cont
 
 func (c *Client) UpdateRecipe(ctx context.Context, recipeId string, body UpdateRecipeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateRecipeRequest(c.Server, recipeId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CloneRecipe(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCloneRecipeRequest(c.Server, recipeId)
 	if err != nil {
 		return nil, err
 	}
@@ -899,6 +914,40 @@ func NewUpdateRecipeRequestWithBody(server string, recipeId string, contentType 
 	return req, nil
 }
 
+// NewCloneRecipeRequest generates requests for CloneRecipe
+func NewCloneRecipeRequest(server string, recipeId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "recipe_id", recipeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/recipes/%s/clone", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewToggleRecipeLikeRequest generates requests for ToggleRecipeLike
 func NewToggleRecipeLikeRequest(server string, recipeId string) (*http.Request, error) {
 	var err error
@@ -1188,6 +1237,9 @@ type ClientWithResponsesInterface interface {
 
 	UpdateRecipeWithResponse(ctx context.Context, recipeId string, body UpdateRecipeJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRecipeResponse, error)
 
+	// CloneRecipeWithResponse request
+	CloneRecipeWithResponse(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*CloneRecipeResponse, error)
+
 	// ToggleRecipeLikeWithResponse request
 	ToggleRecipeLikeWithResponse(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*ToggleRecipeLikeResponse, error)
 
@@ -1408,6 +1460,28 @@ func (r UpdateRecipeResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r UpdateRecipeResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CloneRecipeResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *externalRef0.Recipe
+}
+
+// Status returns HTTPResponse.Status
+func (r CloneRecipeResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CloneRecipeResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -1674,6 +1748,15 @@ func (c *ClientWithResponses) UpdateRecipeWithResponse(ctx context.Context, reci
 		return nil, err
 	}
 	return ParseUpdateRecipeResponse(rsp)
+}
+
+// CloneRecipeWithResponse request returning *CloneRecipeResponse
+func (c *ClientWithResponses) CloneRecipeWithResponse(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*CloneRecipeResponse, error) {
+	rsp, err := c.CloneRecipe(ctx, recipeId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCloneRecipeResponse(rsp)
 }
 
 // ToggleRecipeLikeWithResponse request returning *ToggleRecipeLikeResponse
@@ -2015,6 +2098,32 @@ func ParseUpdateRecipeResponse(rsp *http.Response) (*UpdateRecipeResponse, error
 			return nil, err
 		}
 		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCloneRecipeResponse parses an HTTP response from a CloneRecipeWithResponse call
+func ParseCloneRecipeResponse(rsp *http.Response) (*CloneRecipeResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CloneRecipeResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest externalRef0.Recipe
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
 
 	}
 

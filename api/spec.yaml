@@ -209,6 +209,34 @@ paths:
                 schema:
                   $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
 
+  /api/v1/recipes/{recipe_id}/clone:
+    post:
+      summary: Clone a recipe
+      operationId: cloneRecipe
+      description: Creates a copy of a public recipe authored by another user.
+      tags: [recipes]
+      parameters:
+        - name: recipe_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "201":
+          description: Cloned recipe
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/Recipe"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Cannot clone own recipe
+        "404":
+          description: Recipe not found
+        "500":
+          description: Internal server error
+
   /api/v1/uploads/images/{image_id}:
     get:
       summary: Get image by ID

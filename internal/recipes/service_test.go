@@ -120,3 +120,52 @@ func TestRecipeService_ListRecipes(t *testing.T) {
 		}
 	})
 }
+
+func TestRecipeService_CloneRecipe(t *testing.T) {
+	t.Run("clones recipe", func(t *testing.T) {
+		svc, repo := setupRecipeService(t, &mockLikeChecker{})
+		original := createTestRecipe(t, repo)
+
+		result, err := svc.CloneRecipe(t.Context(), "user-2", original.Id)
+		require.NoError(t, err)
+		assert.NotEqual(t, original.Id, result.Id)
+		assert.Equal(t, "user-2", result.AuthorId)
+		assert.Equal(t, "Copy of "+original.Title, result.Title)
+		assert.NotNil(t, result.Origin)
+		assert.Equal(t, original.Id, result.Origin.RecipeId)
+	})
+
+	t.Run("cannot clone own recipe", func(t *testing.T) {
+		svc, repo := setupRecipeService(t, &mockLikeChecker{})
+		original := createTestRecipe(t, repo)
+
+		_, err := svc.CloneRecipe(t.Context(), original.AuthorId, original.Id)
+		assert.ErrorIs(t, err, recipes.ErrForbidden)
+	})
+
+	t.Run("cannot clone private recipe", func(t *testing.T) {
+		svc, repo := setupRecipeService(t, &mockLikeChecker{})
+		private := createTestRecipe(t, repo)
+		private.Public = false
+		require.NoError(t, repo.UpsertRecipe(t.Context(), private))
+
+		_, err := svc.CloneRecipe(t.Context(), "user-2", private.Id)
+		assert.ErrorIs(t, err, recipes.ErrNotFound)
+	})
+
+	t.Run("returns not found for non-existent recipe", func(t *testing.T) {
+		svc, _ := setupRecipeService(t, &mockLikeChecker{})
+
+		_, err := svc.CloneRecipe(t.Context(), "user-2", "non-existent")
+		assert.ErrorIs(t, err, recipes.ErrNotFound)
+	})
+
+	t.Run("clones steps", func(t *testing.T) {
+		svc, repo := setupRecipeService(t, &mockLikeChecker{})
+		original := createTestRecipe(t, repo)
+
+		result, err := svc.CloneRecipe(t.Context(), "user-2", original.Id)
+		require.NoError(t, err)
+		assert.Len(t, result.Steps, len(original.Steps))
+	})
+}

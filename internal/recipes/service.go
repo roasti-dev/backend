@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
 	"github.com/nikpivkin/roasti-app-backend/internal/ids"
@@ -158,6 +159,39 @@ func (s *Service) UpdateRecipe(
 
 	s.confirmRecipeImages(ctx, updated)
 	return updated, nil
+}
+
+func (s *Service) CloneRecipe(ctx context.Context, userID, recipeID string) (models.Recipe, error) {
+	original, err := s.repo.GetRecipeByID(ctx, recipeID)
+	if err != nil {
+		return models.Recipe{}, err
+	}
+
+	if !original.Public {
+		return models.Recipe{}, ErrNotFound
+	}
+
+	if original.AuthorId == userID {
+		return models.Recipe{}, ErrForbidden
+	}
+
+	clone := original
+	clone.Id = ids.NewID()
+	clone.AuthorId = userID
+	clone.Title = "Copy of " + original.Title
+	clone.Origin = &models.RecipeOrigin{
+		RecipeId: recipeID,
+	}
+	clone.LikesCount = 0
+	clone.CreatedAt = time.Now().UTC()
+	clone.UpdatedAt = time.Now().UTC()
+	clone.Steps = original.Steps
+
+	if err := s.repo.UpsertRecipe(ctx, clone); err != nil {
+		return models.Recipe{}, err
+	}
+
+	return s.repo.GetRecipeByID(ctx, clone.Id)
 }
 
 func (s *Service) DeleteRecipe(ctx context.Context, userID, recipeID string) error {

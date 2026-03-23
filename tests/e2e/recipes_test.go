@@ -369,3 +369,83 @@ func TestToggleRecipeLike(t *testing.T) {
 		assert.Equal(t, 404, resp.StatusCode())
 	})
 }
+
+func TestCloneRecipe(t *testing.T) {
+	srv := setupTestServer(t)
+
+	t.Run("clones recipe", func(t *testing.T) {
+		c1 := newAuthenticatedTestClient(t, srv)
+		c2 := newAuthenticatedTestClient(t, srv)
+		original := createRecipe(t, c1, defaultPayload)
+
+		resp, err := c2.CloneRecipeWithResponse(t.Context(), original.Id)
+		require.NoError(t, err)
+		assert.Equal(t, 201, resp.StatusCode())
+		assert.NotEqual(t, original.Id, resp.JSON201.Id)
+		assert.Equal(t, "Copy of "+original.Title, resp.JSON201.Title)
+		assert.NotNil(t, resp.JSON201.Origin)
+		assert.Equal(t, original.Id, resp.JSON201.Origin.RecipeId)
+	})
+
+	t.Run("cannot clone own recipe", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		recipe := createRecipe(t, c, defaultPayload)
+
+		resp, err := c.CloneRecipeWithResponse(t.Context(), recipe.Id)
+		require.NoError(t, err)
+		assert.Equal(t, 403, resp.StatusCode())
+	})
+
+	t.Run("cannot clone private recipe", func(t *testing.T) {
+		c1 := newAuthenticatedTestClient(t, srv)
+		c2 := newAuthenticatedTestClient(t, srv)
+
+		private := defaultPayload
+		private.Public = new(false)
+		recipe := createRecipe(t, c1, private)
+
+		resp, err := c2.CloneRecipeWithResponse(t.Context(), recipe.Id)
+		require.NoError(t, err)
+		assert.Equal(t, 404, resp.StatusCode())
+	})
+
+	t.Run("clone appears in author likes", func(t *testing.T) {
+		c1 := newAuthenticatedTestClient(t, srv)
+		c2 := newAuthenticatedTestClient(t, srv)
+		original := createRecipe(t, c1, defaultPayload)
+
+		resp, err := c2.CloneRecipeWithResponse(t.Context(), original.Id)
+		require.NoError(t, err)
+		assert.Equal(t, 201, resp.StatusCode())
+
+		list, err := c2.ListRecipesWithResponse(t.Context(), &client.ListRecipesParams{})
+		require.NoError(t, err)
+		assert.Equal(t, 200, list.StatusCode())
+		var found bool
+		for _, r := range list.JSON200.Items {
+			if r.Id == resp.JSON201.Id {
+				found = true
+				break
+			}
+		}
+		assert.True(t, found)
+	})
+
+	t.Run("unauthenticated returns 401", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		recipe := createRecipe(t, c, defaultPayload)
+
+		unauth := newTestClient(t, srv)
+		resp, err := unauth.CloneRecipeWithResponse(t.Context(), recipe.Id)
+		require.NoError(t, err)
+		assert.Equal(t, 401, resp.StatusCode())
+	})
+
+	t.Run("non-existent recipe returns 404", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+
+		resp, err := c.CloneRecipeWithResponse(t.Context(), ids.NewID())
+		require.NoError(t, err)
+		assert.Equal(t, 404, resp.StatusCode())
+	})
+}

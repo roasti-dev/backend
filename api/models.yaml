@@ -226,6 +226,11 @@ components:
           description: ID of the user who created the recipe
         author:
           $ref: "#/components/schemas/RecipeAuthor"
+          description: Author of the recipe
+        origin:
+          $ref: "#/components/schemas/RecipeOrigin"
+          nullable: true
+          description: Present if this recipe was cloned from another recipe
         title:
           type: string
           description: Recipe title
@@ -296,6 +301,9 @@ components:
           description: ID of the user who created the recipe
         author:
           $ref: "#/components/schemas/RecipeAuthor"
+        origin:
+          $ref: "#/components/schemas/RecipeOrigin"
+          nullable: true
         title:
           type: string
           description: Recipe title
@@ -547,15 +555,32 @@ components:
 
     RecipeAuthor:
       type: object
+      description: Brief author information embedded in recipe responses
       required:
         - id
         - username
-        - avatar_id
       properties:
         id:
           type: string
+          description: Unique user identifier
         username:
           type: string
+          description: Author's username
         avatar_id:
           type: string
           nullable: true
+          description: ID of the author's avatar image
+
+    RecipeOrigin:
+      type: object
+      description: Reference to the original recipe this was cloned from
+      required:
+        - recipe_id
+        - author
+      properties:
+        recipe_id:
+          type: string
+          description: ID of the original recipe
+        author:
+          $ref: "#/components/schemas/RecipeAuthor"
+          description: Author of the original recipe

@@ -40,8 +40,12 @@ var (
 		"recipes.created_at",
 		"recipes.updated_at",
 		"recipes.likes_count",
+		"recipes.origin_recipe_id",
 		"users.username",
 		"users.avatar_id",
+		"origin_recipes.author_id",
+		"origin_authors.username",
+		"origin_authors.avatar_id",
 	}
 
 	recipeInsertColumns = []string{
@@ -58,6 +62,7 @@ var (
 		"created_at",
 		"updated_at",
 		"likes_count",
+		"origin_recipe_id",
 	}
 
 	recipeSortableColumns = []string{
@@ -75,8 +80,12 @@ var (
 		"recipes.roast_level",
 		"recipes.likes_count",
 		"recipes.created_at",
+		"recipes.origin_recipe_id",
 		"users.username",
 		"users.avatar_id",
+		"origin_recipes.author_id",
+		"origin_authors.username",
+		"origin_authors.avatar_id",
 	}
 
 	brewStepsColumns = []string{
@@ -113,6 +122,11 @@ func (r *Repository) UpsertRecipe(ctx context.Context, recipe models.Recipe) err
 
 	now := time.Now().UTC()
 
+	var originRecipeID *string
+	if recipe.Origin != nil {
+		originRecipeID = &recipe.Origin.RecipeId
+	}
+
 	query := r.psql.Insert(recipesTable).
 		Columns(recipeInsertColumns...).
 		Values(
@@ -129,6 +143,7 @@ func (r *Repository) UpsertRecipe(ctx context.Context, recipe models.Recipe) err
 			now,
 			now,
 			0,
+			originRecipeID,
 		).
 		Suffix("ON CONFLICT (id) DO UPDATE SET " +
 			"title = EXCLUDED.title, " +
@@ -157,7 +172,15 @@ func (r *Repository) UpsertRecipe(ctx context.Context, recipe models.Recipe) err
 	if len(recipe.Steps) > 0 {
 		q := r.psql.Insert(brewStepsTable).Columns(brewStepsColumns...)
 		for _, step := range recipe.Steps {
-			q = q.Values(nil, recipe.Id, step.Order, step.Title, ptr.GetOr(step.Description, ""), step.DurationSeconds, step.ImageId)
+			q = q.Values(
+				nil,
+				recipe.Id,
+				step.Order,
+				step.Title,
+				ptr.GetOr(step.Description, ""),
+				step.DurationSeconds,
+				step.ImageId,
+			)
 		}
 		if _, err = q.RunWith(tx).ExecContext(ctx); err != nil {
 			return fmt.Errorf("insert steps: %w", err)
@@ -172,6 +195,8 @@ func (r *Repository) GetRecipeByID(ctx context.Context, recipeID string) (models
 		Select(recipeSelectColumns...).
 		From(recipesTable).
 		Join("users ON users.id = recipes.author_id").
+		LeftJoin("recipes AS origin_recipes ON origin_recipes.id = recipes.origin_recipe_id").
+		LeftJoin("users AS origin_authors ON origin_authors.id = origin_recipes.author_id").
 		Where(sq.Eq{"recipes.id": recipeID}).
 		Limit(1)
 
@@ -205,7 +230,9 @@ func (r *Repository) ListRecipes(
 	sb := r.psql.
 		Select(recipeSelectColumns...).
 		From(recipesTable).
-		Join("users ON users.id = recipes.author_id")
+		Join("users ON users.id = recipes.author_id").
+		LeftJoin("recipes AS origin_recipes ON origin_recipes.id = recipes.origin_recipe_id").
+		LeftJoin("users AS origin_authors ON origin_authors.id = origin_recipes.author_id")
 	sb = applyListRecipesFilter(sb, params, currentUserID)
 	sb = applyPagination(sb, pag)
 	sb = applySort(sb, params.SortField, params.SortDirection, recipeSortableColumns, "recipes.created_at")
@@ -254,6 +281,8 @@ func (r *Repository) GetPreviewsByIDs(ctx context.Context, currentUserID string,
 		Select(recipePreviewColumns...).
 		From(recipesTable).
 		Join("users ON users.id = recipes.author_id").
+		LeftJoin("recipes AS origin_recipes ON origin_recipes.id = recipes.origin_recipe_id").
+		LeftJoin("users AS origin_authors ON origin_authors.id = origin_recipes.author_id").
 		Where(sq.Eq{"recipes.id": ids}).
 		Where(sq.Or{
 			sq.Eq{"recipes.public": true},
@@ -268,17 +297,11 @@ func (r *Repository) GetPreviewsByIDs(ctx context.Context, currentUserID string,
 
 	var previews []models.RecipePreview
 	for rows.Next() {
-		var p models.RecipePreview
-		if err := rows.Scan(
-			&p.Id, &p.AuthorId, &p.Title, &p.ImageId,
-			&p.BrewMethod, &p.Difficulty, &p.RoastLevel,
-			&p.LikesCount, &p.CreatedAt,
-			&p.Author.Username, &p.Author.AvatarId,
-		); err != nil {
+		preview, err := scanRecipePreview(rows)
+		if err != nil {
 			return nil, fmt.Errorf("scan recipe preview: %w", err)
 		}
-		p.Author.Id = p.AuthorId
-		previews = append(previews, p)
+		previews = append(previews, preview)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("rows error: %w", err)
@@ -364,6 +387,11 @@ func scanRecipes(rows *sql.Rows) ([]models.Recipe, []string, error) {
 
 func scanRecipe(s scanner) (models.Recipe, error) {
 	var recipe models.Recipe
+	var originRecipeID sql.NullString
+	var originAuthorID sql.NullString
+	var originUsername sql.NullString
+	var originAvatarID sql.NullString
+
 	err := s.Scan(
 		&recipe.Id,
 		&recipe.AuthorId,
@@ -378,11 +406,60 @@ func scanRecipe(s scanner) (models.Recipe, error) {
 		&recipe.CreatedAt,
 		&recipe.UpdatedAt,
 		&recipe.LikesCount,
+		&originRecipeID,
 		&recipe.Author.Username,
 		&recipe.Author.AvatarId,
+		&originAuthorID,
+		&originUsername,
+		&originAvatarID,
 	)
 	recipe.Author.Id = recipe.AuthorId
+
+	if originRecipeID.Valid {
+		recipe.Origin = &models.RecipeOrigin{
+			RecipeId: originRecipeID.String,
+			Author: models.RecipeAuthor{
+				Id:       originAuthorID.String,
+				Username: originUsername.String,
+				AvatarId: &originAvatarID.String,
+			},
+		}
+	}
+
 	return recipe, err
+}
+
+func scanRecipePreview(s scanner) (models.RecipePreview, error) {
+	var p models.RecipePreview
+	var originRecipeID sql.NullString
+	var originAuthorID sql.NullString
+	var originUsername sql.NullString
+	var originAvatarID sql.NullString
+
+	err := s.Scan(
+		&p.Id, &p.AuthorId, &p.Title, &p.ImageId,
+		&p.BrewMethod, &p.Difficulty, &p.RoastLevel,
+		&p.LikesCount, &p.CreatedAt,
+		&originRecipeID,
+		&p.Author.Username, &p.Author.AvatarId,
+		&originAuthorID,
+		&originUsername,
+		&originAvatarID,
+	)
+	p.Author.Id = p.AuthorId
+
+	if originRecipeID.Valid {
+		p.Origin = &models.RecipeOrigin{
+			RecipeId: originRecipeID.String,
+			Author: models.RecipeAuthor{
+				Id:       originAuthorID.String,
+				Username: originUsername.String,
+				AvatarId: &originAvatarID.String,
+			},
+		}
+	}
+
+	return p, err
 }
 
 func (r *Repository) DeleteRecipe(ctx context.Context, userID, recipeID string) error {

@@ -77,6 +77,7 @@ func InitSchema(db *sql.DB) error {
 		);`,
 		`CREATE INDEX IF NOT EXISTS idx_likes_target ON likes (target_id, target_type);`,
 		`ALTER TABLE recipes ADD COLUMN likes_count INTEGER NOT NULL DEFAULT 0;`,
+		`ALTER TABLE recipes ADD COLUMN origin_recipe_id TEXT REFERENCES recipes(id) ON DELETE SET NULL;`,
 	}
 
 	for _, q := range queries {

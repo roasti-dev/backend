@@ -77,3 +77,12 @@ func (s *ServerHandler) ToggleRecipeLike(ctx context.Context, request ToggleReci
 		LikesCount: int32(result.LikesCount),
 	}), nil
 }
+
+func (s *ServerHandler) CloneRecipe(ctx context.Context, request CloneRecipeRequestObject) (CloneRecipeResponseObject, error) {
+	userID := requestctx.GetUserID(ctx)
+	cloned, err := s.recipeService.CloneRecipe(ctx, userID, request.RecipeId)
+	if err != nil {
+		return nil, err
+	}
+	return CloneRecipe201JSONResponse(cloned), nil
+}
