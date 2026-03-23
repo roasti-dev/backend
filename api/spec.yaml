@@ -51,7 +51,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/RecipePage"
+                $ref: "./models.yaml#/components/schemas/RecipePage"
         "400":
           description: Bad request
         "500":
@@ -456,7 +456,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/LikedRecipePage"
+                $ref: "./models.yaml#/components/schemas/LikedRecipePage"
         "401":
           description: Unauthorized
         "404":
@@ -475,24 +475,5 @@ components:
       in: cookie
       name: refresh_token
 
-  schemas:
-    RecipePage:
-      allOf:
-        - $ref: "./models.yaml#/components/schemas/Page"
-        - type: object
-          properties:
-            items:
-              type: array
-              items:
-                $ref: "./models.yaml#/components/schemas/Recipe"
 
-    LikedRecipePage:
-      allOf:
-        - $ref: "./models.yaml#/components/schemas/Page"
-        - type: object
-          properties:
-            items:
-              type: array
-              items:
-                $ref: "./models.yaml#/components/schemas/LikedRecipe"
 

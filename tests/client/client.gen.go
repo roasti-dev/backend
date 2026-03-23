@@ -92,18 +92,6 @@ func (e ListUserLikesParamsListUserLikesType) Valid() bool {
 	}
 }
 
-// LikedRecipePage defines model for LikedRecipePage.
-type LikedRecipePage struct {
-	Items      []externalRef0.LikedRecipe  `json:"items"`
-	Pagination externalRef0.PaginationMeta `json:"pagination"`
-}
-
-// RecipePage defines model for RecipePage.
-type RecipePage struct {
-	Items      []externalRef0.Recipe       `json:"items"`
-	Pagination externalRef0.PaginationMeta `json:"pagination"`
-}
-
 // ListRecipesParams defines parameters for ListRecipes.
 type ListRecipesParams struct {
 	ListRecipes *externalRef0.ListRecipesParams `form:"listRecipes,omitempty" json:"listRecipes,omitempty"`
@@ -1355,7 +1343,7 @@ func (r RegisterUserResponse) StatusCode() int {
 type ListRecipesResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *RecipePage
+	JSON200      *externalRef0.RecipePage
 }
 
 // Status returns HTTPResponse.Status
@@ -1581,7 +1569,7 @@ func (r GetCurrentUserResponse) StatusCode() int {
 type ListUserLikesResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *LikedRecipePage
+	JSON200      *externalRef0.LikedRecipePage
 }
 
 // Status returns HTTPResponse.Status
@@ -1964,7 +1952,7 @@ func ParseListRecipesResponse(rsp *http.Response) (*ListRecipesResponse, error) 
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest RecipePage
+		var dest externalRef0.RecipePage
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -2260,7 +2248,7 @@ func ParseListUserLikesResponse(rsp *http.Response) (*ListUserLikesResponse, err
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest LikedRecipePage
+		var dest externalRef0.LikedRecipePage
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
