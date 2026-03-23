@@ -7,6 +7,7 @@ import (
 	"github.com/nikpivkin/roasti-app-backend/internal/likes"
 	"github.com/nikpivkin/roasti-app-backend/internal/recipe"
 	"github.com/nikpivkin/roasti-app-backend/internal/uploads"
+	"github.com/nikpivkin/roasti-app-backend/internal/users"
 )
 
 var _ StrictServerInterface = (*ServerHandler)(nil)
@@ -15,6 +16,7 @@ type ServerHandler struct {
 	logger        *slog.Logger
 	authService   *auth.Service
 	uploadService *uploads.Service
+	userService   *users.Service
 	recipeService *recipe.Service
 	likeService   *likes.Service
 }
@@ -22,6 +24,7 @@ type ServerHandler struct {
 func NewServerHandler(
 	recipeService *recipe.Service,
 	authService *auth.Service,
+	userService *users.Service,
 	uploader *uploads.Service,
 	likeService *likes.Service,
 ) *ServerHandler {
@@ -29,6 +32,7 @@ func NewServerHandler(
 		logger:        slog.Default(),
 		recipeService: recipeService,
 		authService:   authService,
+		userService:   userService,
 		uploadService: uploader,
 		likeService:   likeService,
 	}

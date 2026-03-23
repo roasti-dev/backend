@@ -250,7 +250,7 @@ func TestCookieAuth(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		meResp, err := c.GetMyProfileWithResponse(t.Context())
+		meResp, err := c.GetCurrentUserWithResponse(t.Context())
 		require.NoError(t, err)
 		assert.Equal(t, 200, meResp.StatusCode())
 	})
@@ -270,7 +270,7 @@ func TestCookieAuth(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 204, logoutResp.StatusCode())
 
-		meResp, err := c.GetMyProfileWithResponse(t.Context())
+		meResp, err := c.GetCurrentUserWithResponse(t.Context())
 		require.NoError(t, err)
 		assert.Equal(t, 401, meResp.StatusCode())
 	})
@@ -291,7 +291,7 @@ func TestCookieAuth(t *testing.T) {
 		require.Equal(t, 200, refreshResp.StatusCode())
 		assert.NotEmpty(t, refreshResp.JSON200.AccessToken)
 
-		meResp, err := c.GetMyProfileWithResponse(t.Context())
+		meResp, err := c.GetCurrentUserWithResponse(t.Context())
 		require.NoError(t, err)
 		assert.Equal(t, 200, meResp.StatusCode())
 	})

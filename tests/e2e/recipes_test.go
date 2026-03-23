@@ -240,7 +240,7 @@ func TestToggleRecipeLike(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode())
 		assert.True(t, resp.JSON200.Liked)
-		assert.Equal(t, int(1), resp.JSON200.LikesCount)
+		assert.Equal(t, int32(1), resp.JSON200.LikesCount)
 	})
 
 	t.Run("unlike a recipe", func(t *testing.T) {
@@ -253,7 +253,7 @@ func TestToggleRecipeLike(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode())
 		assert.False(t, resp.JSON200.Liked)
-		assert.Equal(t, int(0), resp.JSON200.LikesCount)
+		assert.Equal(t, int32(0), resp.JSON200.LikesCount)
 	})
 
 	t.Run("two users like same recipe", func(t *testing.T) {
@@ -267,7 +267,7 @@ func TestToggleRecipeLike(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode())
 		assert.True(t, resp.JSON200.Liked)
-		assert.Equal(t, int(2), resp.JSON200.LikesCount)
+		assert.Equal(t, int32(2), resp.JSON200.LikesCount)
 	})
 
 	t.Run("like does not affect other recipes", func(t *testing.T) {
@@ -281,7 +281,7 @@ func TestToggleRecipeLike(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode())
 		assert.True(t, resp.JSON200.Liked)
-		assert.Equal(t, int(1), resp.JSON200.LikesCount)
+		assert.Equal(t, int32(1), resp.JSON200.LikesCount)
 	})
 
 	t.Run("unauthenticated returns 401", func(t *testing.T) {

@@ -195,9 +195,6 @@ type ClientInterface interface {
 
 	RegisterUser(ctx context.Context, body RegisterUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetMyProfile request
-	GetMyProfile(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// ListRecipes request
 	ListRecipes(ctx context.Context, params *ListRecipesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -225,6 +222,9 @@ type ClientInterface interface {
 
 	// GetImage request
 	GetImage(ctx context.Context, imageId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetCurrentUser request
+	GetCurrentUser(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// HealthCheck request
 	HealthCheck(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -316,18 +316,6 @@ func (c *Client) RegisterUserWithBody(ctx context.Context, contentType string, b
 
 func (c *Client) RegisterUser(ctx context.Context, body RegisterUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewRegisterUserRequest(c.Server, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) GetMyProfile(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetMyProfileRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -448,6 +436,18 @@ func (c *Client) UploadImageWithBody(ctx context.Context, contentType string, bo
 
 func (c *Client) GetImage(ctx context.Context, imageId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetImageRequest(c.Server, imageId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetCurrentUser(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetCurrentUserRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -626,33 +626,6 @@ func NewRegisterUserRequestWithBody(server string, contentType string, body io.R
 	}
 
 	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewGetMyProfileRequest generates requests for GetMyProfile
-func NewGetMyProfileRequest(server string) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api/v1/profiles/me")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
 
 	return req, nil
 }
@@ -958,6 +931,33 @@ func NewGetImageRequest(server string, imageId string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewGetCurrentUserRequest generates requests for GetCurrentUser
+func NewGetCurrentUserRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/users/me")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewHealthCheckRequest generates requests for HealthCheck
 func NewHealthCheckRequest(server string) (*http.Request, error) {
 	var err error
@@ -1048,9 +1048,6 @@ type ClientWithResponsesInterface interface {
 
 	RegisterUserWithResponse(ctx context.Context, body RegisterUserJSONRequestBody, reqEditors ...RequestEditorFn) (*RegisterUserResponse, error)
 
-	// GetMyProfileWithResponse request
-	GetMyProfileWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetMyProfileResponse, error)
-
 	// ListRecipesWithResponse request
 	ListRecipesWithResponse(ctx context.Context, params *ListRecipesParams, reqEditors ...RequestEditorFn) (*ListRecipesResponse, error)
 
@@ -1078,6 +1075,9 @@ type ClientWithResponsesInterface interface {
 
 	// GetImageWithResponse request
 	GetImageWithResponse(ctx context.Context, imageId string, reqEditors ...RequestEditorFn) (*GetImageResponse, error)
+
+	// GetCurrentUserWithResponse request
+	GetCurrentUserWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetCurrentUserResponse, error)
 
 	// HealthCheckWithResponse request
 	HealthCheckWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*HealthCheckResponse, error)
@@ -1170,28 +1170,6 @@ func (r RegisterUserResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r RegisterUserResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetMyProfileResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *externalRef0.MyProfile
-}
-
-// Status returns HTTPResponse.Status
-func (r GetMyProfileResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetMyProfileResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -1380,6 +1358,28 @@ func (r GetImageResponse) StatusCode() int {
 	return 0
 }
 
+type GetCurrentUserResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *externalRef0.CurrentUser
+}
+
+// Status returns HTTPResponse.Status
+func (r GetCurrentUserResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetCurrentUserResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type HealthCheckResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -1469,15 +1469,6 @@ func (c *ClientWithResponses) RegisterUserWithResponse(ctx context.Context, body
 	return ParseRegisterUserResponse(rsp)
 }
 
-// GetMyProfileWithResponse request returning *GetMyProfileResponse
-func (c *ClientWithResponses) GetMyProfileWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetMyProfileResponse, error) {
-	rsp, err := c.GetMyProfile(ctx, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetMyProfileResponse(rsp)
-}
-
 // ListRecipesWithResponse request returning *ListRecipesResponse
 func (c *ClientWithResponses) ListRecipesWithResponse(ctx context.Context, params *ListRecipesParams, reqEditors ...RequestEditorFn) (*ListRecipesResponse, error) {
 	rsp, err := c.ListRecipes(ctx, params, reqEditors...)
@@ -1564,6 +1555,15 @@ func (c *ClientWithResponses) GetImageWithResponse(ctx context.Context, imageId 
 		return nil, err
 	}
 	return ParseGetImageResponse(rsp)
+}
+
+// GetCurrentUserWithResponse request returning *GetCurrentUserResponse
+func (c *ClientWithResponses) GetCurrentUserWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetCurrentUserResponse, error) {
+	rsp, err := c.GetCurrentUser(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetCurrentUserResponse(rsp)
 }
 
 // HealthCheckWithResponse request returning *HealthCheckResponse
@@ -1705,32 +1705,6 @@ func ParseRegisterUserResponse(rsp *http.Response) (*RegisterUserResponse, error
 			return nil, err
 		}
 		response.JSON422 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseGetMyProfileResponse parses an HTTP response from a GetMyProfileWithResponse call
-func ParseGetMyProfileResponse(rsp *http.Response) (*GetMyProfileResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetMyProfileResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest externalRef0.MyProfile
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
 
 	}
 
@@ -1976,6 +1950,32 @@ func ParseGetImageResponse(rsp *http.Response) (*GetImageResponse, error) {
 	response := &GetImageResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseGetCurrentUserResponse parses an HTTP response from a GetCurrentUserWithResponse call
+func ParseGetCurrentUserResponse(rsp *http.Response) (*GetCurrentUserResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetCurrentUserResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest externalRef0.CurrentUser
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	}
 
 	return response, nil

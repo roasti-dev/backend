@@ -1,4 +1,4 @@
-package auth
+package users
 
 import (
 	"context"
@@ -24,6 +24,22 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 		db:   db,
 		psql: sq.StatementBuilder.PlaceholderFormat(sq.Dollar).RunWith(db),
 	}
+}
+
+func (r *UserRepository) GetByID(ctx context.Context, userID string) (User, error) {
+	var user User
+	err := r.psql.Select(userColumns...).
+		From(usersTable).
+		Where(sq.Eq{"id": userID}).
+		QueryRowContext(ctx).
+		Scan(&user.ID, &user.Email, &user.Username, &user.AvatarID, &user.Bio, &user.CreatedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return User{}, ErrNotFound
+		}
+		return User{}, fmt.Errorf("get user by id: %w", err)
+	}
+	return user, nil
 }
 
 func (r *UserRepository) Create(ctx context.Context, user User) error {
@@ -56,22 +72,6 @@ func (r *UserRepository) GetByUsername(ctx context.Context, username string) (Us
 			return User{}, ErrNotFound
 		}
 		return User{}, fmt.Errorf("select user: %w", err)
-	}
-	return user, nil
-}
-
-func (r *UserRepository) GetByID(ctx context.Context, userID string) (User, error) {
-	var user User
-	err := r.psql.Select(userColumns...).
-		From(usersTable).
-		Where(sq.Eq{"id": userID}).
-		QueryRowContext(ctx).
-		Scan(&user.ID, &user.Email, &user.Username, &user.AvatarID, &user.Bio, &user.CreatedAt)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return User{}, ErrNotFound
-		}
-		return User{}, fmt.Errorf("get user by id: %w", err)
 	}
 	return user, nil
 }

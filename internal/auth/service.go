@@ -12,6 +12,7 @@ import (
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
 	"github.com/nikpivkin/roasti-app-backend/internal/uploads"
+	"github.com/nikpivkin/roasti-app-backend/internal/users"
 )
 
 const (
@@ -35,7 +36,7 @@ type SignInResult struct {
 
 type Service struct {
 	logger        *slog.Logger
-	users         *UserRepository
+	users         *users.Service
 	revokedTokens *RevokedTokenRepository
 	uploader      *uploads.Service
 	firebaseAuth  *firebaseAuth.Client
@@ -43,7 +44,7 @@ type Service struct {
 }
 
 func NewService(
-	users *UserRepository,
+	users *users.Service,
 	revokedTokens *RevokedTokenRepository,
 	uploader *uploads.Service,
 	firebaseAuth *firebaseAuth.Client,
@@ -57,19 +58,6 @@ func NewService(
 		firebaseAuth:  firebaseAuth,
 		signer:        passwordSigner,
 	}
-}
-
-func (s *Service) CurrentUser(ctx context.Context, userID string) (models.MyProfile, error) {
-	user, err := s.users.GetByID(ctx, userID)
-	if err != nil {
-		return models.UserResponse{}, fmt.Errorf("get user by id: %w", err)
-	}
-	return models.UserResponse{
-		Id:       user.ID,
-		Username: user.Username,
-		AvatarId: user.AvatarID,
-		Bio:      user.Bio,
-	}, nil
 }
 
 func (s *Service) Register(ctx context.Context, req models.RegisterRequest) (models.AuthResponse, error) {
@@ -102,22 +90,18 @@ func (s *Service) Register(ctx context.Context, req models.RegisterRequest) (mod
 		return models.AuthResponse{}, fmt.Errorf("create firebase user: %w", err)
 	}
 
-	if err := s.users.Create(ctx, User{
+	created, err := s.users.Create(ctx, users.User{
 		ID:       firebaseUser.UID,
 		Email:    string(req.Email),
 		Username: req.Username,
 		AvatarID: req.AvatarId,
 		Bio:      req.Bio,
-	}); err != nil {
+	})
+	if err != nil {
 		return models.AuthResponse{}, fmt.Errorf("create user: %w", err)
 	}
 
-	user, err := s.users.GetByUsername(ctx, req.Username)
-	if err != nil {
-		return models.AuthResponse{}, fmt.Errorf("get user: %w", err)
-	}
-
-	s.confirmAvatar(ctx, user)
+	s.confirmAvatar(ctx, created)
 
 	signIn, err := s.signer.SignInWithPassword(ctx, string(req.Email), req.Password)
 	if err != nil {
@@ -127,7 +111,7 @@ func (s *Service) Register(ctx context.Context, req models.RegisterRequest) (mod
 	return models.AuthResponse{
 		AccessToken:  signIn.IDToken,
 		RefreshToken: signIn.RefreshToken,
-		User:         userToResponse(user),
+		User:         userToResponse(created),
 	}, nil
 }
 
@@ -138,7 +122,7 @@ func (s *Service) Login(ctx context.Context, req models.LoginRequest) (models.Au
 
 	user, err := s.users.GetByUsername(ctx, req.Username)
 	if err != nil {
-		if errors.Is(err, ErrNotFound) {
+		if errors.Is(err, users.ErrNotFound) {
 			return models.AuthResponse{}, ErrInvalidCredentials
 		}
 		return models.AuthResponse{}, fmt.Errorf("get user by username: %w", err)
@@ -183,7 +167,7 @@ func (s *Service) Logout(ctx context.Context, refreshToken string) error {
 	return nil
 }
 
-func (s *Service) confirmAvatar(ctx context.Context, user User) {
+func (s *Service) confirmAvatar(ctx context.Context, user users.User) {
 	if user.AvatarID != nil {
 		if err := s.uploader.Confirm(ctx, *user.AvatarID); err != nil {
 			s.logger.WarnContext(ctx, "failed to confirm recipe image",
@@ -194,7 +178,7 @@ func (s *Service) confirmAvatar(ctx context.Context, user User) {
 	}
 }
 
-func userToResponse(u User) models.UserResponse {
+func userToResponse(u users.User) models.UserResponse {
 	return models.UserResponse{
 		Id:       u.ID,
 		Username: u.Username,

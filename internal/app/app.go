@@ -28,6 +28,7 @@ import (
 	"github.com/nikpivkin/roasti-app-backend/internal/middleware"
 	"github.com/nikpivkin/roasti-app-backend/internal/recipe"
 	"github.com/nikpivkin/roasti-app-backend/internal/uploads"
+	"github.com/nikpivkin/roasti-app-backend/internal/users"
 )
 
 type Config struct {
@@ -89,7 +90,8 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 	likeRepo := likes.NewRepository(database)
 	likeService := likes.NewService(database, likeRepo, recipeRepo)
 	recipeService := recipe.NewService(recipeRepo, uploader, likeService)
-	userRepo := auth.NewUserRepository(database)
+	userRepo := users.NewUserRepository(database)
+	userService := users.NewUserService(userRepo)
 
 	revokedTokenRepo := auth.NewRevokedTokenRepository(database)
 	startRevokedTokenCleanup(ctx, revokedTokenRepo)
@@ -97,14 +99,14 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 	passwordSigner := auth.NewFirebasePasswordSigner(
 		cfg.FirebaseAPIKey, cfg.FirebaseIdentityBaseURL, cfg.FirebaseTokenBaseURL,
 	)
-	authService := auth.NewService(userRepo, revokedTokenRepo, uploader, firebaseAuth, passwordSigner)
+	authService := auth.NewService(userService, revokedTokenRepo, uploader, firebaseAuth, passwordSigner)
 
 	swagger, err := handlers.GetSwagger()
 	if err != nil {
 		return nil, err
 	}
 
-	strictHandler := handlers.NewServerHandler(recipeService, authService, uploader, likeService)
+	strictHandler := handlers.NewServerHandler(recipeService, authService, userService, uploader, likeService)
 	handler := handlers.NewStrictHandlerWithOptions(strictHandler, nil, handlers.StrictHTTPServerOptions{
 		ResponseErrorHandlerFunc: responseErrorHandler,
 	})

@@ -418,30 +418,9 @@ components:
           nullable: true
           description: ID of the uploaded avatar image. Can be resolved via the image upload endpoint.
 
-    MyProfile:
+    CurrentUser:
       allOf:
         - $ref: "#/components/schemas/UserResponse"
-
-    UserProfile:
-      type: object
-      required:
-        - id
-        - username
-      properties:
-        id:
-          type: string
-          description: Unique user identifier
-        username:
-          type: string
-          description: Unique username
-        bio:
-          type: string
-          nullable: true
-          description: Short user biography
-        avatar_id:
-          type: string
-          nullable: true
-          description: ID of the uploaded avatar image. Can be resolved via the image upload endpoint.
 
     TokensResponse:
       type: object

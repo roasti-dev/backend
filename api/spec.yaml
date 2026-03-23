@@ -10,15 +10,15 @@ security:
   - CookieAuth: []
 tags:
   - name: recipes
-    description: Coffee brewing recipes management
+    description: Recipe management and discovery
   - name: uploads
     description: Image upload and retrieval
   - name: auth
     description: User registration, authentication and token management
-  - name: profiles
-    description: Operations related to user profiles, including current user and public profiles
+  - name: users
+    description: User account and profile management, including private and public data
   - name: likes
-    description: Like and unlike actions on resources
+    description: Like and unlike actions on recipes
   - name: public
     description: Endpoints that do not require authentication
 paths:
@@ -393,19 +393,19 @@ paths:
         "500":
           description: Internal server error
 
-  /api/v1/profiles/me:
+  /api/v1/users/me:
     get:
       summary: Get current user profile
-      operationId: getMyProfile
+      operationId: getCurrentUser
       description: Returns the profile of the currently authenticated user.
-      tags: [profiles]
+      tags: [users]
       responses:
         "200":
           description: Current user profile
           content:
             application/json:
               schema:
-                $ref: "./models.yaml#/components/schemas/MyProfile"
+                $ref: "./models.yaml#/components/schemas/CurrentUser"
         "401":
           description: Unauthorized
           
