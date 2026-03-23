@@ -178,12 +178,11 @@ func TestGetRecipeByID(t *testing.T) {
 func TestListRecipes(t *testing.T) {
 	srv := setupTestServer(t)
 
-	t.Run("returns own and public recipes", func(t *testing.T) {
+	t.Run("returns only public recipes", func(t *testing.T) {
 		c1 := newAuthenticatedTestClient(t, srv)
 		c2 := newAuthenticatedTestClient(t, srv)
 
 		public := defaultPayload
-		public.Public = new(true)
 		createRecipe(t, c1, public)
 
 		private := defaultPayload
@@ -193,7 +192,9 @@ func TestListRecipes(t *testing.T) {
 		resp, err := c2.ListRecipesWithResponse(t.Context(), &client.ListRecipesParams{})
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode())
-		assert.GreaterOrEqual(t, resp.JSON200.Pagination.ItemsCount, int32(2))
+		for _, r := range resp.JSON200.Items {
+			assert.True(t, r.Public)
+		}
 	})
 
 	t.Run("filter by brew method", func(t *testing.T) {

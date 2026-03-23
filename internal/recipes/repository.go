@@ -288,7 +288,7 @@ func applyListRecipesFilter(
 			sb = sb.Where(sq.Eq{"public": true})
 		}
 	} else {
-		sb = sb.Where("(author_id = ? OR public = ?)", currentUserID, true)
+		sb = sb.Where(sq.Eq{"public": true})
 	}
 
 	return sb

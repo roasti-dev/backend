@@ -79,10 +79,12 @@ func TestRecipeRepository_ListRecipes(t *testing.T) {
 	require.NoError(t, repo.UpsertRecipe(t.Context(), r1))
 	require.NoError(t, repo.UpsertRecipe(t.Context(), r2))
 
-	t.Run("returns public and own recipes", func(t *testing.T) {
-		page, err := repo.ListRecipes(t.Context(), "user-2", models.ListRecipesParams{})
+	t.Run("returns only public recipes when no author filter", func(t *testing.T) {
+		page, err := repo.ListRecipes(t.Context(), "user-1", models.ListRecipesParams{})
 		require.NoError(t, err)
-		assert.GreaterOrEqual(t, len(page.Items), 2)
+		for _, item := range page.Items {
+			assert.True(t, item.Public)
+		}
 	})
 
 	t.Run("does not return other user private recipes", func(t *testing.T) {
