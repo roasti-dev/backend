@@ -44,6 +44,23 @@ jobs:
           name: Release ${{ steps.changelog.outputs.tag }}
           files: app-linux-amd64
 
+      - name: Send release notes to Telegram
+        if: steps.changelog.outputs.skipped == 'false'
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_RELEASE_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_THREAD_ID: ${{ secrets.TELEGRAM_CHANGELOG_THREAD_ID }}
+        run: |
+          MESSAGE="🚀 *Release ${{ steps.changelog.outputs.tag }}*
+
+          ${{ steps.changelog.outputs.clean_changelog }}"
+
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "message_thread_id=${TELEGRAM_THREAD_ID}" \
+            --data-urlencode "text=${MESSAGE}" \
+            --data-urlencode "parse_mode=Markdown"
+
       - name: Install Ansible
         run: pip install ansible
 
@@ -65,4 +82,16 @@ jobs:
 
       - name: Deploy
         run: make deploy
+
+      - name: Notify deploy success
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_RELEASE_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_THREAD_ID: ${{ secrets.TELEGRAM_CHANGELOG_THREAD_ID }}
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "message_thread_id=${TELEGRAM_THREAD_ID}" \
+            --data-urlencode "text=✅ Release ${{ steps.changelog.outputs.tag }} deployed successfully" \
+            --data-urlencode "parse_mode=Markdown"
 
