@@ -22,6 +22,7 @@ func (s *ServerHandler) ListRecipes(ctx context.Context, request ListRecipesRequ
 
 	userID := requestctx.GetUserID(ctx)
 	params := models.ListRecipesParams{
+		Query:         request.Params.Query,
 		AuthorId:      request.Params.AuthorId,
 		BrewMethod:    request.Params.BrewMethod,
 		Difficulty:    request.Params.Difficulty,
