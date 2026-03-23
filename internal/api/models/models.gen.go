@@ -86,6 +86,24 @@ func (e LikeTargetType) Valid() bool {
 	}
 }
 
+// Defines values for ListRecipesParamsSortField.
+const (
+	CreatedAt ListRecipesParamsSortField = "created_at"
+	Title     ListRecipesParamsSortField = "title"
+)
+
+// Valid indicates whether the value is a known member of the ListRecipesParamsSortField enum.
+func (e ListRecipesParamsSortField) Valid() bool {
+	switch e {
+	case CreatedAt:
+		return true
+	case Title:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for RoastLevel.
 const (
 	RoastLevelDark        RoastLevel = "dark"
@@ -107,6 +125,24 @@ func (e RoastLevel) Valid() bool {
 	case RoastLevelMediumDark:
 		return true
 	case RoastLevelMediumLight:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SortDirection.
+const (
+	Asc  SortDirection = "asc"
+	Desc SortDirection = "desc"
+)
+
+// Valid indicates whether the value is a known member of the SortDirection enum.
+func (e SortDirection) Valid() bool {
+	switch e {
+	case Asc:
+		return true
+	case Desc:
 		return true
 	default:
 		return false
@@ -186,7 +222,7 @@ type Image struct {
 	Id string `json:"id"`
 }
 
-// LikeTargetType Type of the liked object
+// LikeTargetType Type of likeable resource
 type LikeTargetType string
 
 // LikedRecipe defines model for LikedRecipe.
@@ -205,6 +241,51 @@ type LikedRecipePage struct {
 
 // LimitParam Number of items per page
 type LimitParam = int32
+
+// ListRecipesParams defines model for ListRecipesParams.
+type ListRecipesParams struct {
+	// AuthorId Filter by author
+	AuthorId *string `json:"authorId,omitempty"`
+
+	// BrewMethod Coffee brewing method
+	BrewMethod *BrewMethod `json:"brewMethod,omitempty"`
+
+	// Difficulty Difficulty level of the recipe
+	Difficulty *Difficulty `json:"difficulty,omitempty"`
+
+	// Limit Number of items per page
+	Limit *LimitParam `json:"limit,omitempty"`
+
+	// Page Page number
+	Page *PageParam `json:"page,omitempty"`
+
+	// Query Search recipes by title or description
+	Query *string `json:"query,omitempty"`
+
+	// SortDirection Sort direction
+	SortDirection *SortDirection `json:"sort_direction,omitempty"`
+
+	// SortField Field to sort by
+	SortField *ListRecipesParamsSortField `json:"sort_field,omitempty"`
+}
+
+// ListRecipesParamsSortField Field to sort by
+type ListRecipesParamsSortField string
+
+// ListUserLikesParams defines model for ListUserLikesParams.
+type ListUserLikesParams struct {
+	// Limit Number of items per page
+	Limit *LimitParam `json:"limit,omitempty"`
+
+	// Page Page number
+	Page *PageParam `json:"page,omitempty"`
+
+	// SortDirection Sort direction
+	SortDirection *SortDirection `json:"sort_direction,omitempty"`
+
+	// Type Type of likeable resource
+	Type LikeTargetType `json:"type"`
+}
 
 // LoginRequest defines model for LoginRequest.
 type LoginRequest struct {
@@ -431,6 +512,9 @@ type RegisterRequest struct {
 // RoastLevel Coffee roast level
 type RoastLevel string
 
+// SortDirection Sort direction
+type SortDirection string
+
 // ToggleLikeResponse defines model for ToggleLikeResponse.
 type ToggleLikeResponse struct {
 	// Liked True if like was added, false if removed
@@ -467,89 +551,45 @@ type UserResponse struct {
 	Username string `json:"username"`
 }
 
-// ListRecipesParams defines model for ListRecipesParams.
-type ListRecipesParams struct {
-	// AuthorId Filter by author
-	AuthorId *string `json:"authorId,omitempty"`
-
-	// BrewMethod Coffee brewing method
-	BrewMethod *BrewMethod `json:"brewMethod,omitempty"`
-
-	// Difficulty Difficulty level of the recipe
-	Difficulty *Difficulty `json:"difficulty,omitempty"`
-
-	// Limit Number of items per page
-	Limit *LimitParam `json:"limit,omitempty"`
-
-	// Page Page number
-	Page *PageParam `json:"page,omitempty"`
-
-	// Query Search recipes by title or description
-	Query *string `json:"query,omitempty"`
-
-	// SortDirection Sort direction
-	SortDirection *string `json:"sort_direction,omitempty"`
-
-	// SortField Field to sort by, e.g. created_at, title, difficulty
-	SortField *string `json:"sort_field,omitempty"`
-}
-
-// ListUserLikesParams defines model for ListUserLikesParams.
-type ListUserLikesParams struct {
-	// Limit Number of items per page
-	Limit *LimitParam `json:"limit,omitempty"`
-
-	// Page Page number
-	Page *PageParam `json:"page,omitempty"`
-
-	// SortDirection Sort direction by liked_at
-	SortDirection *string `json:"sort_direction,omitempty"`
-
-	// Type Type of liked resource
-	Type string `json:"type"`
-}
-
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"iBfCNQAA",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

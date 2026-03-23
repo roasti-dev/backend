@@ -23,32 +23,14 @@ const (
 	CookieAuthScopes = "CookieAuth.Scopes"
 )
 
-// Defines values for ListRecipesParamsListRecipesSortDirection.
+// Defines values for ListRecipesParamsSortField.
 const (
-	ListRecipesParamsListRecipesSortDirectionAsc  ListRecipesParamsListRecipesSortDirection = "asc"
-	ListRecipesParamsListRecipesSortDirectionDesc ListRecipesParamsListRecipesSortDirection = "desc"
+	CreatedAt ListRecipesParamsSortField = "created_at"
+	Title     ListRecipesParamsSortField = "title"
 )
 
-// Valid indicates whether the value is a known member of the ListRecipesParamsListRecipesSortDirection enum.
-func (e ListRecipesParamsListRecipesSortDirection) Valid() bool {
-	switch e {
-	case ListRecipesParamsListRecipesSortDirectionAsc:
-		return true
-	case ListRecipesParamsListRecipesSortDirectionDesc:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListRecipesParamsListRecipesSortField.
-const (
-	CreatedAt ListRecipesParamsListRecipesSortField = "created_at"
-	Title     ListRecipesParamsListRecipesSortField = "title"
-)
-
-// Valid indicates whether the value is a known member of the ListRecipesParamsListRecipesSortField enum.
-func (e ListRecipesParamsListRecipesSortField) Valid() bool {
+// Valid indicates whether the value is a known member of the ListRecipesParamsSortField enum.
+func (e ListRecipesParamsSortField) Valid() bool {
 	switch e {
 	case CreatedAt:
 		return true
@@ -59,49 +41,20 @@ func (e ListRecipesParamsListRecipesSortField) Valid() bool {
 	}
 }
 
-// Defines values for ListUserLikesParamsListUserLikesSortDirection.
-const (
-	ListUserLikesParamsListUserLikesSortDirectionAsc  ListUserLikesParamsListUserLikesSortDirection = "asc"
-	ListUserLikesParamsListUserLikesSortDirectionDesc ListUserLikesParamsListUserLikesSortDirection = "desc"
-)
-
-// Valid indicates whether the value is a known member of the ListUserLikesParamsListUserLikesSortDirection enum.
-func (e ListUserLikesParamsListUserLikesSortDirection) Valid() bool {
-	switch e {
-	case ListUserLikesParamsListUserLikesSortDirectionAsc:
-		return true
-	case ListUserLikesParamsListUserLikesSortDirectionDesc:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListUserLikesParamsListUserLikesType.
-const (
-	Recipe ListUserLikesParamsListUserLikesType = "recipe"
-)
-
-// Valid indicates whether the value is a known member of the ListUserLikesParamsListUserLikesType enum.
-func (e ListUserLikesParamsListUserLikesType) Valid() bool {
-	switch e {
-	case Recipe:
-		return true
-	default:
-		return false
-	}
-}
-
 // ListRecipesParams defines parameters for ListRecipes.
 type ListRecipesParams struct {
-	ListRecipes *externalRef0.ListRecipesParams `form:"listRecipes,omitempty" json:"listRecipes,omitempty"`
+	AuthorId      *string                     `form:"authorId,omitempty" json:"authorId,omitempty"`
+	BrewMethod    *externalRef0.BrewMethod    `form:"brewMethod,omitempty" json:"brewMethod,omitempty"`
+	Difficulty    *externalRef0.Difficulty    `form:"difficulty,omitempty" json:"difficulty,omitempty"`
+	Query         *string                     `form:"query,omitempty" json:"query,omitempty"`
+	SortField     *ListRecipesParamsSortField `form:"sort_field,omitempty" json:"sort_field,omitempty"`
+	SortDirection *externalRef0.SortDirection `form:"sort_direction,omitempty" json:"sort_direction,omitempty"`
+	Page          *externalRef0.PageParam     `form:"page,omitempty" json:"page,omitempty"`
+	Limit         *externalRef0.LimitParam    `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
-// ListRecipesParamsListRecipesSortDirection defines parameters for ListRecipes.
-type ListRecipesParamsListRecipesSortDirection string
-
-// ListRecipesParamsListRecipesSortField defines parameters for ListRecipes.
-type ListRecipesParamsListRecipesSortField string
+// ListRecipesParamsSortField defines parameters for ListRecipes.
+type ListRecipesParamsSortField string
 
 // UploadImageMultipartBody defines parameters for UploadImage.
 type UploadImageMultipartBody struct {
@@ -110,14 +63,11 @@ type UploadImageMultipartBody struct {
 
 // ListUserLikesParams defines parameters for ListUserLikes.
 type ListUserLikesParams struct {
-	ListUserLikes *externalRef0.ListUserLikesParams `form:"listUserLikes,omitempty" json:"listUserLikes,omitempty"`
+	Type          externalRef0.LikeTargetType `form:"type" json:"type"`
+	SortDirection *externalRef0.SortDirection `form:"sort_direction,omitempty" json:"sort_direction,omitempty"`
+	Page          *externalRef0.PageParam     `form:"page,omitempty" json:"page,omitempty"`
+	Limit         *externalRef0.LimitParam    `form:"limit,omitempty" json:"limit,omitempty"`
 }
-
-// ListUserLikesParamsListUserLikesSortDirection defines parameters for ListUserLikes.
-type ListUserLikesParamsListUserLikesSortDirection string
-
-// ListUserLikesParamsListUserLikesType defines parameters for ListUserLikes.
-type ListUserLikesParamsListUserLikesType string
 
 // LoginUserJSONRequestBody defines body for LoginUser for application/json ContentType.
 type LoginUserJSONRequestBody = externalRef0.LoginRequest
@@ -720,9 +670,121 @@ func NewListRecipesRequest(server string, params *ListRecipesParams) (*http.Requ
 	if params != nil {
 		queryValues := queryURL.Query()
 
-		if params.ListRecipes != nil {
+		if params.AuthorId != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "listRecipes", *params.ListRecipes, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "", Format: ""}); err != nil {
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "authorId", *params.AuthorId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.BrewMethod != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "brewMethod", *params.BrewMethod, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Difficulty != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "difficulty", *params.Difficulty, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Query != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "query", *params.Query, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.SortField != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "sort_field", *params.SortField, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.SortDirection != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "sort_direction", *params.SortDirection, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Page != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "page", *params.Page, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -1089,9 +1151,53 @@ func NewListUserLikesRequest(server string, userId string, params *ListUserLikes
 	if params != nil {
 		queryValues := queryURL.Query()
 
-		if params.ListUserLikes != nil {
+		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "type", params.Type, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "listUserLikes", *params.ListUserLikes, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "", Format: ""}); err != nil {
+		if params.SortDirection != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "sort_direction", *params.SortDirection, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Page != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "page", *params.Page, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err

@@ -16,9 +16,7 @@ func TestListUserLikes(t *testing.T) {
 	listLikes := func(t *testing.T, c *authenticatedClient, userID string) *client.ListUserLikesResponse {
 		t.Helper()
 		resp, err := c.ListUserLikesWithResponse(t.Context(), userID, &client.ListUserLikesParams{
-			ListUserLikes: &models.ListUserLikesParams{
-				Type: "recipe",
-			},
+			Type: "recipe",
 		})
 		require.NoError(t, err)
 		return resp
@@ -107,14 +105,10 @@ func TestListUserLikes(t *testing.T) {
 		toggleRecipeLike(t, c, r1.Id)
 		toggleRecipeLike(t, c, r2.Id)
 
-		limit := models.LimitParam(1)
-		page := models.PageParam(1)
 		resp, err := c.ListUserLikesWithResponse(t.Context(), c.ID, &client.ListUserLikesParams{
-			ListUserLikes: &models.ListUserLikesParams{
-				Type:  "recipe",
-				Limit: &limit,
-				Page:  &page,
-			},
+			Type:  "recipe",
+			Limit: new(models.LimitParam(1)),
+			Page:  new(models.PageParam(1)),
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode())
@@ -133,9 +127,7 @@ func TestListUserLikes(t *testing.T) {
 		unauth := newTestClient(t, srv)
 
 		resp, err := unauth.ListUserLikesWithResponse(t.Context(), c1.ID, &client.ListUserLikesParams{
-			ListUserLikes: &models.ListUserLikesParams{
-				Type: "recipe",
-			},
+			Type: "recipe",
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode())
@@ -147,7 +139,7 @@ func TestListUserLikes(t *testing.T) {
 		toggleRecipeLike(t, c, recipe.Id)
 
 		resp, err := c.ListUserLikesWithResponse(t.Context(), c.ID, &client.ListUserLikesParams{
-			ListUserLikes: &models.ListUserLikesParams{Type: "recipe"},
+			Type: "recipe",
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode())

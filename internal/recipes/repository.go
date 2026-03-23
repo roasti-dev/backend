@@ -348,15 +348,22 @@ func applyListRecipesFilter(
 	return sb
 }
 
-func applySort(sb sq.SelectBuilder, sortField, sortDirection *string, allowedFields []string, defaultField string) sq.SelectBuilder {
+func applySort(
+	sb sq.SelectBuilder,
+	sortField *models.ListRecipesParamsSortField,
+	sortDirection *models.SortDirection,
+	allowedFields []string,
+	defaultField string,
+) sq.SelectBuilder {
 	sort := defaultField
-	if sortField != nil && slices.Contains(allowedFields, *sortField) {
-		sort = *sortField
+
+	if sortField != nil && slices.Contains(allowedFields, string(*sortField)) {
+		sort = string(*sortField)
 	}
 
 	dir := "DESC"
 	if sortDirection != nil {
-		d := strings.ToUpper(*sortDirection)
+		d := strings.ToUpper(string(*sortDirection))
 		if d == "ASC" || d == "DESC" {
 			dir = d
 		}

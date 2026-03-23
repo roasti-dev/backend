@@ -44,7 +44,44 @@ paths:
       description: Returns a paginated list of recipes with optional filters by author, brew method, difficulty, and sorting.
       tags: [recipes]
       parameters:
-        - $ref: "./models.yaml#/components/parameters/ListRecipesParams"
+        - name: authorId
+          in: query
+          schema:
+            type: string
+            description: Filter by author
+        - name: brewMethod
+          in: query
+          schema:
+            $ref: "./models.yaml#/components/schemas/BrewMethod"
+        - name: difficulty
+          in: query
+          schema:
+            $ref: "./models.yaml#/components/schemas/Difficulty"
+        - name: query
+          in: query
+          schema:
+            type: string
+            description: Search recipes by title or description
+        - name: sort_field
+          in: query
+          schema:
+            type: string
+            enum:
+              - created_at
+              - title
+            description: Field to sort by
+        - name: sort_direction
+          in: query
+          schema:
+            $ref: "./models.yaml#/components/schemas/SortDirection"
+        - name: page
+          in: query
+          schema:
+            $ref: "./models.yaml#/components/schemas/PageParam"
+        - name: limit
+          in: query
+          schema:
+            $ref: "./models.yaml#/components/schemas/LimitParam"
       responses:
         "200":
           description: Paginated list of recipes
@@ -449,7 +486,23 @@ paths:
           required: true
           schema:
             type: string
-        - $ref: "./models.yaml#/components/parameters/ListUserLikesParams"
+        - name: type
+          in: query
+          required: true
+          schema:
+            $ref: "./models.yaml#/components/schemas/LikeTargetType"
+        - name: sort_direction
+          in: query
+          schema:
+            $ref: "./models.yaml#/components/schemas/SortDirection"
+        - name: page
+          in: query
+          schema:
+            $ref: "./models.yaml#/components/schemas/PageParam"
+        - name: limit
+          in: query
+          schema:
+            $ref: "./models.yaml#/components/schemas/LimitParam"
       responses:
         "200":
           description: Paginated list of liked recipes
@@ -474,6 +527,4 @@ components:
       type: apiKey
       in: cookie
       name: refresh_token
-
-
-
+  schemas: {}

@@ -211,9 +211,7 @@ func TestListRecipes(t *testing.T) {
 	t.Run("filter by brew method", func(t *testing.T) {
 		c := newAuthenticatedTestClient(t, srv)
 		resp, err := c.ListRecipesWithResponse(t.Context(), &client.ListRecipesParams{
-			ListRecipes: &models.ListRecipesParams{
-				BrewMethod: new(models.V60),
-			},
+			BrewMethod: new(models.V60),
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode())
@@ -238,9 +236,7 @@ func TestListRecipes(t *testing.T) {
 
 		t.Run("matches title", func(t *testing.T) {
 			resp, err := c.ListRecipesWithResponse(t.Context(), &client.ListRecipesParams{
-				ListRecipes: &models.ListRecipesParams{
-					Query: new("V60"),
-				},
+				Query: new("V60"),
 			})
 			require.NoError(t, err)
 			assert.Equal(t, 200, resp.StatusCode())
@@ -250,11 +246,8 @@ func TestListRecipes(t *testing.T) {
 		})
 
 		t.Run("returns empty for no match", func(t *testing.T) {
-			q := "nomatch"
 			resp, err := c.ListRecipesWithResponse(t.Context(), &client.ListRecipesParams{
-				ListRecipes: &models.ListRecipesParams{
-					Query: &q,
-				},
+				Query: new("nomatch"),
 			})
 			require.NoError(t, err)
 			assert.Equal(t, 200, resp.StatusCode())

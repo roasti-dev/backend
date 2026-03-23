@@ -4,65 +4,6 @@ info:
   title: Models only
   version: 0.0.1
 components:
-  parameters:
-
-    ListRecipesParams:
-      name: listRecipes
-      in: query
-      style: form
-      explode: true
-      schema:
-        allOf:
-          - $ref: "#/components/schemas/PaginationParams"
-          - type: object
-            properties:
-              authorId:
-                type: string
-                description: Filter by author
-              brewMethod:
-                $ref: "#/components/schemas/BrewMethod"
-              difficulty:
-                $ref: "#/components/schemas/Difficulty"
-              query:
-                type: string
-                description: Search recipes by title or description
-              sort_field:
-                type: string
-                enum:
-                  - created_at
-                  - title
-                description: "Field to sort by, e.g. created_at, title, difficulty"
-              sort_direction:
-                type: string
-                enum:
-                  - asc
-                  - desc
-                description: "Sort direction"
-
-    ListUserLikesParams:
-      name: listUserLikes
-      in: query
-      style: form
-      explode: true
-      schema:
-        allOf:
-          - $ref: "#/components/schemas/PaginationParams"
-          - type: object
-            required:
-              - type
-            properties:
-              type:
-                type: string
-                enum:
-                  - recipe
-                description: Type of liked resource
-              sort_direction:
-                type: string
-                enum:
-                  - asc
-                  - desc
-                description: Sort direction by liked_at
-
   schemas:
     LimitParam:
       description: Number of items per page
@@ -76,6 +17,13 @@ components:
       format: int32
       default: 1
       minimum: 1
+
+    SortDirection:
+      type: string
+      enum:
+        - asc
+        - desc
+      description: Sort direction
 
     PaginationParams:
       type: object
@@ -521,10 +469,10 @@ components:
           description: Token used to obtain a new access token
 
     LikeTargetType:
-          type: string
-          enum:
-            - recipe
-          description: Type of the liked object
+      type: string
+      enum:
+        - recipe
+      description: Type of likeable resource
 
     ToggleLikeResponse:
       type: object
@@ -585,6 +533,32 @@ components:
           $ref: "#/components/schemas/RecipeAuthor"
           description: Author of the original recipe
 
+    ListRecipesParams:
+      type: object
+      properties:
+        authorId:
+          type: string
+          description: Filter by author
+        brewMethod:
+          $ref: "#/components/schemas/BrewMethod"
+        difficulty:
+          $ref: "#/components/schemas/Difficulty"
+        query:
+          type: string
+          description: Search recipes by title or description
+        sort_field:
+          type: string
+          enum:
+            - created_at
+            - title
+          description: Field to sort by
+        sort_direction:
+          $ref: "#/components/schemas/SortDirection"
+        page:
+          $ref: "#/components/schemas/PageParam"
+        limit:
+          $ref: "#/components/schemas/LimitParam"
+
     RecipePage:
       allOf:
         - $ref: "#/components/schemas/Page"
@@ -594,6 +568,20 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/Recipe"
+
+    ListUserLikesParams:
+      type: object
+      properties:
+        type:
+          $ref: "#/components/schemas/LikeTargetType"
+        sort_direction:
+          $ref: "#/components/schemas/SortDirection"
+        page:
+          $ref: "#/components/schemas/PageParam"
+        limit:
+          $ref: "#/components/schemas/LimitParam"
+      required:
+        - type
 
     LikedRecipePage:
       allOf:

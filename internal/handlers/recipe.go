@@ -5,7 +5,6 @@ import (
 	"log/slog"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
-	"github.com/nikpivkin/roasti-app-backend/internal/ptr"
 	"github.com/nikpivkin/roasti-app-backend/internal/requestctx"
 )
 
@@ -22,7 +21,18 @@ func (s *ServerHandler) ListRecipes(ctx context.Context, request ListRecipesRequ
 	s.logger.DebugContext(ctx, "list recipes request")
 
 	userID := requestctx.GetUserID(ctx)
-	params := ptr.GetOr(request.Params.ListRecipes, models.ListRecipesParams{})
+	params := models.ListRecipesParams{
+		AuthorId:      request.Params.AuthorId,
+		BrewMethod:    request.Params.BrewMethod,
+		Difficulty:    request.Params.Difficulty,
+		Limit:         request.Params.Limit,
+		Page:          request.Params.Page,
+		SortDirection: request.Params.SortDirection,
+	}
+
+	if request.Params.SortField != nil {
+		params.SortField = new(models.ListRecipesParamsSortField(*request.Params.SortField))
+	}
 	recipePage, err := s.recipeService.ListRecipes(ctx, userID, params)
 	if err != nil {
 		return nil, err

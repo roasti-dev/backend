@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
-	"github.com/nikpivkin/roasti-app-backend/internal/ptr"
 	"github.com/nikpivkin/roasti-app-backend/internal/requestctx"
 )
 
@@ -19,8 +18,12 @@ func (s *ServerHandler) GetCurrentUser(ctx context.Context, request GetCurrentUs
 
 func (s *ServerHandler) ListUserLikes(ctx context.Context, request ListUserLikesRequestObject) (ListUserLikesResponseObject, error) {
 	currentUserID := requestctx.GetUserID(ctx)
-	params := ptr.GetOr(request.Params.ListUserLikes, models.ListUserLikesParams{})
-	liked, err := s.userService.ListLikedRecipes(ctx, currentUserID, request.UserId, params)
+	liked, err := s.userService.ListLikedRecipes(ctx, currentUserID, request.UserId, models.ListUserLikesParams{
+		Type:          request.Params.Type,
+		Limit:         request.Params.Limit,
+		Page:          request.Params.Page,
+		SortDirection: request.Params.SortDirection,
+	})
 	if err != nil {
 		return nil, err
 	}
