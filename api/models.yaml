@@ -23,6 +23,9 @@ components:
                 $ref: "#/components/schemas/BrewMethod"
               difficulty:
                 $ref: "#/components/schemas/Difficulty"
+              query:
+                type: string
+                description: Search recipes by title or description
               sort_field:
                 type: string
                 enum:

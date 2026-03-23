@@ -13,8 +13,8 @@ import (
 )
 
 var defaultPayload = models.RecipePayload{
-	Title:       "V60 Recipe",
-	Description: "A great V60 recipe",
+	Title:       "Test Recipe",
+	Description: "Test description",
 	BrewMethod:  models.V60,
 	Difficulty:  models.DifficultyEasy,
 	Public:      new(true),
@@ -208,6 +208,46 @@ func TestListRecipes(t *testing.T) {
 		for _, r := range resp.JSON200.Items {
 			assert.Equal(t, models.V60, r.BrewMethod)
 		}
+	})
+
+	t.Run("filter by query", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+
+		p1 := defaultPayload
+		p1.Title = "V60 Recipe"
+		p1.Description = "Test description"
+
+		p2 := defaultPayload
+		p2.Title = "Aeropress Recipe"
+		p2.Description = "Test description"
+
+		createRecipe(t, c, p1)
+		createRecipe(t, c, p2)
+
+		t.Run("matches title", func(t *testing.T) {
+			resp, err := c.ListRecipesWithResponse(t.Context(), &client.ListRecipesParams{
+				ListRecipes: &models.ListRecipesParams{
+					Query: new("V60"),
+				},
+			})
+			require.NoError(t, err)
+			assert.Equal(t, 200, resp.StatusCode())
+			for _, r := range resp.JSON200.Items {
+				assert.Contains(t, r.Title, "V60")
+			}
+		})
+
+		t.Run("returns empty for no match", func(t *testing.T) {
+			q := "nomatch"
+			resp, err := c.ListRecipesWithResponse(t.Context(), &client.ListRecipesParams{
+				ListRecipes: &models.ListRecipesParams{
+					Query: &q,
+				},
+			})
+			require.NoError(t, err)
+			assert.Equal(t, 200, resp.StatusCode())
+			assert.Empty(t, resp.JSON200.Items)
+		})
 	})
 }
 

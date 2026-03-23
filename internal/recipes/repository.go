@@ -271,6 +271,14 @@ func applyListRecipesFilter(
 		sb = sb.Where(sq.Eq{"difficulty": *params.Difficulty})
 	}
 
+	if params.Query != nil && *params.Query != "" {
+		pattern := "%" + *params.Query + "%"
+		sb = sb.Where(sq.Or{
+			sq.Like{"LOWER(title)": strings.ToLower(pattern)},
+			sq.Like{"description": pattern},
+		})
+	}
+
 	// author filter
 	if params.AuthorId != nil {
 		authorID := *params.AuthorId

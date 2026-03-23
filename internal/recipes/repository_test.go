@@ -94,6 +94,52 @@ func TestRecipeRepository_ListRecipes(t *testing.T) {
 			}
 		}
 	})
+
+	t.Run("filters by query", func(t *testing.T) {
+		repo := setupRecipeRepo(t)
+
+		r1 := defaultTestRecipe()
+		r1.Title = "V60 Recipe"
+		r1.Description = "A great recipe"
+
+		r2 := defaultTestRecipe()
+		r2.Id = "recipe-2"
+		r2.Title = "Aeropress Recipe"
+		r2.Description = "Quick and easy"
+
+		require.NoError(t, repo.UpsertRecipe(t.Context(), r1))
+		require.NoError(t, repo.UpsertRecipe(t.Context(), r2))
+
+		t.Run("matches title", func(t *testing.T) {
+			q := "V60"
+			page, err := repo.ListRecipes(t.Context(), "user-1", models.ListRecipesParams{Query: &q})
+			require.NoError(t, err)
+			assert.Len(t, page.Items, 1)
+			assert.Equal(t, r1.Id, page.Items[0].Id)
+		})
+
+		t.Run("matches description", func(t *testing.T) {
+			q := "Quick"
+			page, err := repo.ListRecipes(t.Context(), "user-1", models.ListRecipesParams{Query: &q})
+			require.NoError(t, err)
+			assert.Len(t, page.Items, 1)
+			assert.Equal(t, r2.Id, page.Items[0].Id)
+		})
+
+		t.Run("case insensitive", func(t *testing.T) {
+			q := "v60"
+			page, err := repo.ListRecipes(t.Context(), "user-1", models.ListRecipesParams{Query: &q})
+			require.NoError(t, err)
+			assert.Len(t, page.Items, 1)
+		})
+
+		t.Run("returns empty for no match", func(t *testing.T) {
+			q := "nomatch"
+			page, err := repo.ListRecipes(t.Context(), "user-1", models.ListRecipesParams{Query: &q})
+			require.NoError(t, err)
+			assert.Empty(t, page.Items)
+		})
+	})
 }
 
 func TestRecipeRepository_DeleteRecipe(t *testing.T) {
