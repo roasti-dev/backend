@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log/slog"
 	"slices"
 	"strings"
 	"time"
@@ -65,89 +64,22 @@ var (
 	}
 )
 
-var (
-	_ sq.StdSqlCtx = (*loggingRunner)(nil)
-)
-
-type loggingRunner struct {
-	db     sq.StdSqlCtx
-	logger *slog.Logger
-}
-
-func newLoggingRunner(db sq.StdSqlCtx, logger *slog.Logger) *loggingRunner {
-	return &loggingRunner{db: db, logger: logger}
-}
-
-func (l *loggingRunner) BeginTx(ctx context.Context, opts *sql.TxOptions) (*loggingRunner, error) {
-	db, ok := l.db.(*sql.DB)
-	if !ok {
-		return nil, fmt.Errorf("not a *sql.DB")
-	}
-	tx, err := db.BeginTx(ctx, opts)
-	if err != nil {
-		return nil, fmt.Errorf("begin tx: %w", err)
-	}
-	return newLoggingRunner(tx, l.logger), nil
-}
-
-func (l *loggingRunner) Rollback() error {
-	tx, ok := l.db.(*sql.Tx)
-	if !ok {
-		return fmt.Errorf("not a *sql.Tx")
-	}
-	return tx.Rollback()
-}
-
-func (l *loggingRunner) Commit() error {
-	tx, ok := l.db.(*sql.Tx)
-	if !ok {
-		return fmt.Errorf("not a *sql.Tx")
-	}
-	return tx.Commit()
-}
-
-func (l *loggingRunner) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
-	l.logger.DebugContext(ctx, "exec", slog.String("query", query), slog.Any("args", args))
-	return l.db.ExecContext(ctx, query, args...)
-}
-
-func (l *loggingRunner) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
-	l.logger.DebugContext(ctx, "query", slog.String("query", query), slog.Any("args", args))
-	return l.db.QueryContext(ctx, query, args...)
-}
-
-func (l *loggingRunner) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
-	l.logger.DebugContext(ctx, "queryRow", slog.String("query", query), slog.Any("args", args))
-	return l.db.QueryRowContext(ctx, query, args...)
-}
-
-func (l *loggingRunner) Exec(query string, args ...any) (sql.Result, error) {
-	return l.db.Exec(query, args...)
-}
-
-func (l *loggingRunner) Query(query string, args ...any) (*sql.Rows, error) {
-	return l.db.Query(query, args...)
-}
-
-func (l *loggingRunner) QueryRow(query string, args ...any) *sql.Row {
-	return l.db.QueryRow(query, args...)
-}
-
 type Repository struct {
-	runner *loggingRunner
+	db     *sql.DB
+	runner sq.StdSqlCtx
 	psql   sq.StatementBuilderType
 }
 
-func NewRepository(db *sql.DB, logger *slog.Logger) *Repository {
-	runner := newLoggingRunner(db, logger)
+func NewRepository(db *sql.DB, runner sq.StdSqlCtx) *Repository {
 	return &Repository{
 		runner: runner,
-		psql:   sq.StatementBuilder.PlaceholderFormat(sq.Dollar).RunWith(sq.WrapStdSqlCtx(runner)),
+		db:     db,
+		psql:   sq.StatementBuilder.PlaceholderFormat(sq.Dollar).RunWith(runner),
 	}
 }
 
 func (r *Repository) UpsertRecipe(ctx context.Context, recipe models.Recipe) error {
-	tx, err := r.runner.BeginTx(ctx, nil)
+	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}

@@ -32,6 +32,7 @@ import (
 )
 
 type Config struct {
+	Debug                         bool
 	DBPath                        string
 	UploadsPath                   string
 	AppVersion                    string
@@ -82,11 +83,13 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 		slog.String("token_base_url", cfg.FirebaseTokenBaseURL),
 	)
 
+	runner := db.NewRunner(database, slog.Default(), cfg.Debug)
+
 	uploadRepo := uploads.NewRepository(database)
 	uploader := uploads.NewService(cfg.UploadsPath, uploadRepo)
 	startTmpCleanup(ctx, uploader)
 
-	recipeRepo := recipes.NewRepository(database, logger)
+	recipeRepo := recipes.NewRepository(database, runner)
 	likeRepo := likes.NewRepository(database)
 	likeService := likes.NewService(database, likeRepo, recipeRepo)
 	recipeService := recipes.NewService(recipeRepo, uploader, likeService)

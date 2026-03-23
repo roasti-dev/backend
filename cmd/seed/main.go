@@ -50,7 +50,7 @@ func realMain() error {
 
 	uploadRepo := uploads.NewRepository(database)
 	uploader := uploads.NewService(os.TempDir(), uploadRepo)
-	recipeRepo := recipes.NewRepository(database, slog.Default())
+	recipeRepo := recipes.NewRepository(database, db.NewRunner(database, slog.Default(), false))
 	likeRepo := likes.NewRepository(database)
 	likeService := likes.NewService(database, likeRepo, recipeRepo)
 	recipeService := recipes.NewService(recipeRepo, uploader, likeService)

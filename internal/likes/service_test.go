@@ -1,7 +1,6 @@
 package likes_test
 
 import (
-	"log/slog"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -16,7 +15,7 @@ import (
 func setupLikeService(t *testing.T) (*likes.Service, *recipes.Repository) {
 	database := testutil.SetupTestDB(t)
 	likeRepo := likes.NewRepository(database)
-	recipeRepo := recipes.NewRepository(database, slog.Default())
+	recipeRepo := recipes.NewRepository(database, database)
 	svc := likes.NewService(database, likeRepo, recipeRepo)
 	return svc, recipeRepo
 }

@@ -2,7 +2,6 @@ package recipes_test
 
 import (
 	"context"
-	"log/slog"
 	"testing"
 	"time"
 
@@ -51,7 +50,7 @@ func (m *mockLikeChecker) GetLikedIDs(_ context.Context, _ string, _ models.Like
 
 func setupRecipeService(t *testing.T, likeChecker recipes.LikeChecker) (*recipes.Service, *recipes.Repository) {
 	database := testutil.SetupTestDB(t)
-	repo := recipes.NewRepository(database, slog.Default())
+	repo := recipes.NewRepository(database, database)
 	svc := recipes.NewService(repo, nil, likeChecker)
 	return svc, repo
 }

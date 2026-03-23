@@ -50,7 +50,8 @@ func run() error {
 		slog.Warn("unknown APP_ENV, falling back to development", "value", appEnv)
 		appEnv = log.EnvDevelopment
 	}
-	logger := log.InitLogger(appVersion, appEnv)
+	debug := os.Getenv("DEBUG") != ""
+	logger := log.InitLogger(appVersion, appEnv, debug)
 
 	slog.SetDefault(logger)
 
@@ -65,6 +66,7 @@ func run() error {
 	defer stop()
 
 	a, err := app.New(ctx, app.Config{
+		Debug:                         debug,
 		DBPath:                        getEnvOrDefault("DATABASE_PATH", "data.db"),
 		UploadsPath:                   getEnvOrDefault("UPLOADS_PATH", "./uploads"),
 		AppVersion:                    appVersion,

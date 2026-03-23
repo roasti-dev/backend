@@ -1,7 +1,6 @@
 package recipes_test
 
 import (
-	"log/slog"
 	"testing"
 	"time"
 
@@ -15,7 +14,8 @@ import (
 )
 
 func setupRecipeRepo(t *testing.T) *recipes.Repository {
-	return recipes.NewRepository(testutil.SetupTestDB(t), slog.Default())
+	database := testutil.SetupTestDB(t)
+	return recipes.NewRepository(database, database)
 }
 
 func defaultTestRecipe() models.Recipe {

@@ -1,7 +1,6 @@
 package users_test
 
 import (
-	"log/slog"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -16,7 +15,7 @@ import (
 func TestLikeRepository_ListByUser(t *testing.T) {
 	db := testutil.SetupTestDB(t)
 	likesRepo := likes.NewRepository(db)
-	recipesRepo := recipes.NewRepository(db, slog.Default())
+	recipesRepo := recipes.NewRepository(db, db)
 
 	testutil.CreateTestRecipe(t, recipesRepo, "recipe-1", "user-1")
 	testutil.CreateTestRecipe(t, recipesRepo, "recipe-2", "user-1")

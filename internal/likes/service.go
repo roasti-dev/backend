@@ -13,22 +13,26 @@ import (
 
 var ErrTargetNotFound = apierr.NewApiError(http.StatusNotFound, "target not found")
 
-type CounterUpdater interface {
+type counterUpdater interface {
 	IncrementLikes(ctx context.Context, tx *sql.Tx, targetID string) (int, error)
 	DecrementLikes(ctx context.Context, tx *sql.Tx, targetID string) (int, error)
 }
 
-type Service struct {
-	repo    *Repository
-	counter CounterUpdater
-	db      *sql.DB
+type txBeginner interface {
+	BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error)
 }
 
-func NewService(db *sql.DB, repo *Repository, counter CounterUpdater) *Service {
+type Service struct {
+	db      txBeginner
+	repo    *Repository
+	counter counterUpdater
+}
+
+func NewService(db txBeginner, repo *Repository, counter counterUpdater) *Service {
 	return &Service{
+		db:      db,
 		repo:    repo,
 		counter: counter,
-		db:      db,
 	}
 }
 
