@@ -28,18 +28,21 @@ jobs:
       - name: Build
         run: make build-linux-amd64
 
+      - name: Install conventional-changelog CLI & preset
+        run: |
+          npm install -g conventional-changelog-cli
+          npm install -g conventional-changelog-conventionalcommits
+
       - name: Generate changelog
         id: changelog
-        uses: TriPSs/conventional-changelog-action@v6
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          release-count: 0
-          preset: conventionalcommits
-          skip-tag: "true"
-          skip-commit: "true"
-          skip-git-pull: "true"
-          skip-version-file: "true"
-          output-file: "false"
+        run: |
+          npx conventional-changelog -p conventionalcommits -r 2 --stdout | \
+          awk 'BEGIN {skip=1} /^## / {if (skip) {skip=0; next}} {print}' > tmp_changelog.md
+
+          echo "tag=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
+          echo "clean_changelog<<EOF" >> $GITHUB_OUTPUT
+          cat tmp_changelog.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -49,7 +52,7 @@ jobs:
           files: app-linux-amd64
 
       - name: Send release notes to Telegram
-        if: steps.changelog.outputs.skipped == 'false'
+        if: steps.changelog.outputs.clean_changelog != ''
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_RELEASE_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
@@ -62,8 +65,7 @@ jobs:
           curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
             --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
             --data-urlencode "message_thread_id=${TELEGRAM_THREAD_ID}" \
-            --data-urlencode "text=${MESSAGE}" \
-            --data-urlencode "parse_mode=Markdown"
+            --data-urlencode "text=${MESSAGE}"
 
       - name: Install Ansible
         run: pip install ansible
