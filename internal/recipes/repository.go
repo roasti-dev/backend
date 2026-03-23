@@ -26,7 +26,25 @@ const (
 )
 
 var (
-	recipeColumns = []string{
+	recipeSelectColumns = []string{
+		"recipes.id",
+		"recipes.author_id",
+		"recipes.title",
+		"recipes.description",
+		"recipes.image_id",
+		"recipes.brew_method",
+		"recipes.difficulty",
+		"recipes.roast_level",
+		"recipes.beans",
+		"recipes.public",
+		"recipes.created_at",
+		"recipes.updated_at",
+		"recipes.likes_count",
+		"users.username",
+		"users.avatar_id",
+	}
+
+	recipeInsertColumns = []string{
 		"id",
 		"author_id",
 		"title",
@@ -43,14 +61,22 @@ var (
 	}
 
 	recipeSortableColumns = []string{
-		"created_at",
-		"title",
+		"recipes.created_at",
+		"recipes.title",
 	}
 
 	recipePreviewColumns = []string{
-		"id", "author_id", "title", "image_id",
-		"brew_method", "difficulty", "roast_level",
-		"likes_count", "created_at",
+		"recipes.id",
+		"recipes.author_id",
+		"recipes.title",
+		"recipes.image_id",
+		"recipes.brew_method",
+		"recipes.difficulty",
+		"recipes.roast_level",
+		"recipes.likes_count",
+		"recipes.created_at",
+		"users.username",
+		"users.avatar_id",
 	}
 
 	brewStepsColumns = []string{
@@ -88,7 +114,7 @@ func (r *Repository) UpsertRecipe(ctx context.Context, recipe models.Recipe) err
 	now := time.Now().UTC()
 
 	query := r.psql.Insert(recipesTable).
-		Columns(recipeColumns...).
+		Columns(recipeInsertColumns...).
 		Values(
 			recipe.Id,
 			recipe.AuthorId,
@@ -143,9 +169,10 @@ func (r *Repository) UpsertRecipe(ctx context.Context, recipe models.Recipe) err
 
 func (r *Repository) GetRecipeByID(ctx context.Context, recipeID string) (models.Recipe, error) {
 	sb := r.psql.
-		Select(recipeColumns...).
+		Select(recipeSelectColumns...).
 		From(recipesTable).
-		Where(sq.Eq{"id": recipeID}).
+		Join("users ON users.id = recipes.author_id").
+		Where(sq.Eq{"recipes.id": recipeID}).
 		Limit(1)
 
 	row := sb.RunWith(r.runner).QueryRowContext(ctx)
@@ -176,11 +203,12 @@ func (r *Repository) ListRecipes(
 	pag := params.Pagination()
 
 	sb := r.psql.
-		Select(recipeColumns...).
-		From(recipesTable)
+		Select(recipeSelectColumns...).
+		From(recipesTable).
+		Join("users ON users.id = recipes.author_id")
 	sb = applyListRecipesFilter(sb, params, currentUserID)
 	sb = applyPagination(sb, pag)
-	sb = applySort(sb, params.SortField, params.SortDirection, recipeSortableColumns)
+	sb = applySort(sb, params.SortField, params.SortDirection, recipeSortableColumns, "recipes.created_at")
 
 	rows, err := sb.RunWith(r.runner).QueryContext(ctx)
 	if err != nil {
@@ -225,10 +253,11 @@ func (r *Repository) GetPreviewsByIDs(ctx context.Context, currentUserID string,
 	rows, err := r.psql.
 		Select(recipePreviewColumns...).
 		From(recipesTable).
-		Where(sq.Eq{"id": ids}).
+		Join("users ON users.id = recipes.author_id").
+		Where(sq.Eq{"recipes.id": ids}).
 		Where(sq.Or{
-			sq.Eq{"public": true},
-			sq.Eq{"author_id": currentUserID},
+			sq.Eq{"recipes.public": true},
+			sq.Eq{"recipes.author_id": currentUserID},
 		}).
 		RunWith(r.runner).
 		QueryContext(ctx)
@@ -244,9 +273,11 @@ func (r *Repository) GetPreviewsByIDs(ctx context.Context, currentUserID string,
 			&p.Id, &p.AuthorId, &p.Title, &p.ImageId,
 			&p.BrewMethod, &p.Difficulty, &p.RoastLevel,
 			&p.LikesCount, &p.CreatedAt,
+			&p.Author.Username, &p.Author.AvatarId,
 		); err != nil {
 			return nil, fmt.Errorf("scan recipe preview: %w", err)
 		}
+		p.Author.Id = p.AuthorId
 		previews = append(previews, p)
 	}
 	if err := rows.Err(); err != nil {
@@ -263,39 +294,39 @@ func applyListRecipesFilter(
 
 	// brew method
 	if params.BrewMethod != nil {
-		sb = sb.Where(sq.Eq{"brew_method": *params.BrewMethod})
+		sb = sb.Where(sq.Eq{"recipes.brew_method": *params.BrewMethod})
 	}
 
 	// difficulty
 	if params.Difficulty != nil {
-		sb = sb.Where(sq.Eq{"difficulty": *params.Difficulty})
+		sb = sb.Where(sq.Eq{"recipes.difficulty": *params.Difficulty})
 	}
 
 	if params.Query != nil && *params.Query != "" {
-		pattern := "%" + *params.Query + "%"
+		pattern := "%" + strings.ToLower(*params.Query) + "%"
 		sb = sb.Where(sq.Or{
-			sq.Like{"LOWER(title)": strings.ToLower(pattern)},
-			sq.Like{"description": pattern},
+			sq.Expr("LOWER(recipes.title) LIKE ?", pattern),
+			sq.Expr("LOWER(recipes.description) LIKE ?", pattern),
 		})
 	}
 
 	// author filter
 	if params.AuthorId != nil {
 		authorID := *params.AuthorId
-		sb = sb.Where(sq.Eq{"author_id": authorID})
+		sb = sb.Where(sq.Eq{"recipes.author_id": authorID})
 
 		if authorID != currentUserID {
-			sb = sb.Where(sq.Eq{"public": true})
+			sb = sb.Where(sq.Eq{"recipes.public": true})
 		}
 	} else {
-		sb = sb.Where(sq.Eq{"public": true})
+		sb = sb.Where(sq.Eq{"recipes.public": true})
 	}
 
 	return sb
 }
 
-func applySort(sb sq.SelectBuilder, sortField, sortDirection *string, allowedFields []string) sq.SelectBuilder {
-	sort := "created_at"
+func applySort(sb sq.SelectBuilder, sortField, sortDirection *string, allowedFields []string, defaultField string) sq.SelectBuilder {
+	sort := defaultField
 	if sortField != nil && slices.Contains(allowedFields, *sortField) {
 		sort = *sortField
 	}
@@ -308,7 +339,7 @@ func applySort(sb sq.SelectBuilder, sortField, sortDirection *string, allowedFie
 		}
 	}
 
-	return sb.OrderBy(fmt.Sprintf("%s %s, id %s", sort, dir, dir))
+	return sb.OrderBy(fmt.Sprintf("%s %s, recipes.id %s", sort, dir, dir))
 }
 
 func applyPagination(sb sq.SelectBuilder, pag models.PaginationParams) sq.SelectBuilder {
@@ -333,7 +364,6 @@ func scanRecipes(rows *sql.Rows) ([]models.Recipe, []string, error) {
 
 func scanRecipe(s scanner) (models.Recipe, error) {
 	var recipe models.Recipe
-
 	err := s.Scan(
 		&recipe.Id,
 		&recipe.AuthorId,
@@ -348,8 +378,10 @@ func scanRecipe(s scanner) (models.Recipe, error) {
 		&recipe.CreatedAt,
 		&recipe.UpdatedAt,
 		&recipe.LikesCount,
+		&recipe.Author.Username,
+		&recipe.Author.AvatarId,
 	)
-
+	recipe.Author.Id = recipe.AuthorId
 	return recipe, err
 }
 

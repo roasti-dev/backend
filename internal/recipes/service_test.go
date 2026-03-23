@@ -50,6 +50,8 @@ func (m *mockLikeChecker) GetLikedIDs(_ context.Context, _ string, _ models.Like
 
 func setupRecipeService(t *testing.T, likeChecker recipes.LikeChecker) (*recipes.Service, *recipes.Repository) {
 	database := testutil.SetupTestDB(t)
+	testutil.CreateTestUser(t, database, "user-1")
+	testutil.CreateTestUser(t, database, "user-2")
 	repo := recipes.NewRepository(database, database)
 	svc := recipes.NewService(repo, nil, likeChecker)
 	return svc, repo

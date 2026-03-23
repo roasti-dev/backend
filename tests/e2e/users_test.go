@@ -140,4 +140,18 @@ func TestListUserLikes(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode())
 	})
+
+	t.Run("liked recipes contain author", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		recipe := createRecipe(t, c, defaultPayload)
+		toggleRecipeLike(t, c, recipe.Id)
+
+		resp, err := c.ListUserLikesWithResponse(t.Context(), c.ID, &client.ListUserLikesParams{
+			ListUserLikes: &models.ListUserLikesParams{Type: "recipe"},
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode())
+		assert.NotEmpty(t, resp.JSON200.Items[0].Recipe.Author.Id)
+		assert.NotEmpty(t, resp.JSON200.Items[0].Recipe.Author.Username)
+	})
 }

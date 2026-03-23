@@ -15,6 +15,8 @@ import (
 
 func setupRecipeRepo(t *testing.T) *recipes.Repository {
 	database := testutil.SetupTestDB(t)
+	testutil.CreateTestUser(t, database, "user-1")
+	testutil.CreateTestUser(t, database, "user-2")
 	return recipes.NewRepository(database, database)
 }
 
@@ -141,6 +143,14 @@ func TestRecipeRepository_ListRecipes(t *testing.T) {
 			require.NoError(t, err)
 			assert.Empty(t, page.Items)
 		})
+	})
+
+	t.Run("populates author", func(t *testing.T) {
+		page, err := repo.ListRecipes(t.Context(), "user-1", models.ListRecipesParams{})
+		require.NoError(t, err)
+		require.NotEmpty(t, page.Items)
+		assert.Equal(t, "user-1", page.Items[0].Author.Id)
+		assert.Equal(t, "user-1", page.Items[0].Author.Username)
 	})
 }
 

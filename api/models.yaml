@@ -224,6 +224,8 @@ components:
         author_id:
           type: string
           description: ID of the user who created the recipe
+        author:
+          $ref: "#/components/schemas/RecipeAuthor"
         title:
           type: string
           description: Recipe title
@@ -270,6 +272,7 @@ components:
       required:
         - id
         - author_id
+        - author
         - title
         - description
         - brew_method
@@ -291,6 +294,8 @@ components:
         author_id:
           type: string
           description: ID of the user who created the recipe
+        author:
+          $ref: "#/components/schemas/RecipeAuthor"
         title:
           type: string
           description: Recipe title
@@ -318,6 +323,7 @@ components:
       required:
         - id
         - author_id
+        - author
         - title
         - brew_method
         - difficulty
@@ -538,3 +544,18 @@ components:
           format: date-time
         recipe:
           $ref: "#/components/schemas/RecipePreview"
+
+    RecipeAuthor:
+      type: object
+      required:
+        - id
+        - username
+        - avatar_id
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+        avatar_id:
+          type: string
+          nullable: true

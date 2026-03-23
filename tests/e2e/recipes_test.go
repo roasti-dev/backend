@@ -173,6 +173,17 @@ func TestGetRecipeByID(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 403, resp.StatusCode())
 	})
+
+	t.Run("recipe contains author", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		recipe := createRecipe(t, c, defaultPayload)
+
+		resp, err := c.GetRecipeWithResponse(t.Context(), recipe.Id)
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode())
+		assert.Equal(t, recipe.AuthorId, resp.JSON200.Author.Id)
+		assert.NotEmpty(t, resp.JSON200.Author.Username)
+	})
 }
 
 func TestListRecipes(t *testing.T) {
@@ -250,6 +261,20 @@ func TestListRecipes(t *testing.T) {
 			assert.Empty(t, resp.JSON200.Items)
 		})
 	})
+
+	t.Run("list recipes contains author", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		createRecipe(t, c, defaultPayload)
+
+		resp, err := c.ListRecipesWithResponse(t.Context(), &client.ListRecipesParams{})
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode())
+		for _, r := range resp.JSON200.Items {
+			assert.NotEmpty(t, r.Author.Id)
+			assert.NotEmpty(t, r.Author.Username)
+		}
+	})
+
 }
 
 func TestRecipeWithImage(t *testing.T) {
