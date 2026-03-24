@@ -138,3 +138,16 @@ func (r *Repository) ListByUser(ctx context.Context, userID string, targetType m
 	}
 	return likes, nil
 }
+
+func (r *Repository) CountByUser(ctx context.Context, userID string, targetType models.LikeTargetType) (int, error) {
+	var count int
+	err := r.psql.Select("COUNT(*)").
+		From(likesTable).
+		Where(sq.Eq{"user_id": userID, "target_type": targetType}).
+		QueryRowContext(ctx).
+		Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("count likes by user: %w", err)
+	}
+	return count, nil
+}

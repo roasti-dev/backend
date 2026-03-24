@@ -15,6 +15,7 @@ type RecipeService interface {
 }
 
 type LikesRepository interface {
+	CountByUser(ctx context.Context, userID string, targetType models.LikeTargetType) (int, error)
 	ListByUser(ctx context.Context, userID string, targetType models.LikeTargetType, limit, offset int) ([]likes.Like, error)
 }
 
@@ -76,6 +77,15 @@ func (s *Service) ListLikedRecipes(ctx context.Context, currentUserID, targetUse
 
 	pag := params.Pagination()
 
+	total, err := s.likes.CountByUser(ctx, targetUserID, models.LikeTargetTypeRecipe)
+	if err != nil {
+		return models.GenericPage[models.LikedRecipe]{}, fmt.Errorf("count liked recipes: %w", err)
+	}
+
+	if total == 0 {
+		return models.NewPage([]models.LikedRecipe{}, pag, 0), nil
+	}
+
 	likedList, err := s.likes.ListByUser(ctx, targetUserID, models.LikeTargetTypeRecipe, int(pag.GetLimit()), int(pag.Offset()))
 	if err != nil {
 		return models.GenericPage[models.LikedRecipe]{}, fmt.Errorf("list liked recipes: %w", err)
@@ -105,5 +115,5 @@ func (s *Service) ListLikedRecipes(ctx context.Context, currentUserID, targetUse
 		}
 	}
 
-	return models.NewPage(result, pag, len(likedList)), nil
+	return models.NewPage(result, pag, total), nil
 }
