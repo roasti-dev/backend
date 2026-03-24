@@ -29,9 +29,9 @@ components:
       type: object
       properties:
         limit:
-          $ref: '#/components/schemas/LimitParam'
+          $ref: "#/components/schemas/LimitParam"
         page:
-          $ref: '#/components/schemas/PageParam'
+          $ref: "#/components/schemas/PageParam"
 
     PaginationMeta:
       type: object
@@ -408,11 +408,11 @@ components:
           description: Refresh token obtained during login or registration
 
     LogoutRequest:
-          type: object
-          required: [refresh_token]
-          properties:
-            refresh_token:
-              type: string
+      type: object
+      required: [refresh_token]
+      properties:
+        refresh_token:
+          type: string
 
     AuthResponse:
       type: object

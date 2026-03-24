@@ -213,42 +213,42 @@ paths:
                 $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
 
   /api/v1/recipes/{recipe_id}/like:
-      post:
-        summary: Toggle like on a recipe
-        operationId: toggleRecipeLike
-        description: Adds a like if not liked, removes if already liked.
-        tags: [likes]
-        parameters:
-          - name: recipe_id
-            in: path
-            required: true
-            schema:
-              type: string
-        responses:
-          "200":
-            description: Like toggled
-            content:
-              application/json:
-                schema:
-                  $ref: "./models.yaml#/components/schemas/ToggleLikeResponse"
-          "401":
-            description: Unauthorized
-            content:
-              application/json:
-                schema:
-                  $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
-          "404":
-            description: Recipe not found
-            content:
-              application/json:
-                schema:
-                  $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
-          "500":
-            description: Internal server error
-            content:
-              application/json:
-                schema:
-                  $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
+    post:
+      summary: Toggle like on a recipe
+      operationId: toggleRecipeLike
+      description: Adds a like if not liked, removes if already liked.
+      tags: [likes]
+      parameters:
+        - name: recipe_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Like toggled
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ToggleLikeResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
+        "404":
+          description: Recipe not found
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
 
   /api/v1/recipes/{recipe_id}/clone:
     post:
@@ -453,7 +453,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: './models.yaml#/components/schemas/LogoutRequest'
+              $ref: "./models.yaml#/components/schemas/LogoutRequest"
       responses:
         "204":
           description: Logged out successfully
@@ -522,7 +522,6 @@ paths:
           description: User not found
         "500":
           description: Internal server error
-          
 
 components:
   securitySchemes:
