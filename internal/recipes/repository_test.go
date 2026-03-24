@@ -145,6 +145,30 @@ func TestRecipeRepository_ListRecipes(t *testing.T) {
 		})
 	})
 
+	t.Run("filters by query", func(t *testing.T) {
+		repo := setupRecipeRepo(t)
+
+		r1 := defaultTestRecipe()
+		r1.Title = "Тест"
+		r1.Description = "oo"
+
+		r2 := defaultTestRecipe()
+		r2.Title = "Тест"
+		r2.Description = "kkk"
+
+		require.NoError(t, repo.UpsertRecipe(t.Context(), r1))
+		require.NoError(t, repo.UpsertRecipe(t.Context(), r2))
+
+		t.Run("matches title", func(t *testing.T) {
+			page, err := repo.ListRecipes(t.Context(), "user-1", models.ListRecipesParams{
+				Query:     new("kk"),
+				SortField: new(models.ListRecipesParamsSortField("created_at")),
+			})
+			require.NoError(t, err)
+			assert.Len(t, page.Items, 1)
+		})
+	})
+
 	t.Run("populates author", func(t *testing.T) {
 		page, err := repo.ListRecipes(t.Context(), "user-1", models.ListRecipesParams{})
 		require.NoError(t, err)

@@ -7,7 +7,7 @@ info:
 
 security:
   - BearerAuth: []
-  - CookieAuth: []
+  - AccessTokenCookie: []
 tags:
   - name: recipes
     description: Recipe management and discovery
@@ -413,7 +413,8 @@ paths:
       summary: Refresh access token
       operationId: refreshToken
       description: Issues a new access token using a valid refresh token.
-      security: []
+      security:
+        - RefreshTokenCookie: []
       tags: [auth, public]
       requestBody:
         required: false
@@ -524,8 +525,18 @@ components:
     BearerAuth:
       type: http
       scheme: bearer
-    CookieAuth:
+      bearerFormat: JWT
+      description: Access token in Authorization header. Takes precedence over cookie.
+
+    AccessTokenCookie:
+      type: apiKey
+      in: cookie
+      name: access_token
+      description: Access token stored in HttpOnly cookie.
+
+    RefreshTokenCookie:
       type: apiKey
       in: cookie
       name: refresh_token
+      description: Refresh token stored in HttpOnly cookie (used for refresh endpoint)
   schemas: {}

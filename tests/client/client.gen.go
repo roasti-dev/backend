@@ -19,8 +19,9 @@ import (
 )
 
 const (
-	BearerAuthScopes = "BearerAuth.Scopes"
-	CookieAuthScopes = "CookieAuth.Scopes"
+	AccessTokenCookieScopes  = "AccessTokenCookie.Scopes"
+	BearerAuthScopes         = "BearerAuth.Scopes"
+	RefreshTokenCookieScopes = "RefreshTokenCookie.Scopes"
 )
 
 // Defines values for ListRecipesParamsSortField.
