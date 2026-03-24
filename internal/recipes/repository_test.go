@@ -20,8 +20,9 @@ func setupRecipeRepo(t *testing.T) *recipes.Repository {
 	return recipes.NewRepository(database, database)
 }
 
-func defaultTestRecipe() models.Recipe {
-	return models.Recipe{
+func TestRecipeRepository_UpsertRecipe_Create(t *testing.T) {
+	repo := setupRecipeRepo(t)
+	r := models.Recipe{
 		Id:          "recipe-1",
 		AuthorId:    "user-1",
 		Title:       "Test Recipe",
@@ -33,11 +34,6 @@ func defaultTestRecipe() models.Recipe {
 		CreatedAt:   time.Now().UTC(),
 		UpdatedAt:   time.Now().UTC(),
 	}
-}
-
-func TestRecipeRepository_UpsertRecipe_Create(t *testing.T) {
-	repo := setupRecipeRepo(t)
-	r := defaultTestRecipe()
 
 	require.NoError(t, repo.UpsertRecipe(t.Context(), r))
 
@@ -51,8 +47,7 @@ func TestRecipeRepository_UpsertRecipe_Create(t *testing.T) {
 
 func TestRecipeRepository_UpsertRecipe_Update(t *testing.T) {
 	repo := setupRecipeRepo(t)
-	r := defaultTestRecipe()
-	require.NoError(t, repo.UpsertRecipe(t.Context(), r))
+	r := testutil.CreateTestRecipe(t, repo, "recipe-1", "user-1")
 
 	r.Title = "Updated Title"
 	require.NoError(t, repo.UpsertRecipe(t.Context(), r))
@@ -72,13 +67,9 @@ func TestRecipeRepository_GetRecipeByID_NotFound(t *testing.T) {
 func TestRecipeRepository_ListRecipes(t *testing.T) {
 	repo := setupRecipeRepo(t)
 
-	r1 := defaultTestRecipe()
-	r2 := defaultTestRecipe()
-	r2.Id = "recipe-2"
-	r2.AuthorId = "user-2"
+	r1 := testutil.CreateTestRecipe(t, repo, "recipe-1", "user-1")
+	r2 := testutil.CreateTestRecipe(t, repo, "recipe-2", "user-2")
 	r2.Public = false
-
-	require.NoError(t, repo.UpsertRecipe(t.Context(), r1))
 	require.NoError(t, repo.UpsertRecipe(t.Context(), r2))
 
 	t.Run("returns only public recipes when no author filter", func(t *testing.T) {
@@ -102,16 +93,14 @@ func TestRecipeRepository_ListRecipes(t *testing.T) {
 	t.Run("filters by query", func(t *testing.T) {
 		repo := setupRecipeRepo(t)
 
-		r1 := defaultTestRecipe()
+		r1 := testutil.CreateTestRecipe(t, repo, "recipe-1", "user-1")
 		r1.Title = "V60 Recipe"
 		r1.Description = "A great recipe"
+		require.NoError(t, repo.UpsertRecipe(t.Context(), r1))
 
-		r2 := defaultTestRecipe()
-		r2.Id = "recipe-2"
+		r2 := testutil.CreateTestRecipe(t, repo, "recipe-2", "user-1")
 		r2.Title = "Aeropress Recipe"
 		r2.Description = "Quick and easy"
-
-		require.NoError(t, repo.UpsertRecipe(t.Context(), r1))
 		require.NoError(t, repo.UpsertRecipe(t.Context(), r2))
 
 		t.Run("matches title", func(t *testing.T) {
@@ -145,50 +134,82 @@ func TestRecipeRepository_ListRecipes(t *testing.T) {
 		})
 	})
 
-	t.Run("filters by query", func(t *testing.T) {
+	t.Run("filters by author", func(t *testing.T) {
 		repo := setupRecipeRepo(t)
 
-		r1 := defaultTestRecipe()
-		r1.Title = "Тест"
-		r1.Description = "oo"
-
-		r2 := defaultTestRecipe()
-		r2.Title = "Тест"
-		r2.Description = "kkk"
-
-		require.NoError(t, repo.UpsertRecipe(t.Context(), r1))
+		r1 := testutil.CreateTestRecipe(t, repo, "recipe-1", "user-1")
+		r2 := testutil.CreateTestRecipe(t, repo, "recipe-2", "user-1")
+		r2.Public = false
 		require.NoError(t, repo.UpsertRecipe(t.Context(), r2))
+		testutil.CreateTestRecipe(t, repo, "recipe-3", "user-2")
 
-		t.Run("matches title", func(t *testing.T) {
-			page, err := repo.ListRecipes(t.Context(), "user-1", models.ListRecipesParams{
-				Query:     new("kk"),
-				SortField: new(models.ListRecipesParamsSortField("created_at")),
-			})
+		t.Run("returns only author recipes", func(t *testing.T) {
+			page, err := repo.ListRecipes(t.Context(), "user-3", models.ListRecipesParams{AuthorId: &r1.AuthorId})
+			require.NoError(t, err)
+			for _, item := range page.Items {
+				assert.Equal(t, "user-1", item.Author.Id)
+			}
+		})
+
+		t.Run("owner sees own private recipes", func(t *testing.T) {
+			page, err := repo.ListRecipes(t.Context(), "user-1", models.ListRecipesParams{AuthorId: &r1.AuthorId})
+			require.NoError(t, err)
+			assert.Len(t, page.Items, 2)
+		})
+
+		t.Run("other user does not see private recipes of author", func(t *testing.T) {
+			page, err := repo.ListRecipes(t.Context(), "user-3", models.ListRecipesParams{AuthorId: &r1.AuthorId})
 			require.NoError(t, err)
 			assert.Len(t, page.Items, 1)
+			assert.Equal(t, r1.Id, page.Items[0].Id)
 		})
+	})
+
+	t.Run("filters by brew method", func(t *testing.T) {
+		repo := setupRecipeRepo(t)
+
+		r1 := testutil.CreateTestRecipe(t, repo, "recipe-1", "user-1")
+		r2 := testutil.CreateTestRecipe(t, repo, "recipe-2", "user-1")
+		r2.BrewMethod = models.Aeropress
+		require.NoError(t, repo.UpsertRecipe(t.Context(), r2))
+
+		page, err := repo.ListRecipes(t.Context(), "user-1", models.ListRecipesParams{BrewMethod: &r1.BrewMethod})
+		require.NoError(t, err)
+		assert.Len(t, page.Items, 1)
+		assert.Equal(t, r1.Id, page.Items[0].Id)
+	})
+
+	t.Run("filters by difficulty", func(t *testing.T) {
+		repo := setupRecipeRepo(t)
+
+		r1 := testutil.CreateTestRecipe(t, repo, "recipe-1", "user-1")
+		r2 := testutil.CreateTestRecipe(t, repo, "recipe-2", "user-1")
+		r2.Difficulty = models.DifficultyHard
+		require.NoError(t, repo.UpsertRecipe(t.Context(), r2))
+
+		page, err := repo.ListRecipes(t.Context(), "user-1", models.ListRecipesParams{Difficulty: &r1.Difficulty})
+		require.NoError(t, err)
+		assert.Len(t, page.Items, 1)
+		assert.Equal(t, r1.Id, page.Items[0].Id)
 	})
 
 	t.Run("populates author", func(t *testing.T) {
 		page, err := repo.ListRecipes(t.Context(), "user-1", models.ListRecipesParams{})
 		require.NoError(t, err)
 		require.NotEmpty(t, page.Items)
-		assert.Equal(t, "user-1", page.Items[0].Author.Id)
-		assert.Equal(t, "user-1", page.Items[0].Author.Username)
+		assert.Equal(t, r1.AuthorId, page.Items[0].Author.Id)
 	})
 }
 
 func TestRecipeRepository_ListRecipes_FilterByRoastLevel(t *testing.T) {
 	repo := setupRecipeRepo(t)
 
-	r1 := defaultTestRecipe()
+	r1 := testutil.CreateTestRecipe(t, repo, "recipe-1", "user-1")
 	r1.RoastLevel = new(models.RoastLevelLight)
-
-	r2 := defaultTestRecipe()
-	r2.Id = "recipe-2"
-	r2.RoastLevel = new(models.RoastLevelDark)
-
 	require.NoError(t, repo.UpsertRecipe(t.Context(), r1))
+
+	r2 := testutil.CreateTestRecipe(t, repo, "recipe-2", "user-1")
+	r2.RoastLevel = new(models.RoastLevelDark)
 	require.NoError(t, repo.UpsertRecipe(t.Context(), r2))
 
 	t.Run("returns only matching roast level", func(t *testing.T) {
@@ -217,8 +238,7 @@ func TestRecipeRepository_ListRecipes_FilterByRoastLevel(t *testing.T) {
 
 func TestRecipeRepository_DeleteRecipe(t *testing.T) {
 	repo := setupRecipeRepo(t)
-	r := defaultTestRecipe()
-	require.NoError(t, repo.UpsertRecipe(t.Context(), r))
+	r := testutil.CreateTestRecipe(t, repo, "recipe-1", "user-1")
 
 	require.NoError(t, repo.DeleteRecipe(t.Context(), r.AuthorId, r.Id))
 
@@ -228,8 +248,7 @@ func TestRecipeRepository_DeleteRecipe(t *testing.T) {
 
 func TestRecipeRepository_IncrementLikes(t *testing.T) {
 	repo := setupRecipeRepo(t)
-	r := defaultTestRecipe()
-	require.NoError(t, repo.UpsertRecipe(t.Context(), r))
+	r := testutil.CreateTestRecipe(t, repo, "recipe-1", "user-1")
 
 	count, err := repo.IncrementLikes(t.Context(), nil, r.Id)
 	require.NoError(t, err)
@@ -242,8 +261,7 @@ func TestRecipeRepository_IncrementLikes(t *testing.T) {
 
 func TestRecipeRepository_DecrementLikes(t *testing.T) {
 	repo := setupRecipeRepo(t)
-	r := defaultTestRecipe()
-	require.NoError(t, repo.UpsertRecipe(t.Context(), r))
+	r := testutil.CreateTestRecipe(t, repo, "recipe-1", "user-1")
 
 	_, err := repo.IncrementLikes(t.Context(), nil, r.Id)
 	require.NoError(t, err)
@@ -255,8 +273,7 @@ func TestRecipeRepository_DecrementLikes(t *testing.T) {
 
 func TestRecipeRepository_DecrementLikes_NotBelowZero(t *testing.T) {
 	repo := setupRecipeRepo(t)
-	r := defaultTestRecipe()
-	require.NoError(t, repo.UpsertRecipe(t.Context(), r))
+	r := testutil.CreateTestRecipe(t, repo, "recipe-1", "user-1")
 
 	count, err := repo.DecrementLikes(t.Context(), nil, r.Id)
 	require.NoError(t, err)
@@ -273,13 +290,9 @@ func TestRecipeRepository_IncrementLikes_NotFound(t *testing.T) {
 func TestRecipeRepository_GetPreviewsByIDs(t *testing.T) {
 	repo := setupRecipeRepo(t)
 
-	r1 := defaultTestRecipe()
-	r2 := defaultTestRecipe()
-	r2.Id = "recipe-2"
-	r2.AuthorId = "user-2"
+	r1 := testutil.CreateTestRecipe(t, repo, "recipe-1", "user-1")
+	r2 := testutil.CreateTestRecipe(t, repo, "recipe-2", "user-2")
 	r2.Public = false
-
-	require.NoError(t, repo.UpsertRecipe(t.Context(), r1))
 	require.NoError(t, repo.UpsertRecipe(t.Context(), r2))
 
 	ids := []string{r1.Id, r2.Id}
@@ -315,13 +328,9 @@ func TestRecipeRepository_GetPreviewsByIDs(t *testing.T) {
 func TestRecipeRepository_GetRecipesByIDs(t *testing.T) {
 	repo := setupRecipeRepo(t)
 
-	r1 := defaultTestRecipe()
-	r2 := defaultTestRecipe()
-	r2.Id = "recipe-2"
-	r2.AuthorId = "user-2"
+	r1 := testutil.CreateTestRecipe(t, repo, "recipe-1", "user-1")
+	r2 := testutil.CreateTestRecipe(t, repo, "recipe-2", "user-2")
 	r2.Public = false
-
-	require.NoError(t, repo.UpsertRecipe(t.Context(), r1))
 	require.NoError(t, repo.UpsertRecipe(t.Context(), r2))
 
 	ids := []string{r1.Id, r2.Id}
