@@ -63,7 +63,7 @@ func (r *Repository) Delete(ctx context.Context, userID, targetID string, target
 		ExecContext(ctx)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return ErrTargetNotFound
+			return nil
 		}
 		return fmt.Errorf("delete like: %w", err)
 	}

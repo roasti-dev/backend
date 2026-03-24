@@ -24,6 +24,11 @@ func TestLikeRepository_Delete(t *testing.T) {
 		require.NoError(t, err)
 		assert.False(t, exists)
 	})
+
+	t.Run("deleting non-existent like does not error", func(t *testing.T) {
+		err := repo.Delete(t.Context(), "user-1", "unknown", models.LikeTargetTypeRecipe)
+		require.NoError(t, err)
+	})
 }
 
 func TestLikeRepository_Exists(t *testing.T) {
