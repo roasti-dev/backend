@@ -255,6 +255,30 @@ func TestListRecipes(t *testing.T) {
 		})
 	})
 
+	t.Run("filter by roast level", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+
+		light := models.RoastLevelLight
+		dark := models.RoastLevelDark
+
+		p1 := defaultPayload
+		p1.RoastLevel = &light
+		createRecipe(t, c, p1)
+
+		p2 := defaultPayload
+		p2.RoastLevel = &dark
+		createRecipe(t, c, p2)
+
+		resp, err := c.ListRecipesWithResponse(t.Context(), &client.ListRecipesParams{
+			RoastLevel: &light,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode())
+		for _, r := range resp.JSON200.Items {
+			assert.Equal(t, &light, r.RoastLevel)
+		}
+	})
+
 	t.Run("list recipes contains author", func(t *testing.T) {
 		c := newAuthenticatedTestClient(t, srv)
 		createRecipe(t, c, defaultPayload)

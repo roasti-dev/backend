@@ -178,6 +178,43 @@ func TestRecipeRepository_ListRecipes(t *testing.T) {
 	})
 }
 
+func TestRecipeRepository_ListRecipes_FilterByRoastLevel(t *testing.T) {
+	repo := setupRecipeRepo(t)
+
+	r1 := defaultTestRecipe()
+	r1.RoastLevel = new(models.RoastLevelLight)
+
+	r2 := defaultTestRecipe()
+	r2.Id = "recipe-2"
+	r2.RoastLevel = new(models.RoastLevelDark)
+
+	require.NoError(t, repo.UpsertRecipe(t.Context(), r1))
+	require.NoError(t, repo.UpsertRecipe(t.Context(), r2))
+
+	t.Run("returns only matching roast level", func(t *testing.T) {
+		page, err := repo.ListRecipes(t.Context(), "user-1", models.ListRecipesParams{
+			RoastLevel: new(models.RoastLevelLight)},
+		)
+		require.NoError(t, err)
+		assert.Len(t, page.Items, 1)
+		assert.Equal(t, r1.Id, page.Items[0].Id)
+	})
+
+	t.Run("returns empty when no match", func(t *testing.T) {
+		page, err := repo.ListRecipes(t.Context(), "user-1", models.ListRecipesParams{
+			RoastLevel: new(models.RoastLevelMedium)},
+		)
+		require.NoError(t, err)
+		assert.Empty(t, page.Items)
+	})
+
+	t.Run("returns all when no filter", func(t *testing.T) {
+		page, err := repo.ListRecipes(t.Context(), "user-1", models.ListRecipesParams{})
+		require.NoError(t, err)
+		assert.Len(t, page.Items, 2)
+	})
+}
+
 func TestRecipeRepository_DeleteRecipe(t *testing.T) {
 	repo := setupRecipeRepo(t)
 	r := defaultTestRecipe()
