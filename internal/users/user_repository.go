@@ -76,6 +76,26 @@ func (r *UserRepository) GetByUsername(ctx context.Context, username string) (Us
 	return user, nil
 }
 
+func (r *UserRepository) Update(ctx context.Context, userID string, req UpdateUserFields) error {
+	if !req.HasFields() {
+		return nil
+	}
+	q := r.psql.Update(usersTable).Where(sq.Eq{"id": userID})
+	if req.Username != nil {
+		q = q.Set("username", *req.Username)
+	}
+	if req.Bio != nil {
+		q = q.Set("bio", *req.Bio)
+	}
+	if req.AvatarID != nil {
+		q = q.Set("avatar_id", *req.AvatarID)
+	}
+	if _, err := q.ExecContext(ctx); err != nil {
+		return fmt.Errorf("update user: %w", err)
+	}
+	return nil
+}
+
 func (r *UserRepository) ExistsByUsername(ctx context.Context, username string) (bool, error) {
 	var count int
 	err := r.psql.Select("COUNT(1)").

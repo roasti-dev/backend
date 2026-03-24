@@ -92,6 +92,9 @@ type UpdateRecipeJSONRequestBody = externalRef0.UpdateRecipeRequest
 // UploadImageMultipartRequestBody defines body for UploadImage for multipart/form-data ContentType.
 type UploadImageMultipartRequestBody UploadImageMultipartBody
 
+// UpdateCurrentUserJSONRequestBody defines body for UpdateCurrentUser for application/json ContentType.
+type UpdateCurrentUserJSONRequestBody = externalRef0.UpdateProfileRequest
+
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
 
@@ -218,6 +221,11 @@ type ClientInterface interface {
 
 	// GetCurrentUser request
 	GetCurrentUser(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateCurrentUserWithBody request with any body
+	UpdateCurrentUserWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateCurrentUser(ctx context.Context, body UpdateCurrentUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListUserLikes request
 	ListUserLikes(ctx context.Context, userId string, params *ListUserLikesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -456,6 +464,30 @@ func (c *Client) GetImage(ctx context.Context, imageId string, reqEditors ...Req
 
 func (c *Client) GetCurrentUser(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetCurrentUserRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateCurrentUserWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateCurrentUserRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateCurrentUser(ctx context.Context, body UpdateCurrentUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateCurrentUserRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1140,6 +1172,46 @@ func NewGetCurrentUserRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewUpdateCurrentUserRequest calls the generic UpdateCurrentUser builder with application/json body
+func NewUpdateCurrentUserRequest(server string, body UpdateCurrentUserJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateCurrentUserRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewUpdateCurrentUserRequestWithBody generates requests for UpdateCurrentUser with any type of body
+func NewUpdateCurrentUserRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/users/me")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewListUserLikesRequest generates requests for ListUserLikes
 func NewListUserLikesRequest(server string, userId string, params *ListUserLikesParams) (*http.Request, error) {
 	var err error
@@ -1363,6 +1435,11 @@ type ClientWithResponsesInterface interface {
 
 	// GetCurrentUserWithResponse request
 	GetCurrentUserWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetCurrentUserResponse, error)
+
+	// UpdateCurrentUserWithBodyWithResponse request with any body
+	UpdateCurrentUserWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateCurrentUserResponse, error)
+
+	UpdateCurrentUserWithResponse(ctx context.Context, body UpdateCurrentUserJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateCurrentUserResponse, error)
 
 	// ListUserLikesWithResponse request
 	ListUserLikesWithResponse(ctx context.Context, userId string, params *ListUserLikesParams, reqEditors ...RequestEditorFn) (*ListUserLikesResponse, error)
@@ -1690,6 +1767,30 @@ func (r GetCurrentUserResponse) StatusCode() int {
 	return 0
 }
 
+type UpdateCurrentUserResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *externalRef0.CurrentUser
+	JSON409      *externalRef0.ApiErrorResponse
+	JSON422      *externalRef0.ApiErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateCurrentUserResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateCurrentUserResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type ListUserLikesResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -1905,6 +2006,23 @@ func (c *ClientWithResponses) GetCurrentUserWithResponse(ctx context.Context, re
 		return nil, err
 	}
 	return ParseGetCurrentUserResponse(rsp)
+}
+
+// UpdateCurrentUserWithBodyWithResponse request with arbitrary body returning *UpdateCurrentUserResponse
+func (c *ClientWithResponses) UpdateCurrentUserWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateCurrentUserResponse, error) {
+	rsp, err := c.UpdateCurrentUserWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateCurrentUserResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateCurrentUserWithResponse(ctx context.Context, body UpdateCurrentUserJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateCurrentUserResponse, error) {
+	rsp, err := c.UpdateCurrentUser(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateCurrentUserResponse(rsp)
 }
 
 // ListUserLikesWithResponse request returning *ListUserLikesResponse
@@ -2351,6 +2469,46 @@ func ParseGetCurrentUserResponse(rsp *http.Response) (*GetCurrentUserResponse, e
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateCurrentUserResponse parses an HTTP response from a UpdateCurrentUserWithResponse call
+func ParseUpdateCurrentUserResponse(rsp *http.Response) (*UpdateCurrentUserResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateCurrentUserResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest externalRef0.CurrentUser
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
 
 	}
 

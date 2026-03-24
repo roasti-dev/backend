@@ -459,6 +459,22 @@ components:
           nullable: true
           description: ID of the uploaded avatar image. Can be resolved via the image upload endpoint.
 
+    UpdateProfileRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        username:
+          type: string
+          description: New username. Must be 6-16 characters, letters, numbers and underscores only.
+        bio:
+          type: string
+          nullable: true
+          description: Short user biography
+        avatarId:
+          type: string
+          nullable: true
+          description: ID of the uploaded avatar image. Can be resolved via the image upload endpoint.
+
     CurrentUser:
       allOf:
         - $ref: "#/components/schemas/UserResponse"

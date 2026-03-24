@@ -480,6 +480,39 @@ paths:
         "401":
           description: Unauthorized
 
+    patch:
+      summary: Update current user profile
+      operationId: updateCurrentUser
+      description: Updates profile of the currently authenticated user.
+      tags: [users]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./models.yaml#/components/schemas/UpdateProfileRequest"
+      responses:
+        "200":
+          description: Updated user profile
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/CurrentUser"
+        "400":
+          description: Bad request
+        "409":
+          description: Username already taken
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
+
   /api/v1/users/{user_id}/likes:
     get:
       summary: List liked recipes

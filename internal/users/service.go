@@ -65,6 +65,24 @@ func (s *Service) ExistsByUsername(ctx context.Context, username string) (bool, 
 	return s.repo.ExistsByUsername(ctx, username)
 }
 
+func (s *Service) UpdateProfile(ctx context.Context, userID string, req UpdateUserFields) (models.CurrentUser, error) {
+	if req.Username != nil {
+		exists, err := s.repo.ExistsByUsername(ctx, *req.Username)
+		if err != nil {
+			return models.UserResponse{}, fmt.Errorf("check username: %w", err)
+		}
+		if exists {
+			return models.UserResponse{}, ErrUsernameTaken
+		}
+	}
+
+	if err := s.repo.Update(ctx, userID, req); err != nil {
+		return models.UserResponse{}, err
+	}
+
+	return s.CurrentUser(ctx, userID)
+}
+
 func (s *Service) ExistsByEmail(ctx context.Context, email string) (bool, error) {
 	return s.repo.ExistsByEmail(ctx, email)
 }

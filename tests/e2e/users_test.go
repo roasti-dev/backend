@@ -10,6 +10,101 @@ import (
 	"github.com/nikpivkin/roasti-app-backend/tests/client"
 )
 
+func TestUpdateCurrentUser(t *testing.T) {
+	srv := setupTestServer(t)
+
+	t.Run("updates username", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		newUsername := "updated_" + randomString(5)
+
+		resp, err := c.UpdateCurrentUserWithResponse(t.Context(), client.UpdateCurrentUserJSONRequestBody{
+			Username: &newUsername,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode())
+		assert.Equal(t, newUsername, resp.JSON200.Username)
+	})
+
+	t.Run("updates bio", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		bio := "my bio"
+
+		resp, err := c.UpdateCurrentUserWithResponse(t.Context(), client.UpdateCurrentUserJSONRequestBody{
+			Bio: &bio,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode())
+		assert.Equal(t, &bio, resp.JSON200.Bio)
+	})
+
+	t.Run("partial update does not change other fields", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+
+		// Get original username
+		meResp, err := c.GetCurrentUserWithResponse(t.Context())
+		require.NoError(t, err)
+		originalUsername := meResp.JSON200.Username
+
+		bio := "partial update bio"
+		resp, err := c.UpdateCurrentUserWithResponse(t.Context(), client.UpdateCurrentUserJSONRequestBody{
+			Bio: &bio,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode())
+		assert.Equal(t, originalUsername, resp.JSON200.Username)
+		assert.Equal(t, &bio, resp.JSON200.Bio)
+	})
+
+	t.Run("returns 409 when username already taken", func(t *testing.T) {
+		c1 := newAuthenticatedTestClient(t, srv)
+		c2 := newAuthenticatedTestClient(t, srv)
+
+		// Get c1's username
+		meResp, err := c1.GetCurrentUserWithResponse(t.Context())
+		require.NoError(t, err)
+		takenUsername := meResp.JSON200.Username
+
+		resp, err := c2.UpdateCurrentUserWithResponse(t.Context(), client.UpdateCurrentUserJSONRequestBody{
+			Username: &takenUsername,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 409, resp.StatusCode())
+	})
+
+	t.Run("unauthenticated returns 401", func(t *testing.T) {
+		unauth := newTestClient(t, srv)
+		bio := "bio"
+
+		resp, err := unauth.UpdateCurrentUserWithResponse(t.Context(), client.UpdateCurrentUserJSONRequestBody{
+			Bio: &bio,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 401, resp.StatusCode())
+	})
+}
+
+func TestGetCurrentUser(t *testing.T) {
+	srv := setupTestServer(t)
+
+	t.Run("returns current user profile", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+
+		resp, err := c.GetCurrentUserWithResponse(t.Context())
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode())
+		assert.Equal(t, c.ID, resp.JSON200.Id)
+		assert.NotEmpty(t, resp.JSON200.Username)
+	})
+
+	t.Run("unauthenticated returns 401", func(t *testing.T) {
+		unauth := newTestClient(t, srv)
+
+		resp, err := unauth.GetCurrentUserWithResponse(t.Context())
+		require.NoError(t, err)
+		assert.Equal(t, 401, resp.StatusCode())
+	})
+}
+
 func TestListUserLikes(t *testing.T) {
 	srv := setupTestServer(t)
 
