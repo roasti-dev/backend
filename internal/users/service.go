@@ -10,7 +10,8 @@ import (
 )
 
 type RecipeService interface {
-	GetPreviewsByIDs(ctx context.Context, currentUserID, ownerID string, ids []string) ([]models.RecipePreview, error)
+	// GetPreviewsByIDs(ctx context.Context, currentUserID, ids []string) ([]models.RecipePreview, error)
+	GetRecipesByIDs(ctx context.Context, currentUserID string, ids []string) ([]models.Recipe, error)
 }
 
 type LikesRepository interface {
@@ -67,15 +68,15 @@ func (s *Service) ExistsByEmail(ctx context.Context, email string) (bool, error)
 	return s.repo.ExistsByEmail(ctx, email)
 }
 
-func (s *Service) ListLikedRecipes(ctx context.Context, currentUserID, userID string, params models.ListUserLikesParams) (models.GenericPage[models.LikedRecipe], error) {
-	_, err := s.repo.GetByID(ctx, userID)
+func (s *Service) ListLikedRecipes(ctx context.Context, currentUserID, targetUserID string, params models.ListUserLikesParams) (models.GenericPage[models.LikedRecipe], error) {
+	_, err := s.repo.GetByID(ctx, targetUserID)
 	if err != nil {
 		return models.GenericPage[models.LikedRecipe]{}, err
 	}
 
 	pag := params.Pagination()
 
-	likedList, err := s.likes.ListByUser(ctx, userID, models.LikeTargetTypeRecipe, int(pag.GetLimit()), int(pag.Offset()))
+	likedList, err := s.likes.ListByUser(ctx, targetUserID, models.LikeTargetTypeRecipe, int(pag.GetLimit()), int(pag.Offset()))
 	if err != nil {
 		return models.GenericPage[models.LikedRecipe]{}, fmt.Errorf("list liked recipes: %w", err)
 	}
@@ -91,13 +92,13 @@ func (s *Service) ListLikedRecipes(ctx context.Context, currentUserID, userID st
 		likedAtMap[l.TargetID] = l.CreatedAt
 	}
 
-	previews, err := s.recipes.GetPreviewsByIDs(ctx, currentUserID, userID, ids)
+	recipes, err := s.recipes.GetRecipesByIDs(ctx, currentUserID, ids)
 	if err != nil {
 		return models.GenericPage[models.LikedRecipe]{}, fmt.Errorf("get recipe previews: %w", err)
 	}
 
-	result := make([]models.LikedRecipe, len(previews))
-	for i, p := range previews {
+	result := make([]models.LikedRecipe, len(recipes))
+	for i, p := range recipes {
 		result[i] = models.LikedRecipe{
 			LikedAt: likedAtMap[p.Id],
 			Recipe:  p,

@@ -499,7 +499,7 @@ components:
           type: string
           format: date-time
         recipe:
-          $ref: "#/components/schemas/RecipePreview"
+          $ref: "#/components/schemas/Recipe"
 
     RecipeAuthor:
       type: object

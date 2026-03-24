@@ -276,6 +276,39 @@ func (r *Repository) ListRecipes(
 	return models.NewPage(recipes, pag, total), nil
 }
 
+func (r *Repository) GetRecipesByIDs(ctx context.Context, currentUserID string, ids []string) ([]models.Recipe, error) {
+	rows, err := r.psql.
+		Select(recipeSelectColumns...).
+		From(recipesTable).
+		Join("users ON users.id = recipes.author_id").
+		LeftJoin("recipes AS origin_recipes ON origin_recipes.id = recipes.origin_recipe_id").
+		LeftJoin("users AS origin_authors ON origin_authors.id = origin_recipes.author_id").
+		Where(sq.Eq{"recipes.id": ids}).
+		Where(sq.Or{
+			sq.Eq{"recipes.public": true},
+			sq.Eq{"recipes.author_id": currentUserID},
+		}).
+		RunWith(r.runner).
+		QueryContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("get recipe previews by ids: %w", err)
+	}
+	defer rows.Close()
+
+	var recipes []models.Recipe
+	for rows.Next() {
+		recipe, err := scanRecipe(rows)
+		if err != nil {
+			return nil, fmt.Errorf("scan recipe preview: %w", err)
+		}
+		recipes = append(recipes, recipe)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows error: %w", err)
+	}
+	return recipes, nil
+}
+
 func (r *Repository) GetPreviewsByIDs(ctx context.Context, currentUserID string, ids []string) ([]models.RecipePreview, error) {
 	rows, err := r.psql.
 		Select(recipePreviewColumns...).

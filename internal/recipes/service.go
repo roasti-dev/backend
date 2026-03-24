@@ -80,6 +80,24 @@ func (s *Service) ListRecipes(
 	return page, nil
 }
 
+func (s *Service) GetRecipesByIDs(ctx context.Context, currentUserID string, ids []string) ([]models.Recipe, error) {
+	recipes, err := s.repo.GetRecipesByIDs(ctx, currentUserID, ids)
+	if err != nil {
+		return nil, fmt.Errorf("get recipe previews: %w", err)
+	}
+
+	likedMap, err := s.likeChecker.GetLikedIDs(ctx, currentUserID, models.LikeTargetTypeRecipe, ids)
+	if err != nil {
+		return nil, fmt.Errorf("get liked ids: %w", err)
+	}
+
+	for i := range recipes {
+		recipes[i].IsLiked = likedMap[recipes[i].Id]
+	}
+
+	return recipes, nil
+}
+
 func (s *Service) GetPreviewsByIDs(ctx context.Context, currentUserID, ownerID string, ids []string) ([]models.RecipePreview, error) {
 	previews, err := s.repo.GetPreviewsByIDs(ctx, currentUserID, ids)
 	if err != nil {
