@@ -57,6 +57,10 @@ paths:
           in: query
           schema:
             $ref: "./models.yaml#/components/schemas/Difficulty"
+        - name: roastLevel
+          in: query
+          schema:
+            $ref: "./models.yaml#/components/schemas/RoastLevel"
         - name: query
           in: query
           schema:

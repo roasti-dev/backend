@@ -325,6 +325,11 @@ func applyListRecipesFilter(
 		sb = sb.Where(sq.Eq{"recipes.difficulty": *params.Difficulty})
 	}
 
+	// roast level
+	if params.RoastLevel != nil {
+		sb = sb.Where(sq.Eq{"recipes.roast_level": *params.RoastLevel})
+	}
+
 	if params.Query != nil && *params.Query != "" {
 		pattern := "%" + strings.ToLower(*params.Query) + "%"
 		sb = sb.Where(sq.Or{

@@ -26,6 +26,7 @@ func (s *ServerHandler) ListRecipes(ctx context.Context, request ListRecipesRequ
 		AuthorId:      request.Params.AuthorId,
 		BrewMethod:    request.Params.BrewMethod,
 		Difficulty:    request.Params.Difficulty,
+		RoastLevel:    request.Params.RoastLevel,
 		Limit:         request.Params.Limit,
 		Page:          request.Params.Page,
 		SortDirection: request.Params.SortDirection,
