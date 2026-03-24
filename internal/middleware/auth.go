@@ -38,7 +38,7 @@ func Authenticate(firebaseAuth *auth.Client) openapi3filter.AuthenticationFunc {
 	retrievers := []tokenRetriever{tokenFromHeader, tokenFromCookie}
 	return func(ctx context.Context, ai *openapi3filter.AuthenticationInput) error {
 		switch ai.SecuritySchemeName {
-		case "BearerAuth", "CookieAuth":
+		case "BearerAuth", "AccessTokenCookie":
 		default:
 			return nil
 		}
