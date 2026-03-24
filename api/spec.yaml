@@ -464,6 +464,33 @@ paths:
         "500":
           description: Internal server error
 
+  /api/v1/users/username-availability:
+    get:
+      summary: Check username availability
+      operationId: checkUsernameAvailability
+      description: Returns whether a given username is available for registration.
+      tags: [users]
+      security: []
+      parameters:
+        - name: username
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Username availability result
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [available]
+                properties:
+                  available:
+                    type: boolean
+        "400":
+          description: Bad request
+
   /api/v1/users/me:
     get:
       summary: Get current user profile

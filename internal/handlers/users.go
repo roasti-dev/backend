@@ -30,6 +30,14 @@ func (s *ServerHandler) UpdateCurrentUser(ctx context.Context, request UpdateCur
 	return UpdateCurrentUser200JSONResponse(updated), nil
 }
 
+func (s *ServerHandler) CheckUsernameAvailability(ctx context.Context, request CheckUsernameAvailabilityRequestObject) (CheckUsernameAvailabilityResponseObject, error) {
+	exists, err := s.userService.ExistsByUsername(ctx, request.Params.Username)
+	if err != nil {
+		return nil, err
+	}
+	return CheckUsernameAvailability200JSONResponse{Available: !exists}, nil
+}
+
 func (s *ServerHandler) ListUserLikes(ctx context.Context, request ListUserLikesRequestObject) (ListUserLikesResponseObject, error) {
 	currentUserID := requestctx.GetUserID(ctx)
 	liked, err := s.userService.ListLikedRecipes(ctx, currentUserID, request.UserId, models.ListUserLikesParams{

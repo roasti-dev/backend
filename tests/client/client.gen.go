@@ -63,6 +63,11 @@ type UploadImageMultipartBody struct {
 	File openapi_types.File `json:"file"`
 }
 
+// CheckUsernameAvailabilityParams defines parameters for CheckUsernameAvailability.
+type CheckUsernameAvailabilityParams struct {
+	Username string `form:"username" json:"username"`
+}
+
 // ListUserLikesParams defines parameters for ListUserLikes.
 type ListUserLikesParams struct {
 	Type          externalRef0.LikeTargetType `form:"type" json:"type"`
@@ -226,6 +231,9 @@ type ClientInterface interface {
 	UpdateCurrentUserWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	UpdateCurrentUser(ctx context.Context, body UpdateCurrentUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CheckUsernameAvailability request
+	CheckUsernameAvailability(ctx context.Context, params *CheckUsernameAvailabilityParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListUserLikes request
 	ListUserLikes(ctx context.Context, userId string, params *ListUserLikesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -488,6 +496,18 @@ func (c *Client) UpdateCurrentUserWithBody(ctx context.Context, contentType stri
 
 func (c *Client) UpdateCurrentUser(ctx context.Context, body UpdateCurrentUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateCurrentUserRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CheckUsernameAvailability(ctx context.Context, params *CheckUsernameAvailabilityParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCheckUsernameAvailabilityRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -1212,6 +1232,51 @@ func NewUpdateCurrentUserRequestWithBody(server string, contentType string, body
 	return req, nil
 }
 
+// NewCheckUsernameAvailabilityRequest generates requests for CheckUsernameAvailability
+func NewCheckUsernameAvailabilityRequest(server string, params *CheckUsernameAvailabilityParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/users/username-availability")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "username", params.Username, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListUserLikesRequest generates requests for ListUserLikes
 func NewListUserLikesRequest(server string, userId string, params *ListUserLikesParams) (*http.Request, error) {
 	var err error
@@ -1440,6 +1505,9 @@ type ClientWithResponsesInterface interface {
 	UpdateCurrentUserWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateCurrentUserResponse, error)
 
 	UpdateCurrentUserWithResponse(ctx context.Context, body UpdateCurrentUserJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateCurrentUserResponse, error)
+
+	// CheckUsernameAvailabilityWithResponse request
+	CheckUsernameAvailabilityWithResponse(ctx context.Context, params *CheckUsernameAvailabilityParams, reqEditors ...RequestEditorFn) (*CheckUsernameAvailabilityResponse, error)
 
 	// ListUserLikesWithResponse request
 	ListUserLikesWithResponse(ctx context.Context, userId string, params *ListUserLikesParams, reqEditors ...RequestEditorFn) (*ListUserLikesResponse, error)
@@ -1791,6 +1859,30 @@ func (r UpdateCurrentUserResponse) StatusCode() int {
 	return 0
 }
 
+type CheckUsernameAvailabilityResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		Available bool `json:"available"`
+	}
+}
+
+// Status returns HTTPResponse.Status
+func (r CheckUsernameAvailabilityResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CheckUsernameAvailabilityResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type ListUserLikesResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -2023,6 +2115,15 @@ func (c *ClientWithResponses) UpdateCurrentUserWithResponse(ctx context.Context,
 		return nil, err
 	}
 	return ParseUpdateCurrentUserResponse(rsp)
+}
+
+// CheckUsernameAvailabilityWithResponse request returning *CheckUsernameAvailabilityResponse
+func (c *ClientWithResponses) CheckUsernameAvailabilityWithResponse(ctx context.Context, params *CheckUsernameAvailabilityParams, reqEditors ...RequestEditorFn) (*CheckUsernameAvailabilityResponse, error) {
+	rsp, err := c.CheckUsernameAvailability(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCheckUsernameAvailabilityResponse(rsp)
 }
 
 // ListUserLikesWithResponse request returning *ListUserLikesResponse
@@ -2509,6 +2610,34 @@ func ParseUpdateCurrentUserResponse(rsp *http.Response) (*UpdateCurrentUserRespo
 			return nil, err
 		}
 		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCheckUsernameAvailabilityResponse parses an HTTP response from a CheckUsernameAvailabilityWithResponse call
+func ParseCheckUsernameAvailabilityResponse(rsp *http.Response) (*CheckUsernameAvailabilityResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CheckUsernameAvailabilityResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			Available bool `json:"available"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
 
 	}
 

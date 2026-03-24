@@ -105,6 +105,38 @@ func TestGetCurrentUser(t *testing.T) {
 	})
 }
 
+func TestCheckUsernameAvailability(t *testing.T) {
+	srv := setupTestServer(t)
+
+	check := func(t *testing.T, username string) *client.CheckUsernameAvailabilityResponse {
+		t.Helper()
+		c := newTestClient(t, srv)
+		resp, err := c.CheckUsernameAvailabilityWithResponse(t.Context(), &client.CheckUsernameAvailabilityParams{
+			Username: username,
+		})
+		require.NoError(t, err)
+		return resp
+	}
+
+	t.Run("returns available for unused username", func(t *testing.T) {
+		resp := check(t, "never_taken_"+randomString(8))
+		assert.Equal(t, 200, resp.StatusCode())
+		assert.True(t, resp.JSON200.Available)
+	})
+
+	t.Run("returns unavailable for taken username", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+
+		meResp, err := c.GetCurrentUserWithResponse(t.Context())
+		require.NoError(t, err)
+		takenUsername := meResp.JSON200.Username
+
+		resp := check(t, takenUsername)
+		assert.Equal(t, 200, resp.StatusCode())
+		assert.False(t, resp.JSON200.Available)
+	})
+}
+
 func TestListUserLikes(t *testing.T) {
 	srv := setupTestServer(t)
 
