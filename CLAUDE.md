@@ -83,3 +83,14 @@ Copy `.env.example` to `.env` for local development.
 1. Edit `api/spec.yaml` (routes/operations) or `api/models.yaml` (shared schemas)
 2. Run `make oapi` to regenerate code
 3. Implement the new handler method in `internal/handlers/`
+
+## Git Commits
+
+Use Conventional Commits format: `<type>(<scope>): <description>`
+For breaking changes: `<type>(<scope>)!: <description>`
+
+**Types:** `feat`, `fix`, `refactor`, `perf`, `test`, `chore`
+
+**Scopes:**
+- `auth`, `users`, `recipes`, `likes`, `uploads` — domain changes
+- `api` — api/spec.yaml, api/models.yaml
