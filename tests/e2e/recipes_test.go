@@ -387,13 +387,50 @@ func TestToggleRecipeLike(t *testing.T) {
 	})
 }
 
+func TestRecipeNote(t *testing.T) {
+	srv := setupTestServer(t)
+
+	t.Run("author sees own note", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		note := "my private note"
+		p := defaultPayload
+		p.Note = &note
+		recipe := createRecipe(t, c, p)
+
+		resp, err := c.GetRecipeWithResponse(t.Context(), recipe.Id)
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode())
+		require.NotNil(t, resp.JSON200.Note)
+		assert.Equal(t, note, *resp.JSON200.Note)
+	})
+
+	t.Run("other user does not see note", func(t *testing.T) {
+		c1 := newAuthenticatedTestClient(t, srv)
+		note := "my private note"
+		p := defaultPayload
+		p.Note = &note
+		recipe := createRecipe(t, c1, p)
+
+		c2 := newAuthenticatedTestClient(t, srv)
+		resp, err := c2.GetRecipeWithResponse(t.Context(), recipe.Id)
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode())
+		assert.Nil(t, resp.JSON200.Note)
+	})
+}
+
 func TestCloneRecipe(t *testing.T) {
 	srv := setupTestServer(t)
 
 	t.Run("clones recipe", func(t *testing.T) {
 		c1 := newAuthenticatedTestClient(t, srv)
 		c2 := newAuthenticatedTestClient(t, srv)
-		original := createRecipe(t, c1, defaultPayload)
+		note := "original note"
+		p := defaultPayload
+		p.Note = &note
+		original := createRecipe(t, c1, p)
+
+		toggleRecipeLike(t, c2, original.Id)
 
 		resp, err := c2.CloneRecipeWithResponse(t.Context(), original.Id)
 		require.NoError(t, err)
@@ -402,6 +439,8 @@ func TestCloneRecipe(t *testing.T) {
 		assert.Equal(t, "Copy of "+original.Title, resp.JSON201.Title)
 		assert.NotNil(t, resp.JSON201.Origin)
 		assert.Equal(t, original.Id, resp.JSON201.Origin.RecipeId)
+		assert.Nil(t, resp.JSON201.Note)
+		assert.Zero(t, resp.JSON201.LikesCount)
 	})
 
 	t.Run("cannot clone own recipe", func(t *testing.T) {

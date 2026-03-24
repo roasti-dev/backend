@@ -52,6 +52,8 @@ func (s *Service) GetRecipeByID(ctx context.Context, userID, recipeID string) (m
 		return models.Recipe{}, err
 	}
 
+	recipe.RedactForUser(userID)
+
 	return recipe, nil
 }
 
@@ -75,6 +77,7 @@ func (s *Service) ListRecipes(
 
 	for i, r := range page.Items {
 		page.Items[i].IsLiked = likedIDs[r.Id]
+		page.Items[i].RedactForUser(userID)
 	}
 
 	return page, nil
@@ -93,6 +96,7 @@ func (s *Service) GetRecipesByIDs(ctx context.Context, currentUserID string, ids
 
 	for i := range recipes {
 		recipes[i].IsLiked = likedMap[recipes[i].Id]
+		recipes[i].RedactForUser(currentUserID)
 	}
 
 	return recipes, nil
@@ -193,17 +197,7 @@ func (s *Service) CloneRecipe(ctx context.Context, userID, recipeID string) (mod
 		return models.Recipe{}, ErrForbidden
 	}
 
-	clone := original
-	clone.Id = ids.NewID()
-	clone.AuthorId = userID
-	clone.Title = "Copy of " + original.Title
-	clone.Origin = &models.RecipeOrigin{
-		RecipeId: recipeID,
-	}
-	clone.LikesCount = 0
-	clone.CreatedAt = time.Now().UTC()
-	clone.UpdatedAt = time.Now().UTC()
-	clone.Steps = original.Steps
+	clone := original.CloneFor(userID, ids.NewID(), time.Now().UTC())
 
 	if err := s.repo.UpsertRecipe(ctx, clone); err != nil {
 		return models.Recipe{}, err
@@ -259,6 +253,7 @@ func recipePayloadToModel(payload models.RecipePayload) models.Recipe {
 		Difficulty:  payload.Difficulty,
 		RoastLevel:  payload.RoastLevel,
 		Beans:       payload.Beans,
+		Note:        payload.Note,
 		Public:      payload.Public != nil && *payload.Public,
 		Steps:       mapSlice(payload.Steps, brewStepPayloadToModel),
 	}

@@ -36,6 +36,7 @@ var (
 		"recipes.difficulty",
 		"recipes.roast_level",
 		"recipes.beans",
+		"recipes.note",
 		"recipes.public",
 		"recipes.created_at",
 		"recipes.updated_at",
@@ -58,6 +59,7 @@ var (
 		"difficulty",
 		"roast_level",
 		"beans",
+		"note",
 		"public",
 		"created_at",
 		"updated_at",
@@ -139,6 +141,7 @@ func (r *Repository) UpsertRecipe(ctx context.Context, recipe models.Recipe) err
 			recipe.Difficulty,
 			recipe.RoastLevel,
 			recipe.Beans,
+			recipe.Note,
 			recipe.Public,
 			now,
 			now,
@@ -153,6 +156,7 @@ func (r *Repository) UpsertRecipe(ctx context.Context, recipe models.Recipe) err
 			"difficulty = EXCLUDED.difficulty, " +
 			"roast_level = EXCLUDED.roast_level, " +
 			"beans = EXCLUDED.beans, " +
+			"note = EXCLUDED.note, " +
 			"public = EXCLUDED.public, " +
 			"updated_at = EXCLUDED.updated_at")
 
@@ -447,6 +451,7 @@ func scanRecipe(s scanner) (models.Recipe, error) {
 		&recipe.Difficulty,
 		&recipe.RoastLevel,
 		&recipe.Beans,
+		&recipe.Note,
 		&recipe.Public,
 		&recipe.CreatedAt,
 		&recipe.UpdatedAt,

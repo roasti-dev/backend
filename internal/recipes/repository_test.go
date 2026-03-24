@@ -57,6 +57,64 @@ func TestRecipeRepository_UpsertRecipe_Update(t *testing.T) {
 	assert.Equal(t, "Updated Title", got.Title)
 }
 
+func TestRecipeRepository_Note(t *testing.T) {
+	t.Run("persists note", func(t *testing.T) {
+		repo := setupRecipeRepo(t)
+		r := testutil.CreateTestRecipe(t, repo, "recipe-1", "user-1")
+		note := "my private note"
+		r.Note = &note
+
+		require.NoError(t, repo.UpsertRecipe(t.Context(), r))
+
+		got, err := repo.GetRecipeByID(t.Context(), r.Id)
+		require.NoError(t, err)
+		require.NotNil(t, got.Note)
+		assert.Equal(t, note, *got.Note)
+		assert.Equal(t, r.Id, got.Id)
+	})
+
+	t.Run("nil note is persisted as null", func(t *testing.T) {
+		repo := setupRecipeRepo(t)
+		r := testutil.CreateTestRecipe(t, repo, "recipe-1", "user-1")
+		r.Note = nil
+
+		require.NoError(t, repo.UpsertRecipe(t.Context(), r))
+
+		got, err := repo.GetRecipeByID(t.Context(), r.Id)
+		require.NoError(t, err)
+		assert.Nil(t, got.Note)
+	})
+
+	t.Run("update clears note", func(t *testing.T) {
+		repo := setupRecipeRepo(t)
+		r := testutil.CreateTestRecipe(t, repo, "recipe-1", "user-1")
+		note := "my private note"
+		r.Note = &note
+		require.NoError(t, repo.UpsertRecipe(t.Context(), r))
+
+		r.Note = nil
+		require.NoError(t, repo.UpsertRecipe(t.Context(), r))
+
+		got, err := repo.GetRecipeByID(t.Context(), r.Id)
+		require.NoError(t, err)
+		assert.Nil(t, got.Note)
+	})
+
+	t.Run("note is returned in list", func(t *testing.T) {
+		repo := setupRecipeRepo(t)
+		r := testutil.CreateTestRecipe(t, repo, "recipe-1", "user-1")
+		note := "my private note"
+		r.Note = &note
+		require.NoError(t, repo.UpsertRecipe(t.Context(), r))
+
+		page, err := repo.ListRecipes(t.Context(), "user-1", models.ListRecipesParams{})
+		require.NoError(t, err)
+		require.Len(t, page.Items, 1)
+		require.NotNil(t, page.Items[0].Note)
+		assert.Equal(t, note, *page.Items[0].Note)
+	})
+}
+
 func TestRecipeRepository_GetRecipeByID_NotFound(t *testing.T) {
 	repo := setupRecipeRepo(t)
 
