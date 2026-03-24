@@ -94,3 +94,6 @@ For breaking changes: `<type>(<scope>)!: <description>`
 **Scopes:**
 - `auth`, `users`, `recipes`, `likes`, `uploads` — domain changes
 - `api` — api/spec.yaml, api/models.yaml
+
+Always sign commits with `-s` flag (DCO sign-off).
+
