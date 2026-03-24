@@ -53,10 +53,10 @@ func (e ListRecipesParamsSortField) Valid() bool {
 
 // ListRecipesParams defines parameters for ListRecipes.
 type ListRecipesParams struct {
-	AuthorId      *string                     `form:"authorId,omitempty" json:"authorId,omitempty"`
-	BrewMethod    *externalRef0.BrewMethod    `form:"brewMethod,omitempty" json:"brewMethod,omitempty"`
+	AuthorId      *string                     `form:"author_id,omitempty" json:"author_id,omitempty"`
+	BrewMethod    *externalRef0.BrewMethod    `form:"brew_method,omitempty" json:"brew_method,omitempty"`
 	Difficulty    *externalRef0.Difficulty    `form:"difficulty,omitempty" json:"difficulty,omitempty"`
-	RoastLevel    *externalRef0.RoastLevel    `form:"roastLevel,omitempty" json:"roastLevel,omitempty"`
+	RoastLevel    *externalRef0.RoastLevel    `form:"roast_level,omitempty" json:"roast_level,omitempty"`
 	Query         *string                     `form:"query,omitempty" json:"query,omitempty"`
 	SortField     *ListRecipesParamsSortField `form:"sort_field,omitempty" json:"sort_field,omitempty"`
 	SortDirection *externalRef0.SortDirection `form:"sort_direction,omitempty" json:"sort_direction,omitempty"`
@@ -248,19 +248,19 @@ func (siw *ServerInterfaceWrapper) ListRecipes(w http.ResponseWriter, r *http.Re
 	// Parameter object where we will unmarshal all parameters from the context
 	var params ListRecipesParams
 
-	// ------------- Optional query parameter "authorId" -------------
+	// ------------- Optional query parameter "author_id" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "authorId", r.URL.Query(), &params.AuthorId, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "author_id", r.URL.Query(), &params.AuthorId, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "authorId", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "author_id", Err: err})
 		return
 	}
 
-	// ------------- Optional query parameter "brewMethod" -------------
+	// ------------- Optional query parameter "brew_method" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "brewMethod", r.URL.Query(), &params.BrewMethod, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "brew_method", r.URL.Query(), &params.BrewMethod, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "brewMethod", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "brew_method", Err: err})
 		return
 	}
 
@@ -272,11 +272,11 @@ func (siw *ServerInterfaceWrapper) ListRecipes(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	// ------------- Optional query parameter "roastLevel" -------------
+	// ------------- Optional query parameter "roast_level" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "roastLevel", r.URL.Query(), &params.RoastLevel, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "roast_level", r.URL.Query(), &params.RoastLevel, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "roastLevel", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "roast_level", Err: err})
 		return
 	}
 
@@ -2008,26 +2008,26 @@ var swaggerSpec = []string{
 	"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",
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

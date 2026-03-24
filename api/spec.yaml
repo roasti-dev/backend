@@ -44,12 +44,12 @@ paths:
       description: Returns a paginated list of recipes with optional filters by author, brew method, difficulty, and sorting.
       tags: [recipes]
       parameters:
-        - name: authorId
+        - name: author_id
           in: query
           schema:
             type: string
             description: Filter by author
-        - name: brewMethod
+        - name: brew_method
           in: query
           schema:
             $ref: "./models.yaml#/components/schemas/BrewMethod"
@@ -57,7 +57,7 @@ paths:
           in: query
           schema:
             $ref: "./models.yaml#/components/schemas/Difficulty"
-        - name: roastLevel
+        - name: roast_level
           in: query
           schema:
             $ref: "./models.yaml#/components/schemas/RoastLevel"

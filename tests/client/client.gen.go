@@ -44,10 +44,10 @@ func (e ListRecipesParamsSortField) Valid() bool {
 
 // ListRecipesParams defines parameters for ListRecipes.
 type ListRecipesParams struct {
-	AuthorId      *string                     `form:"authorId,omitempty" json:"authorId,omitempty"`
-	BrewMethod    *externalRef0.BrewMethod    `form:"brewMethod,omitempty" json:"brewMethod,omitempty"`
+	AuthorId      *string                     `form:"author_id,omitempty" json:"author_id,omitempty"`
+	BrewMethod    *externalRef0.BrewMethod    `form:"brew_method,omitempty" json:"brew_method,omitempty"`
 	Difficulty    *externalRef0.Difficulty    `form:"difficulty,omitempty" json:"difficulty,omitempty"`
-	RoastLevel    *externalRef0.RoastLevel    `form:"roastLevel,omitempty" json:"roastLevel,omitempty"`
+	RoastLevel    *externalRef0.RoastLevel    `form:"roast_level,omitempty" json:"roast_level,omitempty"`
 	Query         *string                     `form:"query,omitempty" json:"query,omitempty"`
 	SortField     *ListRecipesParamsSortField `form:"sort_field,omitempty" json:"sort_field,omitempty"`
 	SortDirection *externalRef0.SortDirection `form:"sort_direction,omitempty" json:"sort_direction,omitempty"`
@@ -674,7 +674,7 @@ func NewListRecipesRequest(server string, params *ListRecipesParams) (*http.Requ
 
 		if params.AuthorId != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "authorId", *params.AuthorId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "author_id", *params.AuthorId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -690,7 +690,7 @@ func NewListRecipesRequest(server string, params *ListRecipesParams) (*http.Requ
 
 		if params.BrewMethod != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "brewMethod", *params.BrewMethod, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "brew_method", *params.BrewMethod, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -722,7 +722,7 @@ func NewListRecipesRequest(server string, params *ListRecipesParams) (*http.Requ
 
 		if params.RoastLevel != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "roastLevel", *params.RoastLevel, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "roast_level", *params.RoastLevel, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
