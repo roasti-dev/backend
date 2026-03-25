@@ -22,6 +22,7 @@ var (
 	ErrUsernameTooLong       = apierr.NewApiError(http.StatusUnprocessableEntity, fmt.Sprintf("username must be at most %d characters", maxUsernameLen))
 	ErrInvalidUsernameFormat = apierr.NewApiError(http.StatusUnprocessableEntity, "username can only contain letters, numbers and underscores")
 
+	ErrIncorrectPassword   = apierr.NewApiError(http.StatusUnauthorized, "current password is incorrect")
 	ErrUserDisabled        = apierr.NewApiError(http.StatusForbidden, "user account is disabled")
 	ErrUserNotFound        = apierr.NewApiError(http.StatusNotFound, "user not found")
 	ErrMissingRefreshToken = apierr.NewApiError(http.StatusBadRequest, "missing refresh token")

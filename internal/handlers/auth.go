@@ -46,6 +46,14 @@ func (s *ServerHandler) RefreshToken(ctx context.Context, request RefreshTokenRe
 	return RefreshToken200WithCookieResponse{RefreshToken200JSONResponse(resp)}, nil
 }
 
+func (s *ServerHandler) ChangePassword(ctx context.Context, request ChangePasswordRequestObject) (ChangePasswordResponseObject, error) {
+	userID := requestctx.GetUserID(ctx)
+	if err := s.authService.ChangePassword(ctx, userID, *request.Body); err != nil {
+		return nil, err
+	}
+	return ChangePassword204Response{}, nil
+}
+
 func (s *ServerHandler) LogoutUser(ctx context.Context, request LogoutUserRequestObject) (LogoutUserResponseObject, error) {
 	body := ptr.GetOr(request.Body, models.LogoutRequest{})
 	refreshToken := cmp.Or(

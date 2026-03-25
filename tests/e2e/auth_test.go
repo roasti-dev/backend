@@ -238,6 +238,81 @@ func TestLogout(t *testing.T) {
 	})
 }
 
+func TestChangePassword(t *testing.T) {
+	srv := setupTestServer(t)
+
+	t.Run("changes password successfully", func(t *testing.T) {
+		c := newTestClient(t, srv)
+		username, email, password := randomCredentials()
+
+		_, err := c.RegisterUserWithResponse(t.Context(), models.RegisterRequest{
+			Email:    openapi_types.Email(email),
+			Username: username,
+			Password: password,
+		})
+		require.NoError(t, err)
+
+		authC := newAuthenticatedTestClient(t, srv)
+		newPassword := "newpassword456"
+
+		resp, err := authC.ChangePasswordWithResponse(t.Context(), models.ChangePasswordRequest{
+			CurrentPassword: "password123",
+			NewPassword:     newPassword,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 204, resp.StatusCode())
+
+		// old password no longer works
+		loginResp, err := c.LoginUserWithResponse(t.Context(), models.LoginRequest{
+			Username: authC.Username,
+			Password: "password123",
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 401, loginResp.StatusCode())
+
+		// new password works
+		loginResp, err = c.LoginUserWithResponse(t.Context(), models.LoginRequest{
+			Username: authC.Username,
+			Password: newPassword,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 200, loginResp.StatusCode())
+	})
+
+	t.Run("returns 401 for incorrect current password", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+
+		resp, err := c.ChangePasswordWithResponse(t.Context(), models.ChangePasswordRequest{
+			CurrentPassword: "wrongpassword",
+			NewPassword:     "newpassword456",
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 401, resp.StatusCode())
+	})
+
+	t.Run("returns 422 for weak new password", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+
+		resp, err := c.ChangePasswordWithResponse(t.Context(), models.ChangePasswordRequest{
+			CurrentPassword: "password123",
+			NewPassword:     "123",
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 422, resp.StatusCode())
+	})
+
+	t.Run("unauthenticated returns 401", func(t *testing.T) {
+		c := newTestClient(t, srv)
+
+		resp, err := c.ChangePasswordWithResponse(t.Context(), models.ChangePasswordRequest{
+			CurrentPassword: "password123",
+			NewPassword:     "newpassword456",
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 401, resp.StatusCode())
+	})
+}
+
 func TestCookieAuth(t *testing.T) {
 	srv := setupTestServer(t)
 

@@ -415,6 +415,22 @@ components:
           type: string
           description: Refresh token obtained during login or registration
 
+    ChangePasswordRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - current_password
+        - new_password
+      properties:
+        current_password:
+          type: string
+          format: password
+          description: Current account password
+        new_password:
+          type: string
+          format: password
+          description: New password. Must be 8-32 characters.
+
     LogoutRequest:
       type: object
       required: [refresh_token]

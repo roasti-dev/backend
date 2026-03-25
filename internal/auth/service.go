@@ -160,6 +160,35 @@ func (s *Service) Refresh(ctx context.Context, token string) (models.TokensRespo
 	}, nil
 }
 
+func (s *Service) ChangePassword(ctx context.Context, userID string, req models.ChangePasswordRequest) error {
+	newPassword := strings.TrimSpace(req.NewPassword)
+	if len(newPassword) < minPasswordLen {
+		return ErrPasswordTooShort
+	}
+	if len(newPassword) > maxPasswordLen {
+		return ErrPasswordTooLong
+	}
+
+	user, err := s.users.CurrentUser(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("get current user: %w", err)
+	}
+
+	if _, err := s.signer.SignInWithPassword(ctx, string(user.Email), req.CurrentPassword); err != nil {
+		if errors.Is(err, ErrInvalidCredentials) {
+			return ErrIncorrectPassword
+		}
+		return fmt.Errorf("verify current password: %w", err)
+	}
+
+	params := (&firebaseAuth.UserToUpdate{}).Password(newPassword)
+	if _, err := s.firebaseAuth.UpdateUser(ctx, userID, params); err != nil {
+		return fmt.Errorf("update firebase password: %w", err)
+	}
+
+	return nil
+}
+
 func (s *Service) Logout(ctx context.Context, refreshToken string) error {
 	if err := s.revokedTokens.Add(ctx, refreshToken); err != nil {
 		return fmt.Errorf("mark token as revoked: %w", err)
@@ -177,7 +206,6 @@ func (s *Service) confirmAvatar(ctx context.Context, user models.UserAccount) {
 		}
 	}
 }
-
 
 func validateRegisterRequest(req models.RegisterRequest) error {
 	if strings.TrimSpace(string(req.Email)) == "" {
