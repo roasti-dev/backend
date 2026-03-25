@@ -3,7 +3,7 @@ package models
 import (
 	"time"
 
-	"github.com/nikpivkin/roasti-app-backend/internal/ptr"
+	"github.com/nikpivkin/roasti-app-backend/internal/x/ptr"
 )
 
 // CloneFor creates a copy of the recipe attributed to newAuthorID.

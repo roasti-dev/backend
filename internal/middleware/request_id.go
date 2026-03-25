@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/nikpivkin/roasti-app-backend/internal/requestctx"
+	"github.com/nikpivkin/roasti-app-backend/internal/x/requestctx"
 )
 
 func RequestID(next http.Handler) http.Handler {

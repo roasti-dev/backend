@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
-	"github.com/nikpivkin/roasti-app-backend/internal/ids"
 	"github.com/nikpivkin/roasti-app-backend/internal/uploads"
+	"github.com/nikpivkin/roasti-app-backend/internal/x/ids"
 )
 
 type LikeChecker interface {

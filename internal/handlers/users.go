@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
-	"github.com/nikpivkin/roasti-app-backend/internal/requestctx"
 	"github.com/nikpivkin/roasti-app-backend/internal/users"
+	"github.com/nikpivkin/roasti-app-backend/internal/x/requestctx"
 )
 
 func (s *ServerHandler) GetCurrentUser(ctx context.Context, request GetCurrentUserRequestObject) (GetCurrentUserResponseObject, error) {

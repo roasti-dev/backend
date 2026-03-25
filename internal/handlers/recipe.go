@@ -5,7 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
-	"github.com/nikpivkin/roasti-app-backend/internal/requestctx"
+	"github.com/nikpivkin/roasti-app-backend/internal/x/requestctx"
 )
 
 func (s *ServerHandler) GetRecipe(ctx context.Context, request GetRecipeRequestObject) (GetRecipeResponseObject, error) {

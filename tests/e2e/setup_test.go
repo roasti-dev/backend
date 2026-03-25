@@ -14,7 +14,7 @@ import (
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
 	"github.com/nikpivkin/roasti-app-backend/internal/app"
-	"github.com/nikpivkin/roasti-app-backend/internal/ids"
+	"github.com/nikpivkin/roasti-app-backend/internal/x/ids"
 	"github.com/nikpivkin/roasti-app-backend/tests/client"
 )
 

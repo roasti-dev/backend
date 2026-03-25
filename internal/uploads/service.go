@@ -12,8 +12,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/nikpivkin/roasti-app-backend/internal/ids"
 	"github.com/nikpivkin/roasti-app-backend/internal/log"
+	"github.com/nikpivkin/roasti-app-backend/internal/x/ids"
 )
 
 var allowedMIMETypes = map[string]string{

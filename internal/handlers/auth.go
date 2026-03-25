@@ -8,8 +8,8 @@ import (
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
 	"github.com/nikpivkin/roasti-app-backend/internal/auth"
-	"github.com/nikpivkin/roasti-app-backend/internal/ptr"
-	"github.com/nikpivkin/roasti-app-backend/internal/requestctx"
+	"github.com/nikpivkin/roasti-app-backend/internal/x/ptr"
+	"github.com/nikpivkin/roasti-app-backend/internal/x/requestctx"
 )
 
 func (s *ServerHandler) RegisterUser(ctx context.Context, request RegisterUserRequestObject) (RegisterUserResponseObject, error) {

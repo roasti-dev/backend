@@ -9,7 +9,7 @@ import (
 	"firebase.google.com/go/v4/auth"
 	"github.com/getkin/kin-openapi/openapi3filter"
 
-	"github.com/nikpivkin/roasti-app-backend/internal/requestctx"
+	"github.com/nikpivkin/roasti-app-backend/internal/x/requestctx"
 )
 
 type tokenRetriever func(r *http.Request) string

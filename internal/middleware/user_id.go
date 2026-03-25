@@ -3,7 +3,7 @@ package middleware
 import (
 	"net/http"
 
-	"github.com/nikpivkin/roasti-app-backend/internal/requestctx"
+	"github.com/nikpivkin/roasti-app-backend/internal/x/requestctx"
 )
 
 func UserID(next http.Handler) http.Handler {

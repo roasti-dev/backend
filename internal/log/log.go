@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/nikpivkin/roasti-app-backend/internal/requestctx"
+	"github.com/nikpivkin/roasti-app-backend/internal/x/requestctx"
 )
 
 const errKey = "err"

@@ -8,7 +8,7 @@ import (
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/apierr"
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
-	"github.com/nikpivkin/roasti-app-backend/internal/ids"
+	"github.com/nikpivkin/roasti-app-backend/internal/x/ids"
 )
 
 var ErrTargetNotFound = apierr.NewApiError(http.StatusNotFound, "target not found")
