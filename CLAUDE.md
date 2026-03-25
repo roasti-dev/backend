@@ -78,11 +78,18 @@ HTTP request
 
 Copy `.env.example` to `.env` for local development.
 
-## Adding or Changing API Endpoints
+## OpenAPI Specification
 
 1. Edit `api/spec.yaml` (routes/operations) or `api/models.yaml` (shared schemas)
 2. Run `make oapi` to regenerate code
 3. Implement the new handler method in `internal/handlers/`
+
+### Style & Naming
+
+- Every endpoint must have an `operationId` and at least one tag
+- Path and query parameters use `snake_case`
+- Model fields use `camelCase`
+- All endpoints and fields must have a `description`
 
 ## Git Commits
 
