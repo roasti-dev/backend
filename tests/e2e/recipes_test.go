@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
-	"github.com/nikpivkin/roasti-app-backend/internal/x/ids"
+	"github.com/nikpivkin/roasti-app-backend/internal/x/id"
 	"github.com/nikpivkin/roasti-app-backend/tests/client"
 )
 
@@ -157,7 +157,7 @@ func TestGetRecipeByID(t *testing.T) {
 
 	t.Run("not found - recipe not found ", func(t *testing.T) {
 		c := newAuthenticatedTestClient(t, srv)
-		resp, err := c.GetRecipeWithResponse(t.Context(), ids.NewID())
+		resp, err := c.GetRecipeWithResponse(t.Context(), id.NewID())
 		require.NoError(t, err)
 		assert.Equal(t, 404, resp.StatusCode())
 	})
@@ -381,7 +381,7 @@ func TestToggleRecipeLike(t *testing.T) {
 	t.Run("non-existent recipe returns 404", func(t *testing.T) {
 		c := newAuthenticatedTestClient(t, srv)
 
-		resp, err := c.ToggleRecipeLikeWithResponse(t.Context(), ids.NewID())
+		resp, err := c.ToggleRecipeLikeWithResponse(t.Context(), id.NewID())
 		require.NoError(t, err)
 		assert.Equal(t, 404, resp.StatusCode())
 	})
@@ -500,7 +500,7 @@ func TestCloneRecipe(t *testing.T) {
 	t.Run("non-existent recipe returns 404", func(t *testing.T) {
 		c := newAuthenticatedTestClient(t, srv)
 
-		resp, err := c.CloneRecipeWithResponse(t.Context(), ids.NewID())
+		resp, err := c.CloneRecipeWithResponse(t.Context(), id.NewID())
 		require.NoError(t, err)
 		assert.Equal(t, 404, resp.StatusCode())
 	})

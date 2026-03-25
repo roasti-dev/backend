@@ -8,7 +8,7 @@ import (
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/apierr"
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
-	"github.com/nikpivkin/roasti-app-backend/internal/x/ids"
+	"github.com/nikpivkin/roasti-app-backend/internal/x/id"
 )
 
 var ErrTargetNotFound = apierr.NewApiError(http.StatusNotFound, "target not found")
@@ -68,7 +68,7 @@ func (s *Service) Toggle(ctx context.Context, userID, targetID string, targetTyp
 	var likesCount int
 	var liked bool
 	if !exists {
-		like.ID = ids.NewID()
+		like.ID = id.NewID()
 		if err := txRepo.Create(ctx, like); err != nil {
 			return ToggleResult{}, fmt.Errorf("create like: %w", err)
 		}

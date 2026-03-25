@@ -10,7 +10,7 @@ import (
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
 	"github.com/nikpivkin/roasti-app-backend/internal/uploads"
-	"github.com/nikpivkin/roasti-app-backend/internal/x/ids"
+	"github.com/nikpivkin/roasti-app-backend/internal/x/id"
 )
 
 type LikeChecker interface {
@@ -132,7 +132,7 @@ func (s *Service) CreateRecipe(ctx context.Context, userID string, request model
 
 	recipe := recipePayloadToModel(request)
 
-	recipe.Id = ids.NewID()
+	recipe.Id = id.NewID()
 	recipe.AuthorId = userID
 	if err := s.repo.UpsertRecipe(ctx, recipe); err != nil {
 		return recipe, err
@@ -197,7 +197,7 @@ func (s *Service) CloneRecipe(ctx context.Context, userID, recipeID string) (mod
 		return models.Recipe{}, ErrForbidden
 	}
 
-	clone := original.CloneFor(userID, ids.NewID(), time.Now().UTC())
+	clone := original.CloneFor(userID, id.NewID(), time.Now().UTC())
 
 	if err := s.repo.UpsertRecipe(ctx, clone); err != nil {
 		return models.Recipe{}, err

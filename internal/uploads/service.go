@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/log"
-	"github.com/nikpivkin/roasti-app-backend/internal/x/ids"
+	"github.com/nikpivkin/roasti-app-backend/internal/x/id"
 )
 
 var allowedMIMETypes = map[string]string{
@@ -71,7 +71,7 @@ func (s *Service) Upload(ctx context.Context, r io.Reader) (string, error) {
 		return "", ErrUnsupportedMIMEType
 	}
 
-	id := ids.NewID()
+	id := id.NewID()
 	path := filepath.Join(s.basePath, "images", id+ext)
 
 	if err := os.MkdirAll(filepath.Join(s.basePath, "images"), 0755); err != nil {
@@ -106,12 +106,12 @@ type ImageFile struct {
 	Size        int64
 }
 
-func (s *Service) Resolve(ctx context.Context, id string) (*ImageFile, error) {
-	if !ids.IsValidID(id) {
+func (s *Service) Resolve(ctx context.Context, imageId string) (*ImageFile, error) {
+	if !id.IsValidID(imageId) {
 		return nil, ErrNotFound
 	}
 
-	path, err := s.repo.GetPath(ctx, id)
+	path, err := s.repo.GetPath(ctx, imageId)
 	if err != nil {
 		return nil, err
 	}
@@ -119,11 +119,11 @@ func (s *Service) Resolve(ctx context.Context, id string) (*ImageFile, error) {
 	return s.openImage(path)
 }
 
-func (s *Service) Confirm(ctx context.Context, id string) error {
-	if !ids.IsValidID(id) {
+func (s *Service) Confirm(ctx context.Context, imageId string) error {
+	if !id.IsValidID(imageId) {
 		return ErrNotFound
 	}
-	return s.repo.Confirm(ctx, id)
+	return s.repo.Confirm(ctx, imageId)
 }
 
 func (s *Service) DeleteUnconfirmed(ctx context.Context, maxAge time.Duration) error {
