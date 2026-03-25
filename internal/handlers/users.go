@@ -30,6 +30,14 @@ func (s *ServerHandler) UpdateCurrentUser(ctx context.Context, request UpdateCur
 	return UpdateCurrentUser200JSONResponse(updated), nil
 }
 
+func (s *ServerHandler) GetUserProfile(ctx context.Context, request GetUserProfileRequestObject) (GetUserProfileResponseObject, error) {
+	profile, err := s.userService.GetPublicProfile(ctx, request.UserId)
+	if err != nil {
+		return nil, err
+	}
+	return GetUserProfile200JSONResponse(profile), nil
+}
+
 func (s *ServerHandler) CheckUsernameAvailability(ctx context.Context, request CheckUsernameAvailabilityRequestObject) (CheckUsernameAvailabilityResponseObject, error) {
 	exists, err := s.userService.ExistsByUsername(ctx, request.Params.Username)
 	if err != nil {

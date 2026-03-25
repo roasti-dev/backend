@@ -235,6 +235,9 @@ type ClientInterface interface {
 	// CheckUsernameAvailability request
 	CheckUsernameAvailability(ctx context.Context, params *CheckUsernameAvailabilityParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetUserProfile request
+	GetUserProfile(ctx context.Context, userId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListUserLikes request
 	ListUserLikes(ctx context.Context, userId string, params *ListUserLikesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -508,6 +511,18 @@ func (c *Client) UpdateCurrentUser(ctx context.Context, body UpdateCurrentUserJS
 
 func (c *Client) CheckUsernameAvailability(ctx context.Context, params *CheckUsernameAvailabilityParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewCheckUsernameAvailabilityRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetUserProfile(ctx context.Context, userId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetUserProfileRequest(c.Server, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -1277,6 +1292,40 @@ func NewCheckUsernameAvailabilityRequest(server string, params *CheckUsernameAva
 	return req, nil
 }
 
+// NewGetUserProfileRequest generates requests for GetUserProfile
+func NewGetUserProfileRequest(server string, userId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "user_id", userId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/users/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListUserLikesRequest generates requests for ListUserLikes
 func NewListUserLikesRequest(server string, userId string, params *ListUserLikesParams) (*http.Request, error) {
 	var err error
@@ -1508,6 +1557,9 @@ type ClientWithResponsesInterface interface {
 
 	// CheckUsernameAvailabilityWithResponse request
 	CheckUsernameAvailabilityWithResponse(ctx context.Context, params *CheckUsernameAvailabilityParams, reqEditors ...RequestEditorFn) (*CheckUsernameAvailabilityResponse, error)
+
+	// GetUserProfileWithResponse request
+	GetUserProfileWithResponse(ctx context.Context, userId string, reqEditors ...RequestEditorFn) (*GetUserProfileResponse, error)
 
 	// ListUserLikesWithResponse request
 	ListUserLikesWithResponse(ctx context.Context, userId string, params *ListUserLikesParams, reqEditors ...RequestEditorFn) (*ListUserLikesResponse, error)
@@ -1816,7 +1868,7 @@ func (r GetImageResponse) StatusCode() int {
 type GetCurrentUserResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *externalRef0.CurrentUser
+	JSON200      *externalRef0.UserAccount
 }
 
 // Status returns HTTPResponse.Status
@@ -1838,7 +1890,7 @@ func (r GetCurrentUserResponse) StatusCode() int {
 type UpdateCurrentUserResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *externalRef0.CurrentUser
+	JSON200      *externalRef0.UserAccount
 	JSON409      *externalRef0.ApiErrorResponse
 	JSON422      *externalRef0.ApiErrorResponse
 }
@@ -1877,6 +1929,29 @@ func (r CheckUsernameAvailabilityResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r CheckUsernameAvailabilityResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetUserProfileResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *externalRef0.UserProfile
+	JSON404      *externalRef0.ApiErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetUserProfileResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetUserProfileResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -2124,6 +2199,15 @@ func (c *ClientWithResponses) CheckUsernameAvailabilityWithResponse(ctx context.
 		return nil, err
 	}
 	return ParseCheckUsernameAvailabilityResponse(rsp)
+}
+
+// GetUserProfileWithResponse request returning *GetUserProfileResponse
+func (c *ClientWithResponses) GetUserProfileWithResponse(ctx context.Context, userId string, reqEditors ...RequestEditorFn) (*GetUserProfileResponse, error) {
+	rsp, err := c.GetUserProfile(ctx, userId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetUserProfileResponse(rsp)
 }
 
 // ListUserLikesWithResponse request returning *ListUserLikesResponse
@@ -2565,7 +2649,7 @@ func ParseGetCurrentUserResponse(rsp *http.Response) (*GetCurrentUserResponse, e
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest externalRef0.CurrentUser
+		var dest externalRef0.UserAccount
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -2591,7 +2675,7 @@ func ParseUpdateCurrentUserResponse(rsp *http.Response) (*UpdateCurrentUserRespo
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest externalRef0.CurrentUser
+		var dest externalRef0.UserAccount
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -2638,6 +2722,39 @@ func ParseCheckUsernameAvailabilityResponse(rsp *http.Response) (*CheckUsernameA
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetUserProfileResponse parses an HTTP response from a GetUserProfileWithResponse call
+func ParseGetUserProfileResponse(rsp *http.Response) (*GetUserProfileResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetUserProfileResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest externalRef0.UserProfile
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
 
 	}
 

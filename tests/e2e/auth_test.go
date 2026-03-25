@@ -35,6 +35,7 @@ func TestRegister(t *testing.T) {
 		assert.NotEmpty(t, resp.JSON201.RefreshToken)
 		assert.Equal(t, username, resp.JSON201.User.Username)
 		assert.NotEmpty(t, resp.JSON201.User.Id)
+		assert.Equal(t, openapi_types.Email(email), resp.JSON201.User.Email)
 	})
 
 	t.Run("duplicate username", func(t *testing.T) {
@@ -126,6 +127,7 @@ func TestLogin(t *testing.T) {
 		assert.Equal(t, 200, resp.StatusCode())
 		assert.NotEmpty(t, resp.JSON200.AccessToken)
 		assert.NotEmpty(t, resp.JSON200.RefreshToken)
+		assert.Equal(t, openapi_types.Email(email), resp.JSON200.User.Email)
 	})
 
 	t.Run("invalid credentials", func(t *testing.T) {

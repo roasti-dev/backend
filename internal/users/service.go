@@ -33,51 +33,59 @@ func NewUserService(repo *UserRepository, recipes RecipeService, likes LikesRepo
 	}
 }
 
-func (s *Service) CurrentUser(ctx context.Context, userID string) (models.CurrentUser, error) {
+func (s *Service) CurrentUser(ctx context.Context, userID string) (models.UserAccount, error) {
 	user, err := s.repo.GetByID(ctx, userID)
 	if err != nil {
-		return models.UserResponse{}, fmt.Errorf("get user by id: %w", err)
+		return models.UserAccount{}, fmt.Errorf("get user by id: %w", err)
 	}
-	return models.UserResponse{
-		Id:       user.ID,
-		Username: user.Username,
-		AvatarId: user.AvatarID,
-		Bio:      user.Bio,
-	}, nil
+	return user.ToAccount(), nil
 }
 
-func (s *Service) GetByUsername(ctx context.Context, username string) (User, error) {
-	return s.repo.GetByUsername(ctx, username)
+func (s *Service) GetPublicProfile(ctx context.Context, userID string) (models.UserProfile, error) {
+	user, err := s.repo.GetByID(ctx, userID)
+	if err != nil {
+		return models.UserProfile{}, fmt.Errorf("get user by id: %w", err)
+	}
+	return user.ToPublicProfile(), nil
 }
 
-func (s *Service) Create(ctx context.Context, user User) (User, error) {
+func (s *Service) GetByUsername(ctx context.Context, username string) (models.UserAccount, error) {
+	user, err := s.repo.GetByUsername(ctx, username)
+	if err != nil {
+		return models.UserAccount{}, err
+	}
+	return user.ToAccount(), nil
+}
+
+
+func (s *Service) Create(ctx context.Context, user User) (models.UserAccount, error) {
 	if err := s.repo.Create(ctx, user); err != nil {
-		return User{}, nil
+		return models.UserAccount{}, err
 	}
 	created, err := s.repo.GetByUsername(ctx, user.Username)
 	if err != nil {
-		return User{}, fmt.Errorf("get user: %w", err)
+		return models.UserAccount{}, fmt.Errorf("get user: %w", err)
 	}
-	return created, nil
+	return created.ToAccount(), nil
 }
 
 func (s *Service) ExistsByUsername(ctx context.Context, username string) (bool, error) {
 	return s.repo.ExistsByUsername(ctx, username)
 }
 
-func (s *Service) UpdateProfile(ctx context.Context, userID string, req UpdateUserFields) (models.CurrentUser, error) {
+func (s *Service) UpdateProfile(ctx context.Context, userID string, req UpdateUserFields) (models.UserAccount, error) {
 	if req.Username != nil {
 		exists, err := s.repo.ExistsByUsername(ctx, *req.Username)
 		if err != nil {
-			return models.UserResponse{}, fmt.Errorf("check username: %w", err)
+			return models.UserAccount{}, fmt.Errorf("check username: %w", err)
 		}
 		if exists {
-			return models.UserResponse{}, ErrUsernameTaken
+			return models.UserAccount{}, ErrUsernameTaken
 		}
 	}
 
 	if err := s.repo.Update(ctx, userID, req); err != nil {
-		return models.UserResponse{}, err
+		return models.UserAccount{}, err
 	}
 
 	return s.CurrentUser(ctx, userID)

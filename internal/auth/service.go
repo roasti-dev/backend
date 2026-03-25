@@ -111,7 +111,7 @@ func (s *Service) Register(ctx context.Context, req models.RegisterRequest) (mod
 	return models.AuthResponse{
 		AccessToken:  signIn.IDToken,
 		RefreshToken: signIn.RefreshToken,
-		User:         userToResponse(created),
+		User:         created,
 	}, nil
 }
 
@@ -128,7 +128,7 @@ func (s *Service) Login(ctx context.Context, req models.LoginRequest) (models.Au
 		return models.AuthResponse{}, fmt.Errorf("get user by username: %w", err)
 	}
 
-	signIn, err := s.signer.SignInWithPassword(ctx, user.Email, req.Password)
+	signIn, err := s.signer.SignInWithPassword(ctx, string(user.Email), req.Password)
 	if err != nil {
 		return models.AuthResponse{}, fmt.Errorf("sign in: %w", err)
 	}
@@ -136,7 +136,7 @@ func (s *Service) Login(ctx context.Context, req models.LoginRequest) (models.Au
 	return models.AuthResponse{
 		AccessToken:  signIn.IDToken,
 		RefreshToken: signIn.RefreshToken,
-		User:         userToResponse(user),
+		User:         user,
 	}, nil
 }
 
@@ -167,25 +167,17 @@ func (s *Service) Logout(ctx context.Context, refreshToken string) error {
 	return nil
 }
 
-func (s *Service) confirmAvatar(ctx context.Context, user users.User) {
-	if user.AvatarID != nil {
-		if err := s.uploader.Confirm(ctx, *user.AvatarID); err != nil {
+func (s *Service) confirmAvatar(ctx context.Context, user models.UserAccount) {
+	if user.AvatarId != nil {
+		if err := s.uploader.Confirm(ctx, *user.AvatarId); err != nil {
 			s.logger.WarnContext(ctx, "failed to confirm recipe image",
-				slog.String("recipe_id", user.ID),
-				slog.String("image_id", *user.AvatarID),
+				slog.String("user_id", user.Id),
+				slog.String("image_id", *user.AvatarId),
 			)
 		}
 	}
 }
 
-func userToResponse(u users.User) models.UserResponse {
-	return models.UserResponse{
-		Id:       u.ID,
-		Username: u.Username,
-		AvatarId: u.AvatarID,
-		Bio:      u.Bio,
-	}
-}
 
 func validateRegisterRequest(req models.RegisterRequest) error {
 	if strings.TrimSpace(string(req.Email)) == "" {

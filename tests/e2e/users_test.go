@@ -94,6 +94,7 @@ func TestGetCurrentUser(t *testing.T) {
 		assert.Equal(t, 200, resp.StatusCode())
 		assert.Equal(t, c.ID, resp.JSON200.Id)
 		assert.NotEmpty(t, resp.JSON200.Username)
+		assert.NotEmpty(t, resp.JSON200.Email)
 	})
 
 	t.Run("unauthenticated returns 401", func(t *testing.T) {
@@ -102,6 +103,66 @@ func TestGetCurrentUser(t *testing.T) {
 		resp, err := unauth.GetCurrentUserWithResponse(t.Context())
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode())
+	})
+}
+
+func TestGetUserProfile(t *testing.T) {
+	srv := setupTestServer(t)
+
+	t.Run("returns public profile by user id", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+
+		meResp, err := c.GetCurrentUserWithResponse(t.Context())
+		require.NoError(t, err)
+		userID := meResp.JSON200.Id
+
+		anon := newTestClient(t, srv)
+		resp, err := anon.GetUserProfileWithResponse(t.Context(), userID)
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode())
+		assert.Equal(t, userID, resp.JSON200.Id)
+		assert.Equal(t, meResp.JSON200.Username, resp.JSON200.Username)
+	})
+
+	t.Run("does not expose email", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+
+		meResp, err := c.GetCurrentUserWithResponse(t.Context())
+		require.NoError(t, err)
+
+		anon := newTestClient(t, srv)
+		resp, err := anon.GetUserProfileWithResponse(t.Context(), meResp.JSON200.Id)
+		require.NoError(t, err)
+		require.Equal(t, 200, resp.StatusCode())
+
+		// UserProfile must not have an email field — verify raw JSON
+		assert.NotContains(t, string(resp.Body), "email")
+	})
+
+	t.Run("returns bio when set", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		bio := "my public bio"
+
+		_, err := c.UpdateCurrentUserWithResponse(t.Context(), client.UpdateCurrentUserJSONRequestBody{
+			Bio: &bio,
+		})
+		require.NoError(t, err)
+
+		meResp, err := c.GetCurrentUserWithResponse(t.Context())
+		require.NoError(t, err)
+
+		anon := newTestClient(t, srv)
+		resp, err := anon.GetUserProfileWithResponse(t.Context(), meResp.JSON200.Id)
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode())
+		assert.Equal(t, &bio, resp.JSON200.Bio)
+	})
+
+	t.Run("returns 404 for unknown user id", func(t *testing.T) {
+		anon := newTestClient(t, srv)
+		resp, err := anon.GetUserProfileWithResponse(t.Context(), "nonexistent-user-id")
+		require.NoError(t, err)
+		assert.Equal(t, 404, resp.StatusCode())
 	})
 }
 
