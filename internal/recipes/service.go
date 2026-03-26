@@ -23,9 +23,10 @@ type RecipeRepository interface {
 	DeleteRecipe(ctx context.Context, userID, recipeID string) error
 }
 
-// Uploader confirms uploaded files.
+// Uploader confirms and copies uploaded files.
 type Uploader interface {
 	Confirm(ctx context.Context, fileID string) error
+	Copy(ctx context.Context, fileID string) (string, error)
 }
 
 type LikeChecker interface {
@@ -255,6 +256,34 @@ func (s *Service) CloneRecipe(ctx context.Context, userID, recipeID string) (mod
 	}
 
 	clone := original.CloneFor(userID, id.NewID(), time.Now().UTC())
+
+	if original.ImageId != nil {
+		newID, err := s.uploader.Copy(ctx, *original.ImageId)
+		if err != nil {
+			s.logger.WarnContext(ctx, "failed to copy recipe image",
+				slog.String("recipe_id", recipeID),
+				slog.String("image_id", *original.ImageId),
+			)
+		} else {
+			clone.ImageId = &newID
+		}
+	}
+
+	for i, step := range clone.Steps {
+		if step.ImageId == nil {
+			continue
+		}
+		newID, err := s.uploader.Copy(ctx, *step.ImageId)
+		if err != nil {
+			s.logger.WarnContext(ctx, "failed to copy step image",
+				slog.Int64("step_order", int64(step.Order)),
+				slog.String("image_id", *step.ImageId),
+			)
+			clone.Steps[i].ImageId = nil
+		} else {
+			clone.Steps[i].ImageId = &newID
+		}
+	}
 
 	if err := s.repo.UpsertRecipe(ctx, clone); err != nil {
 		return models.Recipe{}, err

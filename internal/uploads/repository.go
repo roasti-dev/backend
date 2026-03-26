@@ -93,6 +93,30 @@ func (r *Repository) Delete(ctx context.Context, id string) (string, error) {
 	return path, nil
 }
 
+func (r *Repository) Copy(ctx context.Context, srcID, dstID, dstPath string) error {
+	var mimeType string
+	err := r.psql.Select("mime_type").
+		From(uploadsTable).
+		Where(sq.Eq{"id": srcID}).
+		QueryRowContext(ctx).
+		Scan(&mimeType)
+	if errors.Is(err, sql.ErrNoRows) {
+		return ErrNotFound
+	}
+	if err != nil {
+		return fmt.Errorf("get upload mime_type: %w", err)
+	}
+
+	_, err = r.psql.Insert(uploadsTable).
+		Columns("id", "path", "mime_type", "created_at", "confirmed").
+		Values(dstID, dstPath, mimeType, time.Now().UTC(), true).
+		ExecContext(ctx)
+	if err != nil {
+		return fmt.Errorf("insert copied upload: %w", err)
+	}
+	return nil
+}
+
 func (r *Repository) DeleteUnconfirmed(ctx context.Context, maxAge time.Duration) ([]string, error) {
 	cutoff := time.Now().UTC().Add(-maxAge)
 	rows, err := r.psql.Select("id", "path").

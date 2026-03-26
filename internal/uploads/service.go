@@ -28,6 +28,7 @@ type UploadStore interface {
 	Add(ctx context.Context, id, path, mimeType string) error
 	GetPath(ctx context.Context, id string) (string, error)
 	Confirm(ctx context.Context, id string) error
+	Copy(ctx context.Context, srcID, dstID, dstPath string) error
 	Delete(ctx context.Context, id string) (string, error)
 	DeleteUnconfirmed(ctx context.Context, maxAge time.Duration) ([]string, error)
 }
@@ -132,6 +133,44 @@ func (s *Service) Confirm(ctx context.Context, imageId string) error {
 		return ErrNotFound
 	}
 	return s.repo.Confirm(ctx, imageId)
+}
+
+func (s *Service) Copy(ctx context.Context, srcID string) (string, error) {
+	if !id.IsValidID(srcID) {
+		return "", ErrNotFound
+	}
+
+	srcPath, err := s.repo.GetPath(ctx, srcID)
+	if err != nil {
+		return "", fmt.Errorf("get source path: %w", err)
+	}
+
+	newID := id.NewID()
+	dstPath := filepath.Join(filepath.Dir(srcPath), newID+filepath.Ext(srcPath))
+
+	src, err := os.Open(srcPath)
+	if err != nil {
+		return "", fmt.Errorf("open source file: %w", err)
+	}
+	defer src.Close()
+
+	dst, err := os.Create(dstPath)
+	if err != nil {
+		return "", fmt.Errorf("create dest file: %w", err)
+	}
+	defer dst.Close()
+
+	if _, err := io.Copy(dst, src); err != nil {
+		os.Remove(dstPath)
+		return "", fmt.Errorf("copy file: %w", err)
+	}
+
+	if err := s.repo.Copy(ctx, srcID, newID, dstPath); err != nil {
+		os.Remove(dstPath)
+		return "", fmt.Errorf("save copied upload: %w", err)
+	}
+
+	return newID, nil
 }
 
 func (s *Service) Delete(ctx context.Context, imageId string) error {
