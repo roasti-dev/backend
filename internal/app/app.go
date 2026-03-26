@@ -21,6 +21,7 @@ import (
 	"github.com/nikpivkin/roasti-app-backend/internal/api/apierr"
 	"github.com/nikpivkin/roasti-app-backend/internal/auth"
 	"github.com/nikpivkin/roasti-app-backend/internal/db"
+	"github.com/nikpivkin/roasti-app-backend/internal/events"
 	"github.com/nikpivkin/roasti-app-backend/internal/handlers"
 	"github.com/nikpivkin/roasti-app-backend/internal/likes"
 	"github.com/nikpivkin/roasti-app-backend/internal/log"
@@ -81,10 +82,13 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 	uploader := uploads.NewService(cfg.UploadsPath, uploadRepo)
 	startTmpCleanup(ctx, uploader)
 
+	bus := events.NewBus(64)
+	bus.Start(ctx)
+
 	recipeRepo := recipes.NewRepository(database, runner)
 	likeRepo := likes.NewRepository(database)
 	likeService := likes.NewService(likeRepo)
-	recipeService := recipes.NewService(recipeRepo, uploader, likeService, likeService)
+	recipeService := recipes.NewService(recipeRepo, uploader, likeService, likeService).WithPublisher(bus)
 	userRepo := users.NewUserRepository(database)
 	userService := users.NewUserService(userRepo, &firebaseIdentityCreator{firebaseAuth}, uploader)
 

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
+	"github.com/nikpivkin/roasti-app-backend/internal/events"
 	"github.com/nikpivkin/roasti-app-backend/internal/likes"
 	"github.com/nikpivkin/roasti-app-backend/internal/x/id"
 )
@@ -38,12 +39,17 @@ type LikeToggler interface {
 	Toggle(ctx context.Context, userID, targetID string, targetType models.LikeTargetType) (likes.ToggleResult, error)
 }
 
+type EventPublisher interface {
+	Publish(e events.Event)
+}
+
 type Service struct {
 	logger      *slog.Logger
 	repo        RecipeRepository
 	uploader    Uploader
 	likeChecker LikeChecker
 	likeToggler LikeToggler
+	publisher   EventPublisher
 }
 
 func NewService(repo RecipeRepository, uploader Uploader, likeChecker LikeChecker, likeToggler LikeToggler) *Service {
@@ -54,6 +60,11 @@ func NewService(repo RecipeRepository, uploader Uploader, likeChecker LikeChecke
 		likeChecker: likeChecker,
 		likeToggler: likeToggler,
 	}
+}
+
+func (s *Service) WithPublisher(p EventPublisher) *Service {
+	s.publisher = p
+	return s
 }
 
 func (s *Service) GetRecipeByID(ctx context.Context, userID, recipeID string) (models.Recipe, error) {
@@ -253,10 +264,26 @@ func (s *Service) CloneRecipe(ctx context.Context, userID, recipeID string) (mod
 }
 
 func (s *Service) ToggleLike(ctx context.Context, userID, recipeID string) (likes.ToggleResult, error) {
-	if _, err := s.GetRecipeByID(ctx, userID, recipeID); err != nil {
+	recipe, err := s.GetRecipeByID(ctx, userID, recipeID)
+	if err != nil {
 		return likes.ToggleResult{}, err
 	}
-	return s.likeToggler.Toggle(ctx, userID, recipeID, models.LikeTargetTypeRecipe)
+
+	result, err := s.likeToggler.Toggle(ctx, userID, recipeID, models.LikeTargetTypeRecipe)
+	if err != nil {
+		return likes.ToggleResult{}, err
+	}
+
+	if s.publisher != nil {
+		s.publisher.Publish(events.RecipeLikeToggled{
+			RecipeID: recipeID,
+			OwnerID:  recipe.AuthorId,
+			ByUserID: userID,
+			Liked:    result.Liked,
+		})
+	}
+
+	return result, nil
 }
 
 func (s *Service) DeleteRecipe(ctx context.Context, userID, recipeID string) error {
