@@ -477,8 +477,12 @@ paths:
             schema:
               $ref: "./models.yaml#/components/schemas/ChangePasswordRequest"
       responses:
-        "204":
-          description: Password changed successfully
+        "200":
+          description: Password changed successfully, returns new tokens
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/TokensResponse"
         "401":
           description: Unauthorized or current password is incorrect
           content:

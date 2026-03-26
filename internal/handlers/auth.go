@@ -48,10 +48,11 @@ func (s *ServerHandler) RefreshToken(ctx context.Context, request RefreshTokenRe
 
 func (s *ServerHandler) ChangePassword(ctx context.Context, request ChangePasswordRequestObject) (ChangePasswordResponseObject, error) {
 	userID := requestctx.GetUserID(ctx)
-	if err := s.authService.ChangePassword(ctx, userID, *request.Body); err != nil {
+	tokens, err := s.authService.ChangePassword(ctx, userID, *request.Body)
+	if err != nil {
 		return nil, err
 	}
-	return ChangePassword204Response{}, nil
+	return ChangePassword200JSONResponse(tokens), nil
 }
 
 func (s *ServerHandler) LogoutUser(ctx context.Context, request LogoutUserRequestObject) (LogoutUserResponseObject, error) {

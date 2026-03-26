@@ -128,7 +128,7 @@ func (f *firebasePasswordSigner) RefreshToken(ctx context.Context, refreshToken 
 		}
 
 		switch errResp.Error.Message {
-		case "TOKEN_EXPIRED", "INVALID_REFRESH_TOKEN":
+		case "TOKEN_EXPIRED", "INVALID_REFRESH_TOKEN", "TOKEN_REVOKED":
 			return SignInResult{}, ErrInvalidRefreshToken
 		case "USER_DISABLED":
 			return SignInResult{}, ErrUserDisabled

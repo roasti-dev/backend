@@ -139,30 +139,42 @@ func (s *Service) Refresh(ctx context.Context, token string) (models.TokensRespo
 	}, nil
 }
 
-func (s *Service) ChangePassword(ctx context.Context, userID string, req models.ChangePasswordRequest) error {
+func (s *Service) ChangePassword(ctx context.Context, userID string, req models.ChangePasswordRequest) (models.TokensResponse, error) {
 	newPassword, err := NewPassword(strings.TrimSpace(req.NewPassword), s.policy)
 	if err != nil {
-		return err
+		return models.TokensResponse{}, err
 	}
 
 	user, err := s.users.FindByID(ctx, userID)
 	if err != nil {
-		return fmt.Errorf("get current user: %w", err)
+		return models.TokensResponse{}, fmt.Errorf("get current user: %w", err)
 	}
 
 	if _, err := s.signer.SignInWithPassword(ctx, user.Email, req.CurrentPassword); err != nil {
 		if errors.Is(err, ErrInvalidCredentials) {
-			return ErrIncorrectPassword
+			return models.TokensResponse{}, ErrIncorrectPassword
 		}
-		return fmt.Errorf("verify current password: %w", err)
+		return models.TokensResponse{}, fmt.Errorf("verify current password: %w", err)
 	}
 
 	params := (&firebaseAuth.UserToUpdate{}).Password(newPassword.Value())
 	if _, err := s.firebaseAuth.UpdateUser(ctx, userID, params); err != nil {
-		return fmt.Errorf("update firebase password: %w", err)
+		return models.TokensResponse{}, fmt.Errorf("update firebase password: %w", err)
 	}
 
-	return nil
+	if err := s.firebaseAuth.RevokeRefreshTokens(ctx, userID); err != nil {
+		return models.TokensResponse{}, fmt.Errorf("revoke sessions: %w", err)
+	}
+
+	signIn, err := s.signer.SignInWithPassword(ctx, user.Email, req.NewPassword)
+	if err != nil {
+		return models.TokensResponse{}, fmt.Errorf("sign in after password change: %w", err)
+	}
+
+	return models.TokensResponse{
+		AccessToken:  signIn.IDToken,
+		RefreshToken: signIn.RefreshToken,
+	}, nil
 }
 
 func (s *Service) Logout(ctx context.Context, refreshToken string) error {

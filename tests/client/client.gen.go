@@ -1648,6 +1648,7 @@ type ClientWithResponsesInterface interface {
 type ChangePasswordResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON200      *externalRef0.TokensResponse
 	JSON401      *externalRef0.ApiErrorResponse
 	JSON422      *externalRef0.ApiErrorResponse
 }
@@ -2359,6 +2360,13 @@ func ParseChangePasswordResponse(rsp *http.Response) (*ChangePasswordResponse, e
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest externalRef0.TokensResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
 		var dest externalRef0.ApiErrorResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
