@@ -145,6 +145,12 @@ func (s *Service) UpdateProfile(ctx context.Context, userID string, req UpdateUs
 		return models.UserAccount{}, err
 	}
 
+	if req.AvatarID != nil {
+		if err := s.uploader.Confirm(ctx, *req.AvatarID); err != nil {
+			slog.WarnContext(ctx, "failed to confirm avatar", slog.String("avatar_id", *req.AvatarID))
+		}
+	}
+
 	return s.CurrentUser(ctx, userID)
 }
 
