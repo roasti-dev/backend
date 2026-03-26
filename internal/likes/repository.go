@@ -151,3 +151,39 @@ func (r *Repository) CountByUser(ctx context.Context, userID string, targetType 
 	}
 	return count, nil
 }
+
+func (r *Repository) CountByTarget(ctx context.Context, targetID string, targetType models.LikeTargetType) (int, error) {
+	var count int
+	err := r.psql.Select("COUNT(*)").
+		From(likesTable).
+		Where(sq.Eq{"target_id": targetID, "target_type": targetType}).
+		QueryRowContext(ctx).
+		Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("count likes by target: %w", err)
+	}
+	return count, nil
+}
+
+func (r *Repository) CountByTargets(ctx context.Context, targetIDs []string, targetType models.LikeTargetType) (map[string]int, error) {
+	rows, err := r.psql.Select("target_id", "COUNT(*)").
+		From(likesTable).
+		Where(sq.Eq{"target_id": targetIDs, "target_type": targetType}).
+		GroupBy("target_id").
+		QueryContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("count likes by targets: %w", err)
+	}
+	defer rows.Close()
+
+	result := make(map[string]int, len(targetIDs))
+	for rows.Next() {
+		var id string
+		var count int
+		if err := rows.Scan(&id, &count); err != nil {
+			return nil, fmt.Errorf("scan likes count: %w", err)
+		}
+		result[id] = count
+	}
+	return result, nil
+}

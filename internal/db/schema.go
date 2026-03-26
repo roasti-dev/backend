@@ -76,14 +76,16 @@ func InitSchema(db *sql.DB) error {
 			UNIQUE (user_id, target_id, target_type)
 		);`,
 		`CREATE INDEX IF NOT EXISTS idx_likes_target ON likes (target_id, target_type);`,
-		`ALTER TABLE recipes ADD COLUMN likes_count INTEGER NOT NULL DEFAULT 0;`,
 		`ALTER TABLE recipes ADD COLUMN origin_recipe_id TEXT REFERENCES recipes(id) ON DELETE SET NULL;`,
 		`ALTER TABLE recipes ADD COLUMN note TEXT;`,
+		`ALTER TABLE recipes DROP COLUMN likes_count;`,
 	}
 
 	for _, q := range queries {
 		if _, err := db.Exec(q); err != nil {
-			if !strings.Contains(err.Error(), "duplicate column name") {
+			msg := err.Error()
+			if !strings.Contains(msg, "duplicate column name") &&
+				!strings.Contains(msg, "no such column") {
 				return fmt.Errorf("init schema: %w", err)
 			}
 		}

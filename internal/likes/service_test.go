@@ -16,7 +16,7 @@ func setupLikeService(t *testing.T) (*likes.Service, *recipes.Repository) {
 	database := testutil.SetupTestDB(t)
 	likeRepo := likes.NewRepository(database)
 	recipeRepo := recipes.NewRepository(database, database)
-	svc := likes.NewService(database, likeRepo, recipeRepo)
+	svc := likes.NewService(likeRepo)
 	return svc, recipeRepo
 }
 
@@ -54,11 +54,4 @@ func TestLikeService_Toggle_MultipleUsers(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, result.Liked)
 	assert.Equal(t, 2, result.LikesCount)
-}
-
-func TestLikeService_Toggle_RecipeNotFound(t *testing.T) {
-	svc, _ := setupLikeService(t)
-
-	_, err := svc.Toggle(t.Context(), "user-1", "non-existent", models.LikeTargetTypeRecipe)
-	assert.ErrorIs(t, err, likes.ErrTargetNotFound)
 }

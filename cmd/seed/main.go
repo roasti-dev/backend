@@ -52,7 +52,7 @@ func realMain() error {
 	uploader := uploads.NewService(os.TempDir(), uploadRepo)
 	recipeRepo := recipes.NewRepository(database, db.NewRunner(database, slog.Default(), false))
 	likeRepo := likes.NewRepository(database)
-	likeService := likes.NewService(database, likeRepo, recipeRepo)
+	likeService := likes.NewService(likeRepo)
 	recipeService := recipes.NewService(recipeRepo, uploader, likeService)
 
 	switch *entityType {

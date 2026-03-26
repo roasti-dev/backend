@@ -48,6 +48,14 @@ func (m *mockLikeChecker) GetLikedIDs(_ context.Context, _ string, _ models.Like
 	return result, nil
 }
 
+func (m *mockLikeChecker) CountByTarget(_ context.Context, _ string, _ models.LikeTargetType) (int, error) {
+	return 0, nil
+}
+
+func (m *mockLikeChecker) CountByTargets(_ context.Context, targetIDs []string, _ models.LikeTargetType) (map[string]int, error) {
+	return make(map[string]int, len(targetIDs)), nil
+}
+
 func setupRecipeService(t *testing.T, likeChecker recipes.LikeChecker) (*recipes.Service, *recipes.Repository) {
 	database := testutil.SetupTestDB(t)
 	testutil.CreateTestUser(t, database, "user-1")

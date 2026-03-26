@@ -2,7 +2,6 @@ package likes
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"net/http"
 
@@ -13,27 +12,12 @@ import (
 
 var ErrTargetNotFound = apierr.NewApiError(http.StatusNotFound, "target not found")
 
-type counterUpdater interface {
-	IncrementLikes(ctx context.Context, tx *sql.Tx, targetID string) (int, error)
-	DecrementLikes(ctx context.Context, tx *sql.Tx, targetID string) (int, error)
-}
-
-type txBeginner interface {
-	BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error)
-}
-
 type Service struct {
-	db      txBeginner
-	repo    *Repository
-	counter counterUpdater
+	repo *Repository
 }
 
-func NewService(db txBeginner, repo *Repository, counter counterUpdater) *Service {
-	return &Service{
-		db:      db,
-		repo:    repo,
-		counter: counter,
-	}
+func NewService(repo *Repository) *Service {
+	return &Service{repo: repo}
 }
 
 type ToggleResult struct {
@@ -46,55 +30,46 @@ func (s *Service) IsLiked(ctx context.Context, userID, targetID string, targetTy
 }
 
 func (s *Service) Toggle(ctx context.Context, userID, targetID string, targetType models.LikeTargetType) (ToggleResult, error) {
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return ToggleResult{}, fmt.Errorf("begin tx: %w", err)
-	}
-	defer tx.Rollback()
-
-	txRepo := s.repo.WithTx(tx)
-
-	exists, err := txRepo.Exists(ctx, userID, targetID, targetType)
+	exists, err := s.repo.Exists(ctx, userID, targetID, targetType)
 	if err != nil {
 		return ToggleResult{}, fmt.Errorf("check like: %w", err)
 	}
 
-	like := Like{
-		UserID:     userID,
-		TargetID:   targetID,
-		TargetType: targetType,
-	}
-
-	var likesCount int
 	var liked bool
 	if !exists {
-		like.ID = id.NewID()
-		if err := txRepo.Create(ctx, like); err != nil {
-			return ToggleResult{}, fmt.Errorf("create like: %w", err)
+		like := Like{
+			ID:         id.NewID(),
+			UserID:     userID,
+			TargetID:   targetID,
+			TargetType: targetType,
 		}
-		likesCount, err = s.counter.IncrementLikes(ctx, tx, targetID)
-		if err != nil {
-			return ToggleResult{}, fmt.Errorf("increment likes: %w", err)
+		if err := s.repo.Create(ctx, like); err != nil {
+			return ToggleResult{}, fmt.Errorf("create like: %w", err)
 		}
 		liked = true
 	} else {
-		if err := txRepo.Delete(ctx, userID, targetID, targetType); err != nil {
+		if err := s.repo.Delete(ctx, userID, targetID, targetType); err != nil {
 			return ToggleResult{}, fmt.Errorf("delete like: %w", err)
-		}
-		likesCount, err = s.counter.DecrementLikes(ctx, tx, targetID)
-		if err != nil {
-			return ToggleResult{}, fmt.Errorf("decrement likes: %w", err)
 		}
 		liked = false
 	}
 
-	if err := tx.Commit(); err != nil {
-		return ToggleResult{}, fmt.Errorf("commit tx: %w", err)
+	count, err := s.repo.CountByTarget(ctx, targetID, targetType)
+	if err != nil {
+		return ToggleResult{}, fmt.Errorf("count likes: %w", err)
 	}
 
-	return ToggleResult{Liked: liked, LikesCount: likesCount}, nil
+	return ToggleResult{Liked: liked, LikesCount: count}, nil
 }
 
 func (s *Service) GetLikedIDs(ctx context.Context, userID string, targetType models.LikeTargetType, targetIDs []string) (map[string]bool, error) {
 	return s.repo.GetLikedIDs(ctx, userID, targetType, targetIDs)
+}
+
+func (s *Service) CountByTarget(ctx context.Context, targetID string, targetType models.LikeTargetType) (int, error) {
+	return s.repo.CountByTarget(ctx, targetID, targetType)
+}
+
+func (s *Service) CountByTargets(ctx context.Context, targetIDs []string, targetType models.LikeTargetType) (map[string]int, error) {
+	return s.repo.CountByTargets(ctx, targetIDs, targetType)
 }

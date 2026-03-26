@@ -12,7 +12,6 @@ import (
 	sq "github.com/Masterminds/squirrel"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
-	"github.com/nikpivkin/roasti-app-backend/internal/likes"
 	"github.com/nikpivkin/roasti-app-backend/internal/x/ptr"
 )
 
@@ -40,7 +39,6 @@ var (
 		"recipes.public",
 		"recipes.created_at",
 		"recipes.updated_at",
-		"recipes.likes_count",
 		"recipes.origin_recipe_id",
 		"users.username",
 		"users.avatar_id",
@@ -63,7 +61,6 @@ var (
 		"public",
 		"created_at",
 		"updated_at",
-		"likes_count",
 		"origin_recipe_id",
 	}
 
@@ -80,7 +77,6 @@ var (
 		"recipes.brew_method",
 		"recipes.difficulty",
 		"recipes.roast_level",
-		"recipes.likes_count",
 		"recipes.created_at",
 		"recipes.origin_recipe_id",
 		"users.username",
@@ -145,7 +141,6 @@ func (r *Repository) UpsertRecipe(ctx context.Context, recipe models.Recipe) err
 			recipe.Public,
 			now,
 			now,
-			0,
 			originRecipeID,
 		).
 		Suffix("ON CONFLICT (id) DO UPDATE SET " +
@@ -455,7 +450,6 @@ func scanRecipe(s scanner) (models.Recipe, error) {
 		&recipe.Public,
 		&recipe.CreatedAt,
 		&recipe.UpdatedAt,
-		&recipe.LikesCount,
 		&originRecipeID,
 		&recipe.Author.Username,
 		&recipe.Author.AvatarId,
@@ -489,7 +483,7 @@ func scanRecipePreview(s scanner) (models.RecipePreview, error) {
 	err := s.Scan(
 		&p.Id, &p.AuthorId, &p.Title, &p.ImageId,
 		&p.BrewMethod, &p.Difficulty, &p.RoastLevel,
-		&p.LikesCount, &p.CreatedAt,
+		&p.CreatedAt,
 		&originRecipeID,
 		&p.Author.Username, &p.Author.AvatarId,
 		&originAuthorID,
@@ -521,53 +515,6 @@ func (r *Repository) DeleteRecipe(ctx context.Context, userID, recipeID string) 
 	return err
 }
 
-func (r *Repository) IncrementLikes(ctx context.Context, tx *sql.Tx, targetID string) (int, error) {
-	var repoDb sq.BaseRunner
-	if tx != nil {
-		repoDb = tx
-	} else {
-		repoDb = r.runner
-	}
-	var count int
-	err := sq.StatementBuilder.PlaceholderFormat(sq.Dollar).RunWith(repoDb).
-		Update("recipes").
-		Set("likes_count", sq.Expr("likes_count + 1")).
-		Where(sq.Eq{"id": targetID}).
-		Suffix("RETURNING likes_count").
-		QueryRowContext(ctx).
-		Scan(&count)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return 0, likes.ErrTargetNotFound
-		}
-		return 0, fmt.Errorf("increment likes: %w", err)
-	}
-	return count, nil
-}
-
-func (r *Repository) DecrementLikes(ctx context.Context, tx *sql.Tx, targetID string) (int, error) {
-	var repoDb sq.BaseRunner
-	if tx != nil {
-		repoDb = tx
-	} else {
-		repoDb = r.runner
-	}
-	var count int
-	err := sq.StatementBuilder.PlaceholderFormat(sq.Dollar).RunWith(repoDb).
-		Update("recipes").
-		Set("likes_count", sq.Expr("MAX(likes_count - 1, 0)")).
-		Where(sq.Eq{"id": targetID}).
-		Suffix("RETURNING likes_count").
-		QueryRowContext(ctx).
-		Scan(&count)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return 0, likes.ErrTargetNotFound
-		}
-		return 0, fmt.Errorf("decrement likes: %w", err)
-	}
-	return count, nil
-}
 
 func (r *Repository) getBrewStepsByRecipeIDs(
 	ctx context.Context,

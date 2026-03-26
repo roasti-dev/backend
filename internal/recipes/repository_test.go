@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
-	"github.com/nikpivkin/roasti-app-backend/internal/likes"
 	"github.com/nikpivkin/roasti-app-backend/internal/recipes"
 	"github.com/nikpivkin/roasti-app-backend/internal/testutil"
 )
@@ -302,47 +301,6 @@ func TestRecipeRepository_DeleteRecipe(t *testing.T) {
 
 	_, err := repo.GetRecipeByID(t.Context(), r.Id)
 	assert.ErrorIs(t, err, recipes.ErrNotFound)
-}
-
-func TestRecipeRepository_IncrementLikes(t *testing.T) {
-	repo := setupRecipeRepo(t)
-	r := testutil.CreateTestRecipe(t, repo, "recipe-1", "user-1")
-
-	count, err := repo.IncrementLikes(t.Context(), nil, r.Id)
-	require.NoError(t, err)
-	assert.Equal(t, 1, count)
-
-	count, err = repo.IncrementLikes(t.Context(), nil, r.Id)
-	require.NoError(t, err)
-	assert.Equal(t, 2, count)
-}
-
-func TestRecipeRepository_DecrementLikes(t *testing.T) {
-	repo := setupRecipeRepo(t)
-	r := testutil.CreateTestRecipe(t, repo, "recipe-1", "user-1")
-
-	_, err := repo.IncrementLikes(t.Context(), nil, r.Id)
-	require.NoError(t, err)
-
-	count, err := repo.DecrementLikes(t.Context(), nil, r.Id)
-	require.NoError(t, err)
-	assert.Equal(t, 0, count)
-}
-
-func TestRecipeRepository_DecrementLikes_NotBelowZero(t *testing.T) {
-	repo := setupRecipeRepo(t)
-	r := testutil.CreateTestRecipe(t, repo, "recipe-1", "user-1")
-
-	count, err := repo.DecrementLikes(t.Context(), nil, r.Id)
-	require.NoError(t, err)
-	assert.Equal(t, 0, count)
-}
-
-func TestRecipeRepository_IncrementLikes_NotFound(t *testing.T) {
-	repo := setupRecipeRepo(t)
-
-	_, err := repo.IncrementLikes(t.Context(), nil, "non-existent")
-	assert.ErrorIs(t, err, likes.ErrTargetNotFound)
 }
 
 func TestRecipeRepository_GetPreviewsByIDs(t *testing.T) {

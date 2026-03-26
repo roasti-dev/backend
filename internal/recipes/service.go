@@ -16,6 +16,8 @@ import (
 type LikeChecker interface {
 	IsLiked(ctx context.Context, userID, targetID string, targetType models.LikeTargetType) (bool, error)
 	GetLikedIDs(ctx context.Context, userID string, targetType models.LikeTargetType, targetIDs []string) (map[string]bool, error)
+	CountByTarget(ctx context.Context, targetID string, targetType models.LikeTargetType) (int, error)
+	CountByTargets(ctx context.Context, targetIDs []string, targetType models.LikeTargetType) (map[string]int, error)
 }
 
 type Service struct {
@@ -52,6 +54,12 @@ func (s *Service) GetRecipeByID(ctx context.Context, userID, recipeID string) (m
 		return models.Recipe{}, err
 	}
 
+	likesCount, err := s.likeChecker.CountByTarget(ctx, recipeID, models.LikeTargetTypeRecipe)
+	if err != nil {
+		return models.Recipe{}, err
+	}
+	recipe.LikesCount = int32(likesCount)
+
 	recipe.RedactForUser(userID)
 
 	return recipe, nil
@@ -75,8 +83,14 @@ func (s *Service) ListRecipes(
 		return models.GenericPage[models.Recipe]{}, err
 	}
 
+	likesCounts, err := s.likeChecker.CountByTargets(ctx, ids, models.LikeTargetTypeRecipe)
+	if err != nil {
+		return models.GenericPage[models.Recipe]{}, err
+	}
+
 	for i, r := range page.Items {
 		page.Items[i].IsLiked = likedIDs[r.Id]
+		page.Items[i].LikesCount = int32(likesCounts[r.Id])
 		page.Items[i].RedactForUser(userID)
 	}
 
@@ -94,8 +108,14 @@ func (s *Service) GetRecipesByIDs(ctx context.Context, currentUserID string, ids
 		return nil, fmt.Errorf("get liked ids: %w", err)
 	}
 
+	likesCounts, err := s.likeChecker.CountByTargets(ctx, ids, models.LikeTargetTypeRecipe)
+	if err != nil {
+		return nil, fmt.Errorf("count likes: %w", err)
+	}
+
 	for i := range recipes {
 		recipes[i].IsLiked = likedMap[recipes[i].Id]
+		recipes[i].LikesCount = int32(likesCounts[recipes[i].Id])
 		recipes[i].RedactForUser(currentUserID)
 	}
 
@@ -108,18 +128,24 @@ func (s *Service) GetPreviewsByIDs(ctx context.Context, currentUserID, ownerID s
 		return nil, fmt.Errorf("get recipe previews: %w", err)
 	}
 
-	likedIDs := make([]string, len(previews))
+	previewIDs := make([]string, len(previews))
 	for i, p := range previews {
-		likedIDs[i] = p.Id
+		previewIDs[i] = p.Id
 	}
 
-	likedMap, err := s.likeChecker.GetLikedIDs(ctx, currentUserID, models.LikeTargetTypeRecipe, likedIDs)
+	likedMap, err := s.likeChecker.GetLikedIDs(ctx, currentUserID, models.LikeTargetTypeRecipe, previewIDs)
 	if err != nil {
 		return nil, fmt.Errorf("get liked ids: %w", err)
 	}
 
+	likesCounts, err := s.likeChecker.CountByTargets(ctx, previewIDs, models.LikeTargetTypeRecipe)
+	if err != nil {
+		return nil, fmt.Errorf("count likes: %w", err)
+	}
+
 	for i := range previews {
 		previews[i].IsLiked = likedMap[previews[i].Id]
+		previews[i].LikesCount = int32(likesCounts[previews[i].Id])
 	}
 
 	return previews, nil
