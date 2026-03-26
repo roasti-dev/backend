@@ -23,10 +23,11 @@ type RecipeRepository interface {
 	DeleteRecipe(ctx context.Context, userID, recipeID string) error
 }
 
-// Uploader confirms and copies uploaded files.
+// Uploader confirms, copies, and deletes uploaded files.
 type Uploader interface {
 	Confirm(ctx context.Context, fileID string) error
 	Copy(ctx context.Context, fileID string) (string, error)
+	Delete(ctx context.Context, fileID string) error
 }
 
 type LikeChecker interface {
@@ -328,7 +329,34 @@ func (s *Service) DeleteRecipe(ctx context.Context, userID, recipeID string) err
 		return ErrForbidden
 	}
 
-	return s.repo.DeleteRecipe(ctx, userID, recipeID)
+	if err := s.repo.DeleteRecipe(ctx, userID, recipeID); err != nil {
+		return err
+	}
+
+	s.deleteRecipeImages(ctx, recipe)
+	return nil
+}
+
+func (s *Service) deleteRecipeImages(ctx context.Context, recipe models.Recipe) {
+	if recipe.ImageId != nil {
+		if err := s.uploader.Delete(ctx, *recipe.ImageId); err != nil {
+			s.logger.WarnContext(ctx, "failed to delete recipe image",
+				slog.String("recipe_id", recipe.Id),
+				slog.String("image_id", *recipe.ImageId),
+			)
+		}
+	}
+
+	for _, step := range recipe.Steps {
+		if step.ImageId != nil {
+			if err := s.uploader.Delete(ctx, *step.ImageId); err != nil {
+				s.logger.WarnContext(ctx, "failed to delete step image",
+					slog.Int64("step_id", step.Id),
+					slog.String("image_id", *step.ImageId),
+				)
+			}
+		}
+	}
 }
 
 func (s *Service) confirmRecipeImages(ctx context.Context, recipe models.Recipe) {
