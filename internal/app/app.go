@@ -220,24 +220,9 @@ func (f *firebaseIdentityCreator) CreateIdentity(ctx context.Context, email, pas
 }
 
 func startRevokedTokenCleanup(ctx context.Context, repo *auth.RevokedTokenRepository) {
-	go func() {
-		if err := repo.DeleteExpired(ctx); err != nil {
-			slog.ErrorContext(ctx, "delete expired tokens", log.Err(err))
-		}
-
-		ticker := time.NewTicker(24 * time.Hour)
-		defer ticker.Stop()
-		for {
-			select {
-			case <-ticker.C:
-				if err := repo.DeleteExpired(ctx); err != nil {
-					slog.ErrorContext(ctx, "delete expired tokens", log.Err(err))
-				}
-			case <-ctx.Done():
-				return
-			}
-		}
-	}()
+	runPeriodic(ctx, "revoked-token-cleanup", 24*time.Hour, func(ctx context.Context) error {
+		return repo.DeleteExpired(ctx)
+	})
 }
 
 func fetchPasswordPolicy(ctx context.Context, cfg Config, logger *slog.Logger) (auth.PasswordPolicy, error) {
@@ -266,19 +251,31 @@ func fetchPasswordPolicy(ctx context.Context, cfg Config, logger *slog.Logger) (
 }
 
 func startTmpCleanup(ctx context.Context, svc *uploads.Service) {
-	go func() {
-		if err := svc.DeleteUnconfirmed(ctx, 24*time.Hour); err != nil {
-			slog.ErrorContext(ctx, "cleanup tmp uploads", log.Err(err))
-		}
+	runPeriodic(ctx, "tmp-upload-cleanup", 24*time.Hour, func(ctx context.Context) error {
+		return svc.DeleteUnconfirmed(ctx, 24*time.Hour)
+	})
+}
 
-		ticker := time.NewTicker(24 * time.Hour)
+func runPeriodic(ctx context.Context, name string, interval time.Duration, fn func(context.Context) error) {
+	run := func() {
+		defer func() {
+			if r := recover(); r != nil {
+				slog.ErrorContext(ctx, "panic in background task", "name", name, "panic", r)
+			}
+		}()
+		if err := fn(ctx); err != nil {
+			slog.ErrorContext(ctx, "background task failed", "name", name, log.Err(err))
+		}
+	}
+
+	go func() {
+		run()
+		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
 		for {
 			select {
 			case <-ticker.C:
-				if err := svc.DeleteUnconfirmed(ctx, 24*time.Hour); err != nil {
-					slog.ErrorContext(ctx, "cleanup tmp uploads", log.Err(err))
-				}
+				run()
 			case <-ctx.Done():
 				return
 			}
