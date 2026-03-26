@@ -1,6 +1,9 @@
 package e2e
 
 import (
+	"context"
+	"net/http"
+	"os"
 	"testing"
 
 	openapi_types "github.com/oapi-codegen/runtime/types"
@@ -8,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
+	"github.com/nikpivkin/roasti-app-backend/tests/client"
 )
 
 func randomCredentials() (string, string, string) {
@@ -241,17 +245,8 @@ func TestLogout(t *testing.T) {
 func TestChangePassword(t *testing.T) {
 	srv := setupTestServer(t)
 
-	t.Run("changes password successfully", func(t *testing.T) {
+	t.Run("returns new tokens and password is updated", func(t *testing.T) {
 		c := newTestClient(t, srv)
-		username, email, password := randomCredentials()
-
-		_, err := c.RegisterUserWithResponse(t.Context(), models.RegisterRequest{
-			Email:    openapi_types.Email(email),
-			Username: username,
-			Password: password,
-		})
-		require.NoError(t, err)
-
 		authC := newAuthenticatedTestClient(t, srv)
 		newPassword := "newpassword456"
 
@@ -260,7 +255,9 @@ func TestChangePassword(t *testing.T) {
 			NewPassword:     newPassword,
 		})
 		require.NoError(t, err)
-		assert.Equal(t, 204, resp.StatusCode())
+		require.Equal(t, 200, resp.StatusCode())
+		assert.NotEmpty(t, resp.JSON200.AccessToken)
+		assert.NotEmpty(t, resp.JSON200.RefreshToken)
 
 		// old password no longer works
 		loginResp, err := c.LoginUserWithResponse(t.Context(), models.LoginRequest{
@@ -277,6 +274,52 @@ func TestChangePassword(t *testing.T) {
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 200, loginResp.StatusCode())
+	})
+
+	t.Run("new tokens from response are usable", func(t *testing.T) {
+		authC := newAuthenticatedTestClient(t, srv)
+
+		resp, err := authC.ChangePasswordWithResponse(t.Context(), models.ChangePasswordRequest{
+			CurrentPassword: "password123",
+			NewPassword:     "newpassword456",
+		})
+		require.NoError(t, err)
+		require.Equal(t, 200, resp.StatusCode())
+
+		newClient, err := client.NewClientWithResponses(srv.URL,
+			client.WithRequestEditorFn(func(ctx context.Context, req *http.Request) error {
+				req.Header.Set("Authorization", "Bearer "+resp.JSON200.AccessToken)
+				return nil
+			}),
+		)
+		require.NoError(t, err)
+
+		meResp, err := newClient.GetCurrentUserWithResponse(t.Context())
+		require.NoError(t, err)
+		assert.Equal(t, 200, meResp.StatusCode())
+	})
+
+	t.Run("old refresh token is revoked after password change", func(t *testing.T) {
+		if os.Getenv("FIREBASE_AUTH_EMULATOR_HOST") != "" {
+			// TODO: Firebase Auth emulator does not support token revocation. ?
+			t.Skip("Firebase emulator does not support RevokeRefreshTokens")
+		}
+
+		c := newTestClient(t, srv)
+		authC := newAuthenticatedTestClient(t, srv)
+		oldRefreshToken := authC.RefreshToken
+
+		_, err := authC.ChangePasswordWithResponse(t.Context(), models.ChangePasswordRequest{
+			CurrentPassword: "password123",
+			NewPassword:     "newpassword456",
+		})
+		require.NoError(t, err)
+
+		refreshResp, err := c.RefreshTokenWithResponse(t.Context(), models.RefreshRequest{
+			RefreshToken: oldRefreshToken,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 401, refreshResp.StatusCode())
 	})
 
 	t.Run("returns 401 for incorrect current password", func(t *testing.T) {
