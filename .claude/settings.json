@@ -1,5 +1,10 @@
 {
   "enabledPlugins": {
     "ast-index@ast-index-marketplace": true
+  },
+  "permissions": {
+    "allow": [
+      "Bash(ast-index *)"
+    ]
   }
 }

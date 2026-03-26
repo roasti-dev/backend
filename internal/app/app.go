@@ -32,6 +32,8 @@ import (
 )
 
 type Config struct {
+	ServerPort                    string
+	Env                           log.Env
 	Debug                         bool
 	SecureCookies                 bool
 	DBPath                        string

@@ -9,7 +9,6 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
-	"strings"
 	"syscall"
 	"time"
 
@@ -41,18 +40,12 @@ func run() error {
 		return fmt.Errorf("load .env: %w", err)
 	}
 
-	serverPort := getEnvOrDefault("SERVER_PORT", "9090")
-	if _, err := strconv.Atoi(serverPort); err != nil {
-		return fmt.Errorf("invalid port %q: must be a valid integer (e.g. 8080)", serverPort)
+	cfg := app.ConfigFromEnv(appVersion)
+	if _, err := strconv.Atoi(cfg.ServerPort); err != nil {
+		return fmt.Errorf("invalid SERVER_PORT %q: must be a valid integer (e.g. 8080)", cfg.ServerPort)
 	}
 
-	appEnv := log.Env(getEnvOrDefault("APP_ENV", string(log.EnvDevelopment)))
-	if !appEnv.IsValid() {
-		slog.Warn("unknown APP_ENV, falling back to development", "value", appEnv)
-		appEnv = log.EnvDevelopment
-	}
-	debug := os.Getenv("DEBUG") != ""
-	logger := log.InitLogger(appVersion, appEnv, debug)
+	logger := log.InitLogger(appVersion, cfg.Env, cfg.Debug)
 
 	slog.SetDefault(logger)
 
@@ -66,33 +59,12 @@ func run() error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	var allowedOrigins []string
-	if raw := os.Getenv("ALLOWED_ORIGINS"); raw != "" {
-		for o := range strings.SplitSeq(raw, ",") {
-			if o = strings.TrimSpace(o); o != "" {
-				allowedOrigins = append(allowedOrigins, o)
-			}
-		}
-	}
-
-	a, err := app.New(ctx, app.Config{
-		Debug:                         debug,
-		DBPath:                        getEnvOrDefault("DATABASE_PATH", "data.db"),
-		UploadsPath:                   getEnvOrDefault("UPLOADS_PATH", "./uploads"),
-		AppVersion:                    appVersion,
-		AllowedOrigins:                allowedOrigins,
-		SecureCookies:                 appEnv == log.EnvProduction,
-		FirebaseProjectID:             os.Getenv("FIREBASE_PROJECT_ID"),
-		FirebaseAPIKey:                os.Getenv("FIREBASE_API_KEY"),
-		FirebaseCredentialsJSONBase64: os.Getenv("FIREBASE_CREDENTIALS_JSON_BASE64"),
-		FirebaseIdentityBaseURL:       getEnvOrDefault("FIREBASE_IDENTITY_BASE_URL", "https://identitytoolkit.googleapis.com/v1/accounts"),
-		FirebaseTokenBaseURL:          getEnvOrDefault("FIREBASE_TOKEN_BASE_URL", "https://securetoken.googleapis.com/v1/token"),
-	}, logger)
+	a, err := app.New(ctx, cfg, logger)
 	if err != nil {
 		return fmt.Errorf("create app: %w", err)
 	}
 
-	serverAddr := ":" + serverPort
+	serverAddr := ":" + cfg.ServerPort
 	s := server.New(serverAddr, a.Handler())
 
 	errCh := make(chan error, 1)
@@ -120,11 +92,4 @@ func run() error {
 
 	slog.Info("Server stopped")
 	return nil
-}
-
-func getEnvOrDefault(key, defaultVal string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
-	}
-	return defaultVal
 }
