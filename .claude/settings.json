@@ -1,10 +1,11 @@
 {
-  "enabledPlugins": {
-    "ast-index@ast-index-marketplace": true
-  },
   "permissions": {
     "allow": [
       "Bash(ast-index *)"
     ]
+  },
+  "enabledPlugins": {
+    "ast-index@ast-index-marketplace": true,
+    "gopls-lsp@claude-plugins-official": true
   }
 }
