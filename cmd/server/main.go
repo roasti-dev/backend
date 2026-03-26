@@ -16,7 +16,6 @@ import (
 
 	"github.com/nikpivkin/roasti-app-backend/internal/app"
 	"github.com/nikpivkin/roasti-app-backend/internal/log"
-	"github.com/nikpivkin/roasti-app-backend/internal/server"
 
 	_ "embed"
 )
@@ -65,12 +64,12 @@ func run() error {
 	}
 
 	serverAddr := ":" + cfg.ServerPort
-	s := server.New(serverAddr, a.Handler())
+	srv := &http.Server{Addr: serverAddr, Handler: a.Handler()}
 
 	errCh := make(chan error, 1)
 	go func() {
 		slog.Info("Server started", slog.String("addr", serverAddr))
-		if err := s.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errCh <- err
 		}
 	}()
@@ -86,7 +85,7 @@ func run() error {
 	defer cancel()
 
 	slog.Info("Shutdown server")
-	if err := s.Shutdown(shutdownCtx); err != nil {
+	if err := srv.Shutdown(shutdownCtx); err != nil {
 		return fmt.Errorf("shutdown server: %w", err)
 	}
 
