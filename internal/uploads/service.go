@@ -24,12 +24,19 @@ var allowedMIMETypes = map[string]string{
 
 const maxFileSize = 10 * 1024 * 1024 // 10MB
 
-type Service struct {
-	basePath string
-	repo     *Repository
+type UploadStore interface {
+	Add(ctx context.Context, id, path, mimeType string) error
+	GetPath(ctx context.Context, id string) (string, error)
+	Confirm(ctx context.Context, id string) error
+	DeleteUnconfirmed(ctx context.Context, maxAge time.Duration) ([]string, error)
 }
 
-func NewService(basePath string, repo *Repository) *Service {
+type Service struct {
+	basePath string
+	repo     UploadStore
+}
+
+func NewService(basePath string, repo UploadStore) *Service {
 	return &Service{basePath: basePath, repo: repo}
 }
 

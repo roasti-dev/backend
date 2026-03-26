@@ -10,6 +10,15 @@ import (
 	"github.com/nikpivkin/roasti-app-backend/internal/likes"
 )
 
+type UserStore interface {
+	GetByID(ctx context.Context, userID string) (User, error)
+	GetByUsername(ctx context.Context, username string) (User, error)
+	Create(ctx context.Context, user User) error
+	Update(ctx context.Context, userID string, req UpdateUserFields) error
+	ExistsByUsername(ctx context.Context, username string) (bool, error)
+	ExistsByEmail(ctx context.Context, email string) (bool, error)
+}
+
 // IdentityCreator creates a user identity in an external auth provider
 // and returns the assigned UID.
 type IdentityCreator interface {
@@ -40,14 +49,20 @@ type RegisterInput struct {
 }
 
 type Service struct {
-	repo     *UserRepository
+	repo     UserStore
 	identity IdentityCreator
 	uploader Uploader
 	recipes  RecipeService
 	likes    LikesRepository
 }
 
-func NewUserService(repo *UserRepository, identity IdentityCreator, uploader Uploader, recipes RecipeService, likes LikesRepository) *Service {
+func NewUserService(
+	repo UserStore,
+	identity IdentityCreator,
+	uploader Uploader,
+	recipes RecipeService,
+	likes LikesRepository,
+) *Service {
 	return &Service{
 		repo:     repo,
 		identity: identity,
@@ -135,7 +150,6 @@ func (s *Service) GetByUsername(ctx context.Context, username string) (models.Us
 	}
 	return user.ToAccount(), nil
 }
-
 
 func (s *Service) Create(ctx context.Context, user User) (models.UserAccount, error) {
 	if err := s.repo.Create(ctx, user); err != nil {

@@ -13,6 +13,15 @@ import (
 	"github.com/nikpivkin/roasti-app-backend/internal/x/id"
 )
 
+type RecipeRepository interface {
+	UpsertRecipe(ctx context.Context, recipe models.Recipe) error
+	GetRecipeByID(ctx context.Context, recipeID string) (models.Recipe, error)
+	ListRecipes(ctx context.Context, currentUserID string, params models.ListRecipesParams) (models.GenericPage[models.Recipe], error)
+	GetRecipesByIDs(ctx context.Context, currentUserID string, ids []string) ([]models.Recipe, error)
+	GetPreviewsByIDs(ctx context.Context, currentUserID string, ids []string) ([]models.RecipePreview, error)
+	DeleteRecipe(ctx context.Context, userID, recipeID string) error
+}
+
 // Uploader confirms uploaded files.
 type Uploader interface {
 	Confirm(ctx context.Context, fileID string) error
@@ -31,13 +40,13 @@ type LikeToggler interface {
 
 type Service struct {
 	logger      *slog.Logger
-	repo        *Repository
+	repo        RecipeRepository
 	uploader    Uploader
 	likeChecker LikeChecker
 	likeToggler LikeToggler
 }
 
-func NewService(repo *Repository, uploader Uploader, likeChecker LikeChecker, likeToggler LikeToggler) *Service {
+func NewService(repo RecipeRepository, uploader Uploader, likeChecker LikeChecker, likeToggler LikeToggler) *Service {
 	return &Service{
 		logger:      slog.Default(),
 		repo:        repo,

@@ -23,6 +23,11 @@ type SignInResult struct {
 	RefreshToken string
 }
 
+type RevokedTokenStore interface {
+	IsRevoked(ctx context.Context, token string) (bool, error)
+	Add(ctx context.Context, token string) error
+}
+
 // UserService is the subset of users.Service that auth needs.
 type UserService interface {
 	Register(ctx context.Context, input users.RegisterInput) (users.User, error)
@@ -34,14 +39,14 @@ type Service struct {
 	logger        *slog.Logger
 	policy        PasswordPolicy
 	users         UserService
-	revokedTokens *RevokedTokenRepository
+	revokedTokens RevokedTokenStore
 	firebaseAuth  *firebaseAuth.Client
 	signer        FirebasePasswordSigner
 }
 
 func NewService(
 	users UserService,
-	revokedTokens *RevokedTokenRepository,
+	revokedTokens RevokedTokenStore,
 	firebaseAuth *firebaseAuth.Client,
 	passwordSigner FirebasePasswordSigner,
 	policy PasswordPolicy,
