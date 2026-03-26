@@ -26,6 +26,7 @@ type SignInResult struct {
 
 type Service struct {
 	logger        *slog.Logger
+	policy        PasswordPolicy
 	users         *users.Service
 	revokedTokens *RevokedTokenRepository
 	uploader      *uploads.Service
@@ -39,9 +40,11 @@ func NewService(
 	uploader *uploads.Service,
 	firebaseAuth *firebaseAuth.Client,
 	passwordSigner FirebasePasswordSigner,
+	policy PasswordPolicy,
 ) *Service {
 	return &Service{
 		logger:        slog.Default(),
+		policy:        policy,
 		users:         users,
 		revokedTokens: revokedTokens,
 		uploader:      uploader,
@@ -54,7 +57,7 @@ func (s *Service) Register(ctx context.Context, req models.RegisterRequest) (mod
 	if err := validateRegisterRequest(req); err != nil {
 		return models.AuthResponse{}, err
 	}
-	password, err := users.NewPassword(req.Password)
+	password, err := NewPassword(req.Password, s.policy)
 	if err != nil {
 		return models.AuthResponse{}, err
 	}
@@ -160,7 +163,7 @@ func (s *Service) Refresh(ctx context.Context, token string) (models.TokensRespo
 }
 
 func (s *Service) ChangePassword(ctx context.Context, userID string, req models.ChangePasswordRequest) error {
-	newPassword, err := users.NewPassword(strings.TrimSpace(req.NewPassword))
+	newPassword, err := NewPassword(strings.TrimSpace(req.NewPassword), s.policy)
 	if err != nil {
 		return err
 	}

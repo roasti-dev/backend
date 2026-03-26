@@ -83,6 +83,11 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 		slog.String("token_base_url", cfg.FirebaseTokenBaseURL),
 	)
 
+	passwordPolicy, err := fetchPasswordPolicy(ctx, cfg, logger)
+	if err != nil {
+		return nil, fmt.Errorf("fetch password policy: %w", err)
+	}
+
 	runner := db.NewRunner(database, slog.Default(), cfg.Debug)
 
 	uploadRepo := uploads.NewRepository(database)
@@ -102,7 +107,7 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 	passwordSigner := auth.NewFirebasePasswordSigner(
 		cfg.FirebaseAPIKey, cfg.FirebaseIdentityBaseURL, cfg.FirebaseTokenBaseURL,
 	)
-	authService := auth.NewService(userService, revokedTokenRepo, uploader, firebaseAuth, passwordSigner)
+	authService := auth.NewService(userService, revokedTokenRepo, uploader, firebaseAuth, passwordSigner, passwordPolicy)
 
 	swagger, err := handlers.GetSwagger()
 	if err != nil {
@@ -231,6 +236,31 @@ func startRevokedTokenCleanup(ctx context.Context, repo *auth.RevokedTokenReposi
 			}
 		}
 	}()
+}
+
+func fetchPasswordPolicy(ctx context.Context, cfg Config, logger *slog.Logger) (auth.PasswordPolicy, error) {
+	var credJSON []byte
+	if cfg.FirebaseCredentialsJSONBase64 != "" {
+		decoded, err := base64.StdEncoding.DecodeString(cfg.FirebaseCredentialsJSONBase64)
+		if err != nil {
+			return auth.PasswordPolicy{}, fmt.Errorf("decode firebase credentials: %w", err)
+		}
+		credJSON = decoded
+	}
+
+	policy, err := auth.GetPasswordPolicy(ctx, cfg.FirebaseProjectID, credJSON)
+	if err != nil {
+		logger.WarnContext(ctx, "failed to fetch firebase password policy, using defaults", log.Err(err))
+		return auth.DefaultPasswordPolicy, nil
+	}
+
+	logger.InfoContext(ctx, "firebase password policy loaded",
+		slog.Int("min_length", policy.MinLength),
+		slog.Int("max_length", policy.MaxLength),
+		slog.Bool("require_uppercase", policy.RequireUppercase),
+		slog.Bool("require_numeric", policy.RequireNumeric),
+	)
+	return policy, nil
 }
 
 func startTmpCleanup(ctx context.Context, svc *uploads.Service) {
