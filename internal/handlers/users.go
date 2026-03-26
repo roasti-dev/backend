@@ -48,7 +48,7 @@ func (s *ServerHandler) CheckUsernameAvailability(ctx context.Context, request C
 
 func (s *ServerHandler) ListUserLikes(ctx context.Context, request ListUserLikesRequestObject) (ListUserLikesResponseObject, error) {
 	currentUserID := requestctx.GetUserID(ctx)
-	liked, err := s.likedRecipesFetcher.ListLikedRecipes(ctx, currentUserID, request.UserId, models.ListUserLikesParams{
+	liked, err := s.userLibrary.ListLikedRecipes(ctx, currentUserID, request.UserId, models.ListUserLikesParams{
 		Type:          request.Params.Type,
 		Limit:         request.Params.Limit,
 		Page:          request.Params.Page,

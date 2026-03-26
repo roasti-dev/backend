@@ -18,19 +18,19 @@ type Config struct {
 	SecureCookies bool
 }
 
-// LikedRecipesFetcher returns a paginated list of recipes liked by a user.
-type LikedRecipesFetcher interface {
+// UserLibrary provides access to a user's saved/liked content.
+type UserLibrary interface {
 	ListLikedRecipes(ctx context.Context, currentUserID, targetUserID string, params models.ListUserLikesParams) (models.GenericPage[models.LikedRecipe], error)
 }
 
 type ServerHandler struct {
-	logger              *slog.Logger
-	cfg                 Config
-	authService         *auth.Service
-	uploadService       *uploads.Service
-	userService         *users.Service
-	recipeService       *recipes.Service
-	likedRecipesFetcher LikedRecipesFetcher
+	logger        *slog.Logger
+	cfg           Config
+	authService   *auth.Service
+	uploadService *uploads.Service
+	userService   *users.Service
+	recipeService *recipes.Service
+	userLibrary   UserLibrary
 }
 
 func NewServerHandler(
@@ -38,16 +38,16 @@ func NewServerHandler(
 	authService *auth.Service,
 	userService *users.Service,
 	uploader *uploads.Service,
-	likedRecipesFetcher LikedRecipesFetcher,
+	userLibrary UserLibrary,
 	cfg Config,
 ) *ServerHandler {
 	return &ServerHandler{
-		logger:              slog.Default(),
-		cfg:                 cfg,
-		recipeService:       recipeService,
-		authService:         authService,
-		userService:         userService,
-		uploadService:       uploader,
-		likedRecipesFetcher: likedRecipesFetcher,
+		logger:        slog.Default(),
+		cfg:           cfg,
+		recipeService: recipeService,
+		authService:   authService,
+		userService:   userService,
+		uploadService: uploader,
+		userLibrary:   userLibrary,
 	}
 }
