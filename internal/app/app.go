@@ -36,6 +36,7 @@ type Config struct {
 	DBPath                        string
 	UploadsPath                   string
 	AppVersion                    string
+	AllowedOrigins                []string
 	FirebaseProjectID             string
 	FirebaseCredentialsJSONBase64 string
 	FirebaseAPIKey                string
@@ -153,7 +154,7 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 	})
 
 	return &App{
-		handler: corsMiddleware(nil)(finalHandler),
+		handler: corsMiddleware(cfg.AllowedOrigins)(finalHandler),
 	}, nil
 }
 

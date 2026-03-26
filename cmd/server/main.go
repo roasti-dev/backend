@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -65,11 +66,21 @@ func run() error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	var allowedOrigins []string
+	if raw := os.Getenv("ALLOWED_ORIGINS"); raw != "" {
+		for o := range strings.SplitSeq(raw, ",") {
+			if o = strings.TrimSpace(o); o != "" {
+				allowedOrigins = append(allowedOrigins, o)
+			}
+		}
+	}
+
 	a, err := app.New(ctx, app.Config{
 		Debug:                         debug,
 		DBPath:                        getEnvOrDefault("DATABASE_PATH", "data.db"),
 		UploadsPath:                   getEnvOrDefault("UPLOADS_PATH", "./uploads"),
 		AppVersion:                    appVersion,
+		AllowedOrigins:                allowedOrigins,
 		FirebaseProjectID:             os.Getenv("FIREBASE_PROJECT_ID"),
 		FirebaseAPIKey:                os.Getenv("FIREBASE_API_KEY"),
 		FirebaseCredentialsJSONBase64: os.Getenv("FIREBASE_CREDENTIALS_JSON_BASE64"),
