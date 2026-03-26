@@ -132,6 +132,7 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 
 	apiHandler := middleware.Chain(
 		router,
+		middleware.RateLimit,
 		oapimiddleware.OapiRequestValidatorWithOptions(swagger, &oapimiddleware.Options{
 			Options: openapi3filter.Options{
 				AuthenticationFunc: middleware.Authenticate(firebaseAuth),
