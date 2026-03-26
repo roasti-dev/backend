@@ -4,7 +4,6 @@ import (
 	"log/slog"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/auth"
-	"github.com/nikpivkin/roasti-app-backend/internal/likes"
 	"github.com/nikpivkin/roasti-app-backend/internal/recipes"
 	"github.com/nikpivkin/roasti-app-backend/internal/uploads"
 	"github.com/nikpivkin/roasti-app-backend/internal/users"
@@ -24,7 +23,6 @@ type ServerHandler struct {
 	uploadService *uploads.Service
 	userService   *users.Service
 	recipeService *recipes.Service
-	likeService   *likes.Service
 }
 
 func NewServerHandler(
@@ -32,7 +30,6 @@ func NewServerHandler(
 	authService *auth.Service,
 	userService *users.Service,
 	uploader *uploads.Service,
-	likeService *likes.Service,
 	cfg Config,
 ) *ServerHandler {
 	return &ServerHandler{
@@ -42,6 +39,5 @@ func NewServerHandler(
 		authService:   authService,
 		userService:   userService,
 		uploadService: uploader,
-		likeService:   likeService,
 	}
 }

@@ -60,7 +60,7 @@ HTTP request
 
 **Domain packages** (`internal/recipes/`, `internal/likes/`, `internal/users/`, `internal/uploads/`): each has a service + repository pair. The repository layer uses squirrel for query building against SQLite.
 
-**Database schemas** (`internal/db/schemas`): SQL DDL statements in the project are stored as elements of a slice in a Go file and executed at application startup. Each statement must be idempotent, meaning that running it multiple times should not change the database state or cause errors.
+**Database schemas** (`internal/db/schema.go`): SQL DDL statements in the project are stored as elements of a slice in a Go file and executed at application startup. Each statement must be idempotent, meaning that running it multiple times should not change the database state or cause errors.
 
 ## Key Environment Variables
 
@@ -75,6 +75,9 @@ HTTP request
 | `FIREBASE_API_KEY` | — | Required |
 | `FIREBASE_CREDENTIALS_JSON_BASE64` | — | Base64-encoded service account JSON |
 | `FIREBASE_AUTH_EMULATOR_HOST` | — | Set to `127.0.0.1:9099` for local emulator |
+| `ALLOWED_ORIGINS` | — | Comma-separated list of allowed CORS origins |
+
+`SecureCookies` is automatically enabled when `APP_ENV=production`. Rate limiting is automatically disabled when `DEBUG` is set.
 
 Copy `.env.example` to `.env` for local development.
 

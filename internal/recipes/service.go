@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
+	"github.com/nikpivkin/roasti-app-backend/internal/likes"
 	"github.com/nikpivkin/roasti-app-backend/internal/uploads"
 	"github.com/nikpivkin/roasti-app-backend/internal/x/id"
 )
@@ -20,19 +21,25 @@ type LikeChecker interface {
 	CountByTargets(ctx context.Context, targetIDs []string, targetType models.LikeTargetType) (map[string]int, error)
 }
 
+type LikeToggler interface {
+	Toggle(ctx context.Context, userID, targetID string, targetType models.LikeTargetType) (likes.ToggleResult, error)
+}
+
 type Service struct {
 	logger      *slog.Logger
 	repo        *Repository
 	uploader    *uploads.Service
 	likeChecker LikeChecker
+	likeToggler LikeToggler
 }
 
-func NewService(repo *Repository, uploader *uploads.Service, likeChecker LikeChecker) *Service {
+func NewService(repo *Repository, uploader *uploads.Service, likeChecker LikeChecker, likeToggler LikeToggler) *Service {
 	return &Service{
 		logger:      slog.Default(),
 		repo:        repo,
 		uploader:    uploader,
 		likeChecker: likeChecker,
+		likeToggler: likeToggler,
 	}
 }
 
@@ -230,6 +237,13 @@ func (s *Service) CloneRecipe(ctx context.Context, userID, recipeID string) (mod
 	}
 
 	return s.repo.GetRecipeByID(ctx, clone.Id)
+}
+
+func (s *Service) ToggleLike(ctx context.Context, userID, recipeID string) (likes.ToggleResult, error) {
+	if _, err := s.GetRecipeByID(ctx, userID, recipeID); err != nil {
+		return likes.ToggleResult{}, err
+	}
+	return s.likeToggler.Toggle(ctx, userID, recipeID, models.LikeTargetTypeRecipe)
 }
 
 func (s *Service) DeleteRecipe(ctx context.Context, userID, recipeID string) error {

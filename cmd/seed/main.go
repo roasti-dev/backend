@@ -53,7 +53,7 @@ func realMain() error {
 	recipeRepo := recipes.NewRepository(database, db.NewRunner(database, slog.Default(), false))
 	likeRepo := likes.NewRepository(database)
 	likeService := likes.NewService(likeRepo)
-	recipeService := recipes.NewService(recipeRepo, uploader, likeService)
+	recipeService := recipes.NewService(recipeRepo, uploader, likeService, likeService)
 
 	switch *entityType {
 	case "recipes":

@@ -85,7 +85,7 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 	recipeRepo := recipes.NewRepository(database, runner)
 	likeRepo := likes.NewRepository(database)
 	likeService := likes.NewService(likeRepo)
-	recipeService := recipes.NewService(recipeRepo, uploader, likeService)
+	recipeService := recipes.NewService(recipeRepo, uploader, likeService, likeService)
 	userRepo := users.NewUserRepository(database)
 	userService := users.NewUserService(userRepo, &firebaseIdentityCreator{firebaseAuth}, uploader, recipeService, likeRepo)
 
@@ -104,7 +104,7 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 
 	strictHandler := handlers.NewServerHandler(
 		recipeService, authService,
-		userService, uploader, likeService,
+		userService, uploader,
 		handlers.Config{
 			SecureCookies: cfg.SecureCookies,
 		},
