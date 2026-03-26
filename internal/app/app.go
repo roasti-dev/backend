@@ -12,6 +12,7 @@ import (
 	"time"
 
 	firebase "firebase.google.com/go/v4"
+	firebaseAdminAuth "firebase.google.com/go/v4/auth"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	oapimiddleware "github.com/oapi-codegen/nethttp-middleware"
@@ -86,7 +87,7 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 	likeService := likes.NewService(database, likeRepo, recipeRepo)
 	recipeService := recipes.NewService(recipeRepo, uploader, likeService)
 	userRepo := users.NewUserRepository(database)
-	userService := users.NewUserService(userRepo, recipeService, likeRepo)
+	userService := users.NewUserService(userRepo, &firebaseIdentityCreator{firebaseAuth}, uploader, recipeService, likeRepo)
 
 	revokedTokenRepo := auth.NewRevokedTokenRepository(database)
 	startRevokedTokenCleanup(ctx, revokedTokenRepo)
@@ -94,7 +95,7 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 	passwordSigner := auth.NewFirebasePasswordSigner(
 		cfg.FirebaseAPIKey, cfg.FirebaseIdentityBaseURL, cfg.FirebaseTokenBaseURL,
 	)
-	authService := auth.NewService(userService, revokedTokenRepo, uploader, firebaseAuth, passwordSigner, passwordPolicy)
+	authService := auth.NewService(userService, revokedTokenRepo, firebaseAuth, passwordSigner, passwordPolicy)
 
 	swagger, err := handlers.GetSwagger()
 	if err != nil {
@@ -199,6 +200,23 @@ func corsMiddleware(allowedOrigins []string) func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+// firebaseIdentityCreator adapts the Firebase Admin SDK to users.IdentityCreator.
+type firebaseIdentityCreator struct {
+	client *firebaseAdminAuth.Client
+}
+
+func (f *firebaseIdentityCreator) CreateIdentity(ctx context.Context, email, password string) (string, error) {
+	params := new(firebaseAdminAuth.UserToCreate).Email(email).Password(password)
+	user, err := f.client.CreateUser(ctx, params)
+	if err != nil {
+		if firebaseAdminAuth.IsEmailAlreadyExists(err) {
+			return "", users.ErrEmailTaken
+		}
+		return "", fmt.Errorf("create firebase user: %w", err)
+	}
+	return user.UID, nil
 }
 
 func startRevokedTokenCleanup(ctx context.Context, repo *auth.RevokedTokenRepository) {

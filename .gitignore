@@ -12,3 +12,5 @@ uploads/tmp
 
 .env*
 !.env.example
+
+.ogrep/

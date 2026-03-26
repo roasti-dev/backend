@@ -10,7 +10,6 @@ import (
 	firebaseAuth "firebase.google.com/go/v4/auth"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
-	"github.com/nikpivkin/roasti-app-backend/internal/uploads"
 	"github.com/nikpivkin/roasti-app-backend/internal/users"
 )
 
@@ -24,20 +23,25 @@ type SignInResult struct {
 	RefreshToken string
 }
 
+// UserService is the subset of users.Service that auth needs.
+type UserService interface {
+	Register(ctx context.Context, input users.RegisterInput) (users.User, error)
+	FindByUsername(ctx context.Context, username string) (users.User, error)
+	FindByID(ctx context.Context, userID string) (users.User, error)
+}
+
 type Service struct {
 	logger        *slog.Logger
 	policy        PasswordPolicy
-	users         *users.Service
+	users         UserService
 	revokedTokens *RevokedTokenRepository
-	uploader      *uploads.Service
 	firebaseAuth  *firebaseAuth.Client
 	signer        FirebasePasswordSigner
 }
 
 func NewService(
-	users *users.Service,
+	users UserService,
 	revokedTokens *RevokedTokenRepository,
-	uploader *uploads.Service,
 	firebaseAuth *firebaseAuth.Client,
 	passwordSigner FirebasePasswordSigner,
 	policy PasswordPolicy,
@@ -47,7 +51,6 @@ func NewService(
 		policy:        policy,
 		users:         users,
 		revokedTokens: revokedTokens,
-		uploader:      uploader,
 		firebaseAuth:  firebaseAuth,
 		signer:        passwordSigner,
 	}
@@ -57,53 +60,22 @@ func (s *Service) Register(ctx context.Context, req models.RegisterRequest) (mod
 	if err := validateRegisterRequest(req); err != nil {
 		return models.AuthResponse{}, err
 	}
+
 	password, err := NewPassword(req.Password, s.policy)
 	if err != nil {
 		return models.AuthResponse{}, err
 	}
 
-	username, err := users.NewUsername(req.Username)
-	if err != nil {
-		return models.AuthResponse{}, err
-	}
-
-	exists, err := s.users.ExistsByUsername(ctx, username.Value())
-	if err != nil {
-		return models.AuthResponse{}, fmt.Errorf("check username: %w", err)
-	}
-	if exists {
-		return models.AuthResponse{}, ErrUsernameTaken
-	}
-
-	exists, err = s.users.ExistsByEmail(ctx, string(req.Email))
-	if err != nil {
-		return models.AuthResponse{}, fmt.Errorf("check email: %w", err)
-	}
-	if exists {
-		return models.AuthResponse{}, ErrEmailTaken
-	}
-
-	userToCreate := new(firebaseAuth.UserToCreate).Email(string(req.Email)).Password(password.Value())
-	firebaseUser, err := s.firebaseAuth.CreateUser(ctx, userToCreate)
-	if err != nil {
-		if firebaseAuth.IsEmailAlreadyExists(err) {
-			return models.AuthResponse{}, ErrEmailTaken
-		}
-		return models.AuthResponse{}, fmt.Errorf("create firebase user: %w", err)
-	}
-
-	created, err := s.users.Create(ctx, users.User{
-		ID:       firebaseUser.UID,
+	user, err := s.users.Register(ctx, users.RegisterInput{
 		Email:    string(req.Email),
-		Username: username.Value(),
+		Username: req.Username,
+		Password: password.Value(),
 		AvatarID: req.AvatarId,
 		Bio:      req.Bio,
 	})
 	if err != nil {
-		return models.AuthResponse{}, fmt.Errorf("create user: %w", err)
+		return models.AuthResponse{}, err
 	}
-
-	s.confirmAvatar(ctx, created)
 
 	signIn, err := s.signer.SignInWithPassword(ctx, string(req.Email), req.Password)
 	if err != nil {
@@ -113,7 +85,7 @@ func (s *Service) Register(ctx context.Context, req models.RegisterRequest) (mod
 	return models.AuthResponse{
 		AccessToken:  signIn.IDToken,
 		RefreshToken: signIn.RefreshToken,
-		User:         created,
+		User:         user.ToAccount(),
 	}, nil
 }
 
@@ -122,7 +94,7 @@ func (s *Service) Login(ctx context.Context, req models.LoginRequest) (models.Au
 		return models.AuthResponse{}, err
 	}
 
-	user, err := s.users.GetByUsername(ctx, req.Username)
+	user, err := s.users.FindByUsername(ctx, req.Username)
 	if err != nil {
 		if errors.Is(err, users.ErrNotFound) {
 			return models.AuthResponse{}, ErrInvalidCredentials
@@ -130,7 +102,7 @@ func (s *Service) Login(ctx context.Context, req models.LoginRequest) (models.Au
 		return models.AuthResponse{}, fmt.Errorf("get user by username: %w", err)
 	}
 
-	signIn, err := s.signer.SignInWithPassword(ctx, string(user.Email), req.Password)
+	signIn, err := s.signer.SignInWithPassword(ctx, user.Email, req.Password)
 	if err != nil {
 		return models.AuthResponse{}, fmt.Errorf("sign in: %w", err)
 	}
@@ -138,7 +110,7 @@ func (s *Service) Login(ctx context.Context, req models.LoginRequest) (models.Au
 	return models.AuthResponse{
 		AccessToken:  signIn.IDToken,
 		RefreshToken: signIn.RefreshToken,
-		User:         user,
+		User:         user.ToAccount(),
 	}, nil
 }
 
@@ -168,12 +140,12 @@ func (s *Service) ChangePassword(ctx context.Context, userID string, req models.
 		return err
 	}
 
-	user, err := s.users.CurrentUser(ctx, userID)
+	user, err := s.users.FindByID(ctx, userID)
 	if err != nil {
 		return fmt.Errorf("get current user: %w", err)
 	}
 
-	if _, err := s.signer.SignInWithPassword(ctx, string(user.Email), req.CurrentPassword); err != nil {
+	if _, err := s.signer.SignInWithPassword(ctx, user.Email, req.CurrentPassword); err != nil {
 		if errors.Is(err, ErrInvalidCredentials) {
 			return ErrIncorrectPassword
 		}
@@ -195,22 +167,10 @@ func (s *Service) Logout(ctx context.Context, refreshToken string) error {
 	return nil
 }
 
-func (s *Service) confirmAvatar(ctx context.Context, user models.UserAccount) {
-	if user.AvatarId != nil {
-		if err := s.uploader.Confirm(ctx, *user.AvatarId); err != nil {
-			s.logger.WarnContext(ctx, "failed to confirm recipe image",
-				slog.String("user_id", user.Id),
-				slog.String("image_id", *user.AvatarId),
-			)
-		}
-	}
-}
-
 func validateRegisterRequest(req models.RegisterRequest) error {
 	if strings.TrimSpace(string(req.Email)) == "" {
 		return ErrInvalidEmail
 	}
-
 	return nil
 }
 

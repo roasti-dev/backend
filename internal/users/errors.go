@@ -9,6 +9,7 @@ import (
 
 var (
 	ErrNotFound              = apierr.NewApiError(http.StatusNotFound, "user not found")
+	ErrEmailTaken            = apierr.NewApiError(http.StatusConflict, "email already taken")
 	ErrUsernameTaken         = apierr.NewApiError(http.StatusConflict, "username already taken")
 	ErrUsernameTooShort      = apierr.NewApiError(http.StatusUnprocessableEntity, fmt.Sprintf("username must be at least %d characters", usernameMinLength))
 	ErrUsernameTooLong       = apierr.NewApiError(http.StatusUnprocessableEntity, fmt.Sprintf("username must be at most %d characters", usernameMaxLength))
