@@ -17,7 +17,7 @@ func (s *ServerHandler) RegisterUser(ctx context.Context, request RegisterUserRe
 	if err != nil {
 		return nil, err
 	}
-	return RegisterUser201WithCookieResponse{RegisterUser201JSONResponse(resp), s.secureCookies}, nil
+	return RegisterUser201WithCookieResponse{RegisterUser201JSONResponse(resp), s.cfg.SecureCookies}, nil
 }
 
 func (s *ServerHandler) LoginUser(ctx context.Context, request LoginUserRequestObject) (LoginUserResponseObject, error) {
@@ -25,7 +25,7 @@ func (s *ServerHandler) LoginUser(ctx context.Context, request LoginUserRequestO
 	if err != nil {
 		return nil, err
 	}
-	return LoginUser200WithCookieResponse{LoginUser200JSONResponse(resp), s.secureCookies}, nil
+	return LoginUser200WithCookieResponse{LoginUser200JSONResponse(resp), s.cfg.SecureCookies}, nil
 }
 
 func (s *ServerHandler) RefreshToken(ctx context.Context, request RefreshTokenRequestObject) (RefreshTokenResponseObject, error) {
@@ -43,7 +43,7 @@ func (s *ServerHandler) RefreshToken(ctx context.Context, request RefreshTokenRe
 	if err != nil {
 		return nil, err
 	}
-	return RefreshToken200WithCookieResponse{RefreshToken200JSONResponse(resp), s.secureCookies}, nil
+	return RefreshToken200WithCookieResponse{RefreshToken200JSONResponse(resp), s.cfg.SecureCookies}, nil
 }
 
 func (s *ServerHandler) ChangePassword(ctx context.Context, request ChangePasswordRequestObject) (ChangePasswordResponseObject, error) {

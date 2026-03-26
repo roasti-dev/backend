@@ -12,9 +12,14 @@ import (
 
 var _ StrictServerInterface = (*ServerHandler)(nil)
 
+// Config holds handler-level configuration.
+type Config struct {
+	SecureCookies bool
+}
+
 type ServerHandler struct {
 	logger        *slog.Logger
-	secureCookies bool
+	cfg           Config
 	authService   *auth.Service
 	uploadService *uploads.Service
 	userService   *users.Service
@@ -28,11 +33,11 @@ func NewServerHandler(
 	userService *users.Service,
 	uploader *uploads.Service,
 	likeService *likes.Service,
-	secureCookies bool,
+	cfg Config,
 ) *ServerHandler {
 	return &ServerHandler{
 		logger:        slog.Default(),
-		secureCookies: secureCookies,
+		cfg:           cfg,
 		recipeService: recipeService,
 		authService:   authService,
 		userService:   userService,

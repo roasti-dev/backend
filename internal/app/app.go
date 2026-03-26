@@ -102,7 +102,9 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 		return nil, err
 	}
 
-	strictHandler := handlers.NewServerHandler(recipeService, authService, userService, uploader, likeService, cfg.SecureCookies)
+	strictHandler := handlers.NewServerHandler(recipeService, authService, userService, uploader, likeService, handlers.Config{
+		SecureCookies: cfg.SecureCookies,
+	})
 	handler := handlers.NewStrictHandlerWithOptions(strictHandler, nil, handlers.StrictHTTPServerOptions{
 		ResponseErrorHandlerFunc: responseErrorHandler,
 	})
