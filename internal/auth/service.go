@@ -130,7 +130,7 @@ func (s *Service) Refresh(ctx context.Context, token string) (models.TokensRespo
 
 	signIn, err := s.signer.RefreshToken(ctx, token)
 	if err != nil {
-		return models.TokensResponse{}, err
+		return models.TokensResponse{}, fmt.Errorf("refresh token: %w", err)
 	}
 
 	return models.TokensResponse{
