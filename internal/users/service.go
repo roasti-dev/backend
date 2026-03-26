@@ -126,25 +126,6 @@ func (s *Service) GetPublicProfile(ctx context.Context, userID string) (models.U
 	return user.ToPublicProfile(), nil
 }
 
-func (s *Service) GetByUsername(ctx context.Context, username string) (models.UserAccount, error) {
-	user, err := s.repo.GetByUsername(ctx, username)
-	if err != nil {
-		return models.UserAccount{}, err
-	}
-	return user.ToAccount(), nil
-}
-
-func (s *Service) Create(ctx context.Context, user User) (models.UserAccount, error) {
-	if err := s.repo.Create(ctx, user); err != nil {
-		return models.UserAccount{}, err
-	}
-	created, err := s.repo.GetByUsername(ctx, user.Username)
-	if err != nil {
-		return models.UserAccount{}, fmt.Errorf("get user: %w", err)
-	}
-	return created.ToAccount(), nil
-}
-
 func (s *Service) ExistsByUsername(ctx context.Context, username string) (bool, error) {
 	return s.repo.ExistsByUsername(ctx, username)
 }
@@ -167,7 +148,4 @@ func (s *Service) UpdateProfile(ctx context.Context, userID string, req UpdateUs
 	return s.CurrentUser(ctx, userID)
 }
 
-func (s *Service) ExistsByEmail(ctx context.Context, email string) (bool, error) {
-	return s.repo.ExistsByEmail(ctx, email)
-}
 
