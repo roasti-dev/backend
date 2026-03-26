@@ -11,7 +11,6 @@ import (
 	"github.com/nikpivkin/roasti-app-backend/internal/db"
 	"github.com/nikpivkin/roasti-app-backend/internal/likes"
 	"github.com/nikpivkin/roasti-app-backend/internal/recipes"
-	"github.com/nikpivkin/roasti-app-backend/internal/seed"
 	"github.com/nikpivkin/roasti-app-backend/internal/uploads"
 )
 
@@ -57,7 +56,7 @@ func realMain() error {
 
 	switch *entityType {
 	case "recipes":
-		if err := seed.SeedRecipes(ctx, recipeService, *userID, *filePath); err != nil {
+		if err := seedRecipes(ctx, recipeService, *userID, *filePath); err != nil {
 			return fmt.Errorf("seed recipes: %w", err)
 		}
 	default:

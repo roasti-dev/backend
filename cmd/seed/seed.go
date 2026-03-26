@@ -1,4 +1,4 @@
-package seed
+package main
 
 import (
 	"bytes"
@@ -9,11 +9,9 @@ import (
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
 	"github.com/nikpivkin/roasti-app-backend/internal/recipes"
-
-	_ "embed"
 )
 
-func SeedRecipes(ctx context.Context, recipeService *recipes.Service, userID string, filePath string) error {
+func seedRecipes(ctx context.Context, recipeService *recipes.Service, userID string, filePath string) error {
 	recipes, err := recipeService.ListRecipes(ctx, userID, models.ListRecipesParams{
 		Page:  new(models.PageParam(1)),
 		Limit: new(models.LimitParam(1)),
