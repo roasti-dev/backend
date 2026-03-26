@@ -44,10 +44,10 @@ start:
 	APP_ENV=development DEBUG=true $(GO) run ./cmd/server
 
 setup-server:
-	ansible-playbook -i deploy/inventory.ini deploy/setup.yaml
+	ansible-playbook -i deploy/setup.ini deploy/setup.yaml
 
 deploy:
-	ansible-playbook -i deploy/inventory.ini deploy/deploy.yaml
+	ansible-playbook -i deploy/deploy.ini deploy/deploy.yaml
 
 lint:
 	golangci-lint run

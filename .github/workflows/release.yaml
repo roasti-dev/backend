@@ -83,8 +83,8 @@ jobs:
 
       - name: Write inventory
         run: |
-          echo "[all]" > deploy/inventory.ini
-          echo "${{ secrets.VPS_HOST }} ansible_user=roasti ansible_ssh_private_key_file=~/.ssh/id_rsa" >> deploy/inventory.ini
+          echo "[all]" > deploy/deploy.ini
+          echo "${{ secrets.VPS_HOST }} ansible_user=roasti ansible_ssh_private_key_file=~/.ssh/id_rsa" >> deploy/deploy.ini
 
       - name: Deploy
         run: make deploy

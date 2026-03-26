@@ -1,5 +1,5 @@
 - name: Setup
-  hosts: vps
+  hosts: all
   become: yes
   vars:
     app_user: roasti
