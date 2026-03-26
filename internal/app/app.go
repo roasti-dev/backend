@@ -9,7 +9,6 @@ import (
 	"log/slog"
 	"net/http"
 	"slices"
-	"strings"
 	"time"
 
 	firebase "firebase.google.com/go/v4"
@@ -102,9 +101,13 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 		return nil, err
 	}
 
-	strictHandler := handlers.NewServerHandler(recipeService, authService, userService, uploader, likeService, handlers.Config{
-		SecureCookies: cfg.SecureCookies,
-	})
+	strictHandler := handlers.NewServerHandler(
+		recipeService, authService,
+		userService, uploader, likeService,
+		handlers.Config{
+			SecureCookies: cfg.SecureCookies,
+		},
+	)
 	handler := handlers.NewStrictHandlerWithOptions(strictHandler, nil, handlers.StrictHTTPServerOptions{
 		ResponseErrorHandlerFunc: responseErrorHandler,
 	})
@@ -116,35 +119,25 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 
 	handlers.HandlerWithOptions(handler, handlers.StdHTTPServerOptions{
 		BaseRouter: router,
-	})
-
-	apiHandler := middleware.Chain(
-		router,
-		middleware.RateLimitWithConfig(cfg.RateLimit),
-		oapimiddleware.OapiRequestValidatorWithOptions(swagger, &oapimiddleware.Options{
-			Options: openapi3filter.Options{
-				AuthenticationFunc: middleware.Authenticate(firebaseAuth),
-			},
-		}),
-		middleware.ApplyForRoutes(
-			middleware.RefreshToken,
-			"/api/v1/auth/refresh",
-			"/api/v1/auth/logout",
-		),
-		middleware.RequestLogging(logger),
-		middleware.RequestID,
-	)
-
-	finalHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasPrefix(r.URL.Path, "/api/") {
-			apiHandler.ServeHTTP(w, r)
-		} else {
-			router.ServeHTTP(w, r)
-		}
+		Middlewares: []handlers.MiddlewareFunc{
+			oapimiddleware.OapiRequestValidatorWithOptions(swagger, &oapimiddleware.Options{
+				Options: openapi3filter.Options{
+					AuthenticationFunc: middleware.Authenticate(firebaseAuth),
+				},
+			}),
+			middleware.ApplyForRoutes(
+				middleware.RefreshToken,
+				"/api/v1/auth/refresh",
+				"/api/v1/auth/logout",
+			),
+			middleware.RateLimitWithConfig(cfg.RateLimit),
+			middleware.RequestLogging(logger),
+			middleware.RequestID,
+		},
 	})
 
 	return &App{
-		handler: corsMiddleware(cfg.AllowedOrigins)(finalHandler),
+		handler: corsMiddleware(cfg.AllowedOrigins)(router),
 	}, nil
 }
 
