@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"regexp"
 	"strings"
 
 	firebaseAuth "firebase.google.com/go/v4/auth"
@@ -14,15 +13,6 @@ import (
 	"github.com/nikpivkin/roasti-app-backend/internal/uploads"
 	"github.com/nikpivkin/roasti-app-backend/internal/users"
 )
-
-const (
-	minPasswordLen = 8
-	maxPasswordLen = 32
-	minUsernameLen = 6
-	maxUsernameLen = 16
-)
-
-var usernameRegex = regexp.MustCompile(`^[a-zA-Z0-9_]+$`)
 
 type FirebasePasswordSigner interface {
 	SignInWithPassword(ctx context.Context, email, password string) (SignInResult, error)
@@ -64,8 +54,17 @@ func (s *Service) Register(ctx context.Context, req models.RegisterRequest) (mod
 	if err := validateRegisterRequest(req); err != nil {
 		return models.AuthResponse{}, err
 	}
+	password, err := users.NewPassword(req.Password)
+	if err != nil {
+		return models.AuthResponse{}, err
+	}
 
-	exists, err := s.users.ExistsByUsername(ctx, req.Username)
+	username, err := users.NewUsername(req.Username)
+	if err != nil {
+		return models.AuthResponse{}, err
+	}
+
+	exists, err := s.users.ExistsByUsername(ctx, username.Value())
 	if err != nil {
 		return models.AuthResponse{}, fmt.Errorf("check username: %w", err)
 	}
@@ -81,7 +80,7 @@ func (s *Service) Register(ctx context.Context, req models.RegisterRequest) (mod
 		return models.AuthResponse{}, ErrEmailTaken
 	}
 
-	userToCreate := new(firebaseAuth.UserToCreate).Email(string(req.Email)).Password(req.Password)
+	userToCreate := new(firebaseAuth.UserToCreate).Email(string(req.Email)).Password(password.Value())
 	firebaseUser, err := s.firebaseAuth.CreateUser(ctx, userToCreate)
 	if err != nil {
 		if firebaseAuth.IsEmailAlreadyExists(err) {
@@ -93,7 +92,7 @@ func (s *Service) Register(ctx context.Context, req models.RegisterRequest) (mod
 	created, err := s.users.Create(ctx, users.User{
 		ID:       firebaseUser.UID,
 		Email:    string(req.Email),
-		Username: req.Username,
+		Username: username.Value(),
 		AvatarID: req.AvatarId,
 		Bio:      req.Bio,
 	})
@@ -161,12 +160,9 @@ func (s *Service) Refresh(ctx context.Context, token string) (models.TokensRespo
 }
 
 func (s *Service) ChangePassword(ctx context.Context, userID string, req models.ChangePasswordRequest) error {
-	newPassword := strings.TrimSpace(req.NewPassword)
-	if len(newPassword) < minPasswordLen {
-		return ErrPasswordTooShort
-	}
-	if len(newPassword) > maxPasswordLen {
-		return ErrPasswordTooLong
+	newPassword, err := users.NewPassword(strings.TrimSpace(req.NewPassword))
+	if err != nil {
+		return err
 	}
 
 	user, err := s.users.CurrentUser(ctx, userID)
@@ -181,7 +177,7 @@ func (s *Service) ChangePassword(ctx context.Context, userID string, req models.
 		return fmt.Errorf("verify current password: %w", err)
 	}
 
-	params := (&firebaseAuth.UserToUpdate{}).Password(newPassword)
+	params := (&firebaseAuth.UserToUpdate{}).Password(newPassword.Value())
 	if _, err := s.firebaseAuth.UpdateUser(ctx, userID, params); err != nil {
 		return fmt.Errorf("update firebase password: %w", err)
 	}
@@ -212,24 +208,6 @@ func validateRegisterRequest(req models.RegisterRequest) error {
 		return ErrInvalidEmail
 	}
 
-	password := strings.TrimSpace(req.Password)
-	if len(password) < minPasswordLen {
-		return ErrPasswordTooShort
-	}
-	if len(password) > maxPasswordLen {
-		return ErrPasswordTooLong
-	}
-
-	username := strings.TrimSpace(req.Username)
-	if len(username) < minUsernameLen {
-		return ErrUsernameTooShort
-	}
-	if len(username) > maxUsernameLen {
-		return ErrUsernameTooLong
-	}
-	if !usernameRegex.MatchString(username) {
-		return ErrInvalidUsernameFormat
-	}
 	return nil
 }
 
