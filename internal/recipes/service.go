@@ -10,9 +10,13 @@ import (
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
 	"github.com/nikpivkin/roasti-app-backend/internal/likes"
-	"github.com/nikpivkin/roasti-app-backend/internal/uploads"
 	"github.com/nikpivkin/roasti-app-backend/internal/x/id"
 )
+
+// Uploader confirms uploaded files.
+type Uploader interface {
+	Confirm(ctx context.Context, fileID string) error
+}
 
 type LikeChecker interface {
 	IsLiked(ctx context.Context, userID, targetID string, targetType models.LikeTargetType) (bool, error)
@@ -28,12 +32,12 @@ type LikeToggler interface {
 type Service struct {
 	logger      *slog.Logger
 	repo        *Repository
-	uploader    *uploads.Service
+	uploader    Uploader
 	likeChecker LikeChecker
 	likeToggler LikeToggler
 }
 
-func NewService(repo *Repository, uploader *uploads.Service, likeChecker LikeChecker, likeToggler LikeToggler) *Service {
+func NewService(repo *Repository, uploader Uploader, likeChecker LikeChecker, likeToggler LikeToggler) *Service {
 	return &Service{
 		logger:      slog.Default(),
 		repo:        repo,
