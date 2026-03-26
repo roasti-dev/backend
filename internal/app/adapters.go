@@ -29,13 +29,13 @@ func (f *firebaseIdentityCreator) CreateIdentity(ctx context.Context, email, pas
 	return user.UID, nil
 }
 
-type likedRecipesFetcher struct {
+type userLibrary struct {
 	users   users.UserStore
 	likes   *likes.Service
 	recipes *recipes.Service
 }
 
-func (f *likedRecipesFetcher) ListLikedRecipes(ctx context.Context, currentUserID, targetUserID string, params models.ListUserLikesParams) (models.GenericPage[models.LikedRecipe], error) {
+func (f *userLibrary) ListLikedRecipes(ctx context.Context, currentUserID, targetUserID string, params models.ListUserLikesParams) (models.GenericPage[models.LikedRecipe], error) {
 	if _, err := f.users.GetByID(ctx, targetUserID); err != nil {
 		return models.GenericPage[models.LikedRecipe]{}, err
 	}

@@ -104,7 +104,7 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 	strictHandler := handlers.NewServerHandler(
 		recipeService, authService,
 		userService, uploader,
-		&likedRecipesFetcher{users: userRepo, likes: likeService, recipes: recipeService},
+		&userLibrary{users: userRepo, likes: likeService, recipes: recipeService},
 		handlers.Config{
 			SecureCookies: cfg.SecureCookies,
 		},
