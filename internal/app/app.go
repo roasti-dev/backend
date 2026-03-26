@@ -19,13 +19,13 @@ import (
 
 	"github.com/nikpivkin/roasti-app-backend/docs"
 	"github.com/nikpivkin/roasti-app-backend/internal/api/apierr"
+	"github.com/nikpivkin/roasti-app-backend/internal/app/middleware"
 	"github.com/nikpivkin/roasti-app-backend/internal/auth"
 	"github.com/nikpivkin/roasti-app-backend/internal/db"
 	"github.com/nikpivkin/roasti-app-backend/internal/events"
 	"github.com/nikpivkin/roasti-app-backend/internal/handlers"
 	"github.com/nikpivkin/roasti-app-backend/internal/likes"
 	"github.com/nikpivkin/roasti-app-backend/internal/log"
-	"github.com/nikpivkin/roasti-app-backend/internal/middleware"
 	"github.com/nikpivkin/roasti-app-backend/internal/recipes"
 	"github.com/nikpivkin/roasti-app-backend/internal/uploads"
 	"github.com/nikpivkin/roasti-app-backend/internal/users"
@@ -205,7 +205,6 @@ func corsMiddleware(allowedOrigins []string) func(http.Handler) http.Handler {
 		})
 	}
 }
-
 
 func startRevokedTokenCleanup(ctx context.Context, repo *auth.RevokedTokenRepository) {
 	runPeriodic(ctx, "revoked-token-cleanup", 24*time.Hour, func(ctx context.Context) error {

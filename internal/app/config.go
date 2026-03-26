@@ -5,8 +5,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/nikpivkin/roasti-app-backend/internal/app/middleware"
 	"github.com/nikpivkin/roasti-app-backend/internal/log"
-	"github.com/nikpivkin/roasti-app-backend/internal/middleware"
 )
 
 type Config struct {
@@ -51,9 +51,9 @@ func ConfigFromEnv(appVersion string) Config {
 	return Config{
 		ServerPort:                    envOrDefault("SERVER_PORT", "9090"),
 		Env:                           appEnv,
-		Debug:         debug,
-		SecureCookies: appEnv == log.EnvProduction,
-		RateLimit:     rateLimitCfg,
+		Debug:                         debug,
+		SecureCookies:                 appEnv == log.EnvProduction,
+		RateLimit:                     rateLimitCfg,
 		DBPath:                        envOrDefault("DATABASE_PATH", "data.db"),
 		UploadsPath:                   envOrDefault("UPLOADS_PATH", "./uploads"),
 		AppVersion:                    appVersion,
