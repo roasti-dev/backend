@@ -31,22 +31,6 @@ import (
 	"github.com/nikpivkin/roasti-app-backend/internal/users"
 )
 
-type Config struct {
-	ServerPort                    string
-	Env                           log.Env
-	Debug                         bool
-	SecureCookies                 bool
-	DBPath                        string
-	UploadsPath                   string
-	AppVersion                    string
-	AllowedOrigins                []string
-	FirebaseProjectID             string
-	FirebaseCredentialsJSONBase64 string
-	FirebaseAPIKey                string
-	FirebaseIdentityBaseURL       string
-	FirebaseTokenBaseURL          string
-}
-
 type App struct {
 	handler http.Handler
 }
@@ -134,7 +118,7 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 
 	apiHandler := middleware.Chain(
 		router,
-		middleware.RateLimit,
+		middleware.RateLimitWithConfig(cfg.RateLimit),
 		oapimiddleware.OapiRequestValidatorWithOptions(swagger, &oapimiddleware.Options{
 			Options: openapi3filter.Options{
 				AuthenticationFunc: middleware.Authenticate(firebaseAuth),

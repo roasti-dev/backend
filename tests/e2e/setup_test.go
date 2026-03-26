@@ -22,6 +22,7 @@ func setupTestServer(t *testing.T) *httptest.Server {
 	t.Helper()
 
 	a, err := app.New(t.Context(), app.Config{
+		Debug:                   true,
 		DBPath:                  ":memory:",
 		UploadsPath:             t.TempDir(),
 		AppVersion:              "test",

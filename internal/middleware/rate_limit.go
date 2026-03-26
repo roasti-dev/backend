@@ -9,13 +9,27 @@ import (
 	"golang.org/x/time/rate"
 )
 
-const (
-	// 10 requests per second, burst of 30 — relaxed limits for a non-critical app.
-	rateLimitPerSecond = 10
-	rateLimitBurst     = 30
-	// Idle limiters are cleaned up after this duration.
-	rateLimitCleanupAfter = 5 * time.Minute
-)
+// RateLimitConfig configures the per-IP rate limiter.
+// Set Enabled=false to bypass rate limiting (e.g. in debug mode or tests).
+type RateLimitConfig struct {
+	Enabled bool
+	// RPS is the sustained request rate per IP (requests per second).
+	RPS rate.Limit
+	// Burst is the maximum burst size per IP.
+	Burst int
+	// CleanupAfter controls how long an idle IP entry is kept in memory.
+	CleanupAfter time.Duration
+}
+
+// DefaultRateLimitConfig returns a relaxed config suitable for non-critical apps.
+func DefaultRateLimitConfig() RateLimitConfig {
+	return RateLimitConfig{
+		Enabled:      true,
+		RPS:          10,
+		Burst:        30,
+		CleanupAfter: 5 * time.Minute,
+	}
+}
 
 type ipLimiter struct {
 	limiter  *rate.Limiter
@@ -23,12 +37,14 @@ type ipLimiter struct {
 }
 
 type rateLimiter struct {
+	cfg      RateLimitConfig
 	mu       sync.Mutex
 	limiters map[string]*ipLimiter
 }
 
-func newRateLimiter() *rateLimiter {
+func newRateLimiter(cfg RateLimitConfig) *rateLimiter {
 	rl := &rateLimiter{
+		cfg:      cfg,
 		limiters: make(map[string]*ipLimiter),
 	}
 	go rl.cleanup()
@@ -42,7 +58,7 @@ func (rl *rateLimiter) get(ip string) *rate.Limiter {
 	entry, ok := rl.limiters[ip]
 	if !ok {
 		entry = &ipLimiter{
-			limiter: rate.NewLimiter(rateLimitPerSecond, rateLimitBurst),
+			limiter: rate.NewLimiter(rl.cfg.RPS, rl.cfg.Burst),
 		}
 		rl.limiters[ip] = entry
 	}
@@ -51,12 +67,12 @@ func (rl *rateLimiter) get(ip string) *rate.Limiter {
 }
 
 func (rl *rateLimiter) cleanup() {
-	ticker := time.NewTicker(rateLimitCleanupAfter)
+	ticker := time.NewTicker(rl.cfg.CleanupAfter)
 	defer ticker.Stop()
 	for range ticker.C {
 		rl.mu.Lock()
 		for ip, entry := range rl.limiters {
-			if time.Since(entry.lastSeen) > rateLimitCleanupAfter {
+			if time.Since(entry.lastSeen) > rl.cfg.CleanupAfter {
 				delete(rl.limiters, ip)
 			}
 		}
@@ -64,18 +80,24 @@ func (rl *rateLimiter) cleanup() {
 	}
 }
 
-// RateLimit is a per-IP rate limiting middleware.
-func RateLimit(next http.Handler) http.Handler {
-	rl := newRateLimiter()
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ip, _, err := net.SplitHostPort(r.RemoteAddr)
-		if err != nil {
-			ip = r.RemoteAddr
-		}
-		if !rl.get(ip).Allow() {
-			http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
+// RateLimitWithConfig returns a per-IP rate limiting middleware configured by cfg.
+// If cfg.Enabled is false, the middleware is a no-op.
+func RateLimitWithConfig(cfg RateLimitConfig) func(http.Handler) http.Handler {
+	if !cfg.Enabled {
+		return func(next http.Handler) http.Handler { return next }
+	}
+	rl := newRateLimiter(cfg)
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ip, _, err := net.SplitHostPort(r.RemoteAddr)
+			if err != nil {
+				ip = r.RemoteAddr
+			}
+			if !rl.get(ip).Allow() {
+				http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
 }

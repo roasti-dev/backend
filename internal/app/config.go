@@ -6,7 +6,25 @@ import (
 	"strings"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/log"
+	"github.com/nikpivkin/roasti-app-backend/internal/middleware"
 )
+
+type Config struct {
+	ServerPort                    string
+	Env                           log.Env
+	Debug                         bool
+	SecureCookies                 bool
+	RateLimit                     middleware.RateLimitConfig
+	DBPath                        string
+	UploadsPath                   string
+	AppVersion                    string
+	AllowedOrigins                []string
+	FirebaseProjectID             string
+	FirebaseCredentialsJSONBase64 string
+	FirebaseAPIKey                string
+	FirebaseIdentityBaseURL       string
+	FirebaseTokenBaseURL          string
+}
 
 // ConfigFromEnv builds a Config by reading all relevant environment variables.
 func ConfigFromEnv(appVersion string) Config {
@@ -25,11 +43,17 @@ func ConfigFromEnv(appVersion string) Config {
 		}
 	}
 
+	debug := os.Getenv("DEBUG") != ""
+
+	rateLimitCfg := middleware.DefaultRateLimitConfig()
+	rateLimitCfg.Enabled = !debug
+
 	return Config{
 		ServerPort:                    envOrDefault("SERVER_PORT", "9090"),
 		Env:                           appEnv,
-		Debug:                         os.Getenv("DEBUG") != "",
-		SecureCookies:                 appEnv == log.EnvProduction,
+		Debug:         debug,
+		SecureCookies: appEnv == log.EnvProduction,
+		RateLimit:     rateLimitCfg,
 		DBPath:                        envOrDefault("DATABASE_PATH", "data.db"),
 		UploadsPath:                   envOrDefault("UPLOADS_PATH", "./uploads"),
 		AppVersion:                    appVersion,
