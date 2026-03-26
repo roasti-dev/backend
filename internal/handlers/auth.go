@@ -17,7 +17,7 @@ func (s *ServerHandler) RegisterUser(ctx context.Context, request RegisterUserRe
 	if err != nil {
 		return nil, err
 	}
-	return RegisterUser201WithCookieResponse{RegisterUser201JSONResponse(resp)}, nil
+	return RegisterUser201WithCookieResponse{RegisterUser201JSONResponse(resp), s.secureCookies}, nil
 }
 
 func (s *ServerHandler) LoginUser(ctx context.Context, request LoginUserRequestObject) (LoginUserResponseObject, error) {
@@ -25,7 +25,7 @@ func (s *ServerHandler) LoginUser(ctx context.Context, request LoginUserRequestO
 	if err != nil {
 		return nil, err
 	}
-	return LoginUser200WithCookieResponse{LoginUser200JSONResponse(resp)}, nil
+	return LoginUser200WithCookieResponse{LoginUser200JSONResponse(resp), s.secureCookies}, nil
 }
 
 func (s *ServerHandler) RefreshToken(ctx context.Context, request RefreshTokenRequestObject) (RefreshTokenResponseObject, error) {
@@ -43,7 +43,7 @@ func (s *ServerHandler) RefreshToken(ctx context.Context, request RefreshTokenRe
 	if err != nil {
 		return nil, err
 	}
-	return RefreshToken200WithCookieResponse{RefreshToken200JSONResponse(resp)}, nil
+	return RefreshToken200WithCookieResponse{RefreshToken200JSONResponse(resp), s.secureCookies}, nil
 }
 
 func (s *ServerHandler) ChangePassword(ctx context.Context, request ChangePasswordRequestObject) (ChangePasswordResponseObject, error) {
@@ -74,28 +74,31 @@ func (s *ServerHandler) LogoutUser(ctx context.Context, request LogoutUserReques
 
 type RegisterUser201WithCookieResponse struct {
 	RegisterUser201JSONResponse
+	secure bool
 }
 
 func (r RegisterUser201WithCookieResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
-	setAuthCookies(w, r.AccessToken, r.RefreshToken)
+	setAuthCookies(w, r.AccessToken, r.RefreshToken, r.secure)
 	return r.RegisterUser201JSONResponse.VisitRegisterUserResponse(w)
 }
 
 type LoginUser200WithCookieResponse struct {
 	LoginUser200JSONResponse
+	secure bool
 }
 
 func (r LoginUser200WithCookieResponse) VisitLoginUserResponse(w http.ResponseWriter) error {
-	setAuthCookies(w, r.AccessToken, r.RefreshToken)
+	setAuthCookies(w, r.AccessToken, r.RefreshToken, r.secure)
 	return r.LoginUser200JSONResponse.VisitLoginUserResponse(w)
 }
 
 type RefreshToken200WithCookieResponse struct {
 	RefreshToken200JSONResponse
+	secure bool
 }
 
 func (r RefreshToken200WithCookieResponse) VisitRefreshTokenResponse(w http.ResponseWriter) error {
-	setAuthCookies(w, r.AccessToken, r.RefreshToken)
+	setAuthCookies(w, r.AccessToken, r.RefreshToken, r.secure)
 	return r.RefreshToken200JSONResponse.VisitRefreshTokenResponse(w)
 }
 
@@ -108,12 +111,12 @@ func (r LogoutUser204WithCookieResponse) VisitLogoutUserResponse(w http.Response
 	return r.LogoutUser204Response.VisitLogoutUserResponse(w)
 }
 
-func setAuthCookies(w http.ResponseWriter, accessToken, refreshToken string) {
+func setAuthCookies(w http.ResponseWriter, accessToken, refreshToken string, secure bool) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     "access_token",
 		Value:    accessToken,
 		HttpOnly: true,
-		Secure:   false, // TODO: set true for production
+		Secure:   secure,
 		SameSite: http.SameSiteLaxMode,
 		Path:     "/",
 	})
@@ -121,7 +124,7 @@ func setAuthCookies(w http.ResponseWriter, accessToken, refreshToken string) {
 		Name:     "refresh_token",
 		Value:    refreshToken,
 		HttpOnly: true,
-		Secure:   false, // TODO: set true for production
+		Secure:   secure,
 		SameSite: http.SameSiteLaxMode,
 		Path:     "/api/v1/auth",
 	})

@@ -81,6 +81,7 @@ func run() error {
 		UploadsPath:                   getEnvOrDefault("UPLOADS_PATH", "./uploads"),
 		AppVersion:                    appVersion,
 		AllowedOrigins:                allowedOrigins,
+		SecureCookies:                 appEnv == log.EnvProduction,
 		FirebaseProjectID:             os.Getenv("FIREBASE_PROJECT_ID"),
 		FirebaseAPIKey:                os.Getenv("FIREBASE_API_KEY"),
 		FirebaseCredentialsJSONBase64: os.Getenv("FIREBASE_CREDENTIALS_JSON_BASE64"),

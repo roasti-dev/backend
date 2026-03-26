@@ -33,6 +33,7 @@ import (
 
 type Config struct {
 	Debug                         bool
+	SecureCookies                 bool
 	DBPath                        string
 	UploadsPath                   string
 	AppVersion                    string
@@ -115,7 +116,7 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 		return nil, err
 	}
 
-	strictHandler := handlers.NewServerHandler(recipeService, authService, userService, uploader, likeService)
+	strictHandler := handlers.NewServerHandler(recipeService, authService, userService, uploader, likeService, cfg.SecureCookies)
 	handler := handlers.NewStrictHandlerWithOptions(strictHandler, nil, handlers.StrictHTTPServerOptions{
 		ResponseErrorHandlerFunc: responseErrorHandler,
 	})
