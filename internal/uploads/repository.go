@@ -69,6 +69,30 @@ func (r *Repository) Confirm(ctx context.Context, id string) error {
 	return nil
 }
 
+func (r *Repository) Delete(ctx context.Context, id string) (string, error) {
+	var path string
+	err := r.psql.Select("path").
+		From(uploadsTable).
+		Where(sq.Eq{"id": id}).
+		QueryRowContext(ctx).
+		Scan(&path)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", ErrNotFound
+	}
+	if err != nil {
+		return "", fmt.Errorf("get upload path: %w", err)
+	}
+
+	_, err = r.psql.Delete(uploadsTable).
+		Where(sq.Eq{"id": id}).
+		ExecContext(ctx)
+	if err != nil {
+		return "", fmt.Errorf("delete upload: %w", err)
+	}
+
+	return path, nil
+}
+
 func (r *Repository) DeleteUnconfirmed(ctx context.Context, maxAge time.Duration) ([]string, error) {
 	cutoff := time.Now().UTC().Add(-maxAge)
 	rows, err := r.psql.Select("id", "path").

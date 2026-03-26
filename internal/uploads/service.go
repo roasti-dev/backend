@@ -28,6 +28,7 @@ type UploadStore interface {
 	Add(ctx context.Context, id, path, mimeType string) error
 	GetPath(ctx context.Context, id string) (string, error)
 	Confirm(ctx context.Context, id string) error
+	Delete(ctx context.Context, id string) (string, error)
 	DeleteUnconfirmed(ctx context.Context, maxAge time.Duration) ([]string, error)
 }
 
@@ -131,6 +132,20 @@ func (s *Service) Confirm(ctx context.Context, imageId string) error {
 		return ErrNotFound
 	}
 	return s.repo.Confirm(ctx, imageId)
+}
+
+func (s *Service) Delete(ctx context.Context, imageId string) error {
+	if !id.IsValidID(imageId) {
+		return ErrNotFound
+	}
+	path, err := s.repo.Delete(ctx, imageId)
+	if err != nil {
+		return err
+	}
+	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+		slog.WarnContext(ctx, "failed to remove upload file", slog.String("path", path), log.Err(err))
+	}
+	return nil
 }
 
 func (s *Service) DeleteUnconfirmed(ctx context.Context, maxAge time.Duration) error {

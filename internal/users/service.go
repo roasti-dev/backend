@@ -23,9 +23,10 @@ type IdentityCreator interface {
 	CreateIdentity(ctx context.Context, email, password string) (uid string, err error)
 }
 
-// Uploader confirms uploaded files.
+// Uploader manages uploaded files.
 type Uploader interface {
 	Confirm(ctx context.Context, fileID string) error
+	Delete(ctx context.Context, fileID string) error
 }
 
 // RegisterInput holds the data needed to create a new user.
@@ -141,6 +142,15 @@ func (s *Service) UpdateProfile(ctx context.Context, userID string, req UpdateUs
 		}
 	}
 
+	var oldAvatarID *string
+	if req.AvatarID != nil {
+		current, err := s.repo.GetByID(ctx, userID)
+		if err != nil {
+			return models.UserAccount{}, fmt.Errorf("get current user: %w", err)
+		}
+		oldAvatarID = current.AvatarID
+	}
+
 	if err := s.repo.Update(ctx, userID, req); err != nil {
 		return models.UserAccount{}, err
 	}
@@ -148,6 +158,11 @@ func (s *Service) UpdateProfile(ctx context.Context, userID string, req UpdateUs
 	if req.AvatarID != nil {
 		if err := s.uploader.Confirm(ctx, *req.AvatarID); err != nil {
 			slog.WarnContext(ctx, "failed to confirm avatar", slog.String("avatar_id", *req.AvatarID))
+		}
+		if oldAvatarID != nil {
+			if err := s.uploader.Delete(ctx, *oldAvatarID); err != nil {
+				slog.WarnContext(ctx, "failed to delete old avatar", slog.String("avatar_id", *oldAvatarID))
+			}
 		}
 	}
 
