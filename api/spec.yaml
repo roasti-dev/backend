@@ -28,6 +28,7 @@ paths:
       operationId: healthCheck
       tags:
         - public
+      security: []
       description: Returns the current health status of the service.
       responses:
         "200":

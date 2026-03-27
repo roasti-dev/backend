@@ -791,14 +791,6 @@ func (siw *ServerInterfaceWrapper) ListUserLikes(w http.ResponseWriter, r *http.
 // HealthCheck operation middleware
 func (siw *ServerInterfaceWrapper) HealthCheck(w http.ResponseWriter, r *http.Request) {
 
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
-
-	ctx = context.WithValue(ctx, AccessTokenCookieScopes, []string{})
-
-	r = r.WithContext(ctx)
-
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.HealthCheck(w, r)
 	}))
@@ -2418,10 +2410,10 @@ var swaggerSpec = []string{
 	"wgdNhG3S75WaW/NnUhiCzmvgggyezWLdcSAuCa/d9ARi4r2SSBDjkH9uOWfrGtVAI06blAdM9hCbThls",
 	"JC5yeN/VOjVyNrO52EM6R+zXo6zIEVVBZiTEX6vwX1nwg6l0H1kIrnBZUbXRSLyDxBDl3H1Ran8sfR8x",
 	"HDhqx2FjcCZ+gTT4ZuwfLQmHaknofpZ2Ul+Cle5Wd8KkUufrgZuZP6ZwiV0MbdS6Wp+2yiwroIW97rbX",
-	"q/iIx04hSlNdq+br3SDXLIucYv2Co9H97U+ENHzXs6qgrMNE+E7LCm+Offx1Slr68dcOXSwWJHNoeIrs",
-	"mua6zbbhVcBvl0a8I9cTbfetAzZQkC4pp0sowTXI5kxlYt1u32pk6HakvOJrWZLBmhaBUXOpbn920Ehq",
-	"+ZG27rsLjiBtA/oOy3bH3RDYsOfXhxk7GClhPCvq3H6r3xp6HGmdEpbMWlY5hj7Weu09aywZUvfFfsED",
-	"0W7MzHWUgH9xVxuNAFNNcoFq5qx2hxqBLbRSsb3c/l8AAAD//wKqKyMuZgAA",
+	"q/iIx04hSlNdq+br3SDXLIucYv2Co9H97U+ENHzXs6qgrMNE+E7LCm+Offx1Slr68ddRA2lxIplDytNn",
+	"10LXbb0NLwZ+uzTCHrmsaHtxHbCB8nRJOV1CCa5dNmcqE+t2M1cjUbcjxRZf2ZIM1rQITJxLfPuzg7ZS",
+	"y520dftdcARp29F3WLb774bAhh3APujYwUgJ41lR5/bL/dbs40jrorCA1rLRMfSx8mtvXWMBkbrv9wse",
+	"CHpjdK6jBPyLu+hoxJlqkgtUOmfDO9QILKOViu3l9v8CAAD//1Rkbao8ZgAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
