@@ -80,9 +80,9 @@ func (rl *rateLimiter) cleanup() {
 	}
 }
 
-// RateLimitWithConfig returns a per-IP rate limiting middleware configured by cfg.
+// RateLimit returns a per-IP rate limiting middleware.
 // If cfg.Enabled is false, the middleware is a no-op.
-func RateLimitWithConfig(cfg RateLimitConfig) func(http.Handler) http.Handler {
+func RateLimit(cfg RateLimitConfig) func(http.Handler) http.Handler {
 	if !cfg.Enabled {
 		return func(next http.Handler) http.Handler { return next }
 	}

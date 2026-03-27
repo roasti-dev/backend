@@ -135,7 +135,7 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 				"/api/v1/auth/refresh",
 				"/api/v1/auth/logout",
 			),
-			middleware.RateLimitWithConfig(cfg.RateLimit),
+			middleware.RateLimit(cfg.RateLimit),
 			middleware.RequestLogging(logger),
 			middleware.RequestID,
 		},

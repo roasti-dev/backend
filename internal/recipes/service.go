@@ -23,7 +23,7 @@ type RecipeRepository interface {
 	DeleteRecipe(ctx context.Context, userID, recipeID string) error
 }
 
-// Uploader confirms, copies, and deletes uploaded files.
+// Uploader manages uploaded files.
 type Uploader interface {
 	Confirm(ctx context.Context, fileID string) error
 	Copy(ctx context.Context, fileID string) (string, error)
