@@ -52,7 +52,7 @@ func (s *ServerHandler) ChangePassword(ctx context.Context, request ChangePasswo
 	if err != nil {
 		return nil, err
 	}
-	return ChangePassword200JSONResponse(tokens), nil
+	return ChangePassword200WithCookieResponse{ChangePassword200JSONResponse(tokens), s.cfg.SecureCookies}, nil
 }
 
 func (s *ServerHandler) LogoutUser(ctx context.Context, request LogoutUserRequestObject) (LogoutUserResponseObject, error) {
@@ -110,6 +110,16 @@ type LogoutUser204WithCookieResponse struct {
 func (r LogoutUser204WithCookieResponse) VisitLogoutUserResponse(w http.ResponseWriter) error {
 	clearAuthCookies(w)
 	return r.LogoutUser204Response.VisitLogoutUserResponse(w)
+}
+
+type ChangePassword200WithCookieResponse struct {
+	ChangePassword200JSONResponse
+	secure bool
+}
+
+func (r ChangePassword200WithCookieResponse) VisitChangePasswordResponse(w http.ResponseWriter) error {
+	setAuthCookies(w, r.AccessToken, r.RefreshToken, r.secure)
+	return r.ChangePassword200JSONResponse.VisitChangePasswordResponse(w)
 }
 
 func setAuthCookies(w http.ResponseWriter, accessToken, refreshToken string, secure bool) {
