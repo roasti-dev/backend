@@ -248,12 +248,12 @@ func (s *Service) CloneRecipe(ctx context.Context, userID, recipeID string) (mod
 		return models.Recipe{}, err
 	}
 
-	if !original.Public {
-		return models.Recipe{}, ErrNotFound
-	}
-
 	if original.AuthorId == userID {
 		return models.Recipe{}, ErrForbidden
+	}
+
+	if !original.Public {
+		return models.Recipe{}, ErrNotFound
 	}
 
 	clone := original.CloneFor(userID, id.NewID(), time.Now().UTC())
