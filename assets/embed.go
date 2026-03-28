@@ -1,4 +1,4 @@
-package docs
+package assets
 
 import _ "embed"
 

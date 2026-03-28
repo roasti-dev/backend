@@ -17,7 +17,7 @@ import (
 	oapimiddleware "github.com/oapi-codegen/nethttp-middleware"
 	"google.golang.org/api/option"
 
-	"github.com/nikpivkin/roasti-app-backend/docs"
+	"github.com/nikpivkin/roasti-app-backend/assets"
 	"github.com/nikpivkin/roasti-app-backend/internal/api/apierr"
 	"github.com/nikpivkin/roasti-app-backend/internal/app/middleware"
 	"github.com/nikpivkin/roasti-app-backend/internal/auth"
@@ -119,7 +119,7 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 
 	router := http.NewServeMux()
 	router.HandleFunc("/openapi.json", serveOpenAPIJSON(swagger))
-	router.Handle("/docs/", serveSwaggerStatic(docs.SwaggerHTML))
+	router.Handle("/docs/", serveSwaggerStatic(assets.SwaggerHTML))
 	router.Handle("/docs", http.RedirectHandler("/docs/", http.StatusMovedPermanently))
 
 	handlers.HandlerWithOptions(handler, handlers.StdHTTPServerOptions{

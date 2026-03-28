@@ -1,16 +1,25 @@
-app-*
+# Build output
+/app-*
 
+# Test coverage
 coverage.out
 
+# SQLite databases
 *.db
 
-uploads/images
-uploads/tmp
+# Uploaded files (runtime)
+/uploads/
 
+# Local config
 *.ini
 !*.example.ini
 
+# Environment variables
 .env*
 !.env.example
 
-.ogrep/
+# Editor / tools
+/.ogrep/
+
+# Generated API docs
+/docs/
