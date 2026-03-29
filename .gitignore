@@ -10,7 +10,7 @@ coverage.out
 # Uploaded files (runtime)
 /uploads/
 
-# Local config
+# Ansible inventories
 *.ini
 !*.example.ini
 

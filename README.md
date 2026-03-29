@@ -44,12 +44,16 @@ Copy the inventory file and fill in your server details:
 cp deploy/inventory.example.ini deploy/inventory.ini
 ```
 
-First time setup (creates user, directories, and systemd service):
+First time setup (installs nginx, ufw, creates user and directories):
 ```bash
 make setup-server
+```
+
+After setup, obtain SSL certificate manually (only once):
+```bash
+sudo certbot certonly --nginx -d api.roasti.ru
 ```
 
 Deploy a new version:
 ```bash
 make deploy
-```

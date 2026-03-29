@@ -6,6 +6,8 @@
     app_user: roasti
     app_dir: /var/lib/roasti
     app_bin: /usr/local/bin/roasti
+    app_port: 9091
+    domain_api: api.roasti.ru
 
   tasks:
     - name: Copy binary
@@ -32,15 +34,44 @@
         enabled: yes
         state: restarted
 
-    - name: Read SERVER_PORT from .env.production
-      shell: grep '^SERVER_PORT=' ../.env.production | cut -d'=' -f2
-      register: env_port
-      delegate_to: localhost
-      become: no
+    - name: Copy nginx config for API
+      copy:
+        dest: /etc/nginx/sites-available/{{ domain_api }}
+        content: |
+          server {
+              listen 80;
+              server_name {{ domain_api }};
+              return 301 https://$host$request_uri;
+          }
+
+          server {
+              listen 443 ssl;
+              server_name {{ domain_api }};
+
+              ssl_certificate /etc/letsencrypt/live/{{ domain_api }}/fullchain.pem;
+              ssl_certificate_key /etc/letsencrypt/live/{{ domain_api }}/privkey.pem;
+
+              location / {
+                  proxy_pass http://localhost:{{ app_port }};
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+              }
+          }
+
+    - name: Enable nginx site
+      file:
+        src: /etc/nginx/sites-available/{{ domain_api }}
+        dest: /etc/nginx/sites-enabled/{{ domain_api }}
+        state: link
+
+    - name: Reload nginx
+      systemd:
+        name: nginx
+        state: reloaded
 
     - name: Healthcheck
       uri:
-        url: "http://localhost:{{ env_port.stdout }}/health"
+        url: "http://localhost:{{ app_port }}/health"
         status_code: 200
       retries: 10
       delay: 2
