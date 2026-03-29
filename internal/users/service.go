@@ -143,7 +143,7 @@ func (s *Service) UpdateProfile(ctx context.Context, userID string, req UpdateUs
 	}
 
 	var oldAvatarID *string
-	if req.AvatarID != nil {
+	if req.AvatarID.IsSpecified() {
 		current, err := s.repo.GetByID(ctx, userID)
 		if err != nil {
 			return models.UserAccount{}, fmt.Errorf("get current user: %w", err)
@@ -155,9 +155,12 @@ func (s *Service) UpdateProfile(ctx context.Context, userID string, req UpdateUs
 		return models.UserAccount{}, err
 	}
 
-	if req.AvatarID != nil {
-		if err := s.uploader.Confirm(ctx, *req.AvatarID); err != nil {
-			slog.WarnContext(ctx, "failed to confirm avatar", slog.String("avatar_id", *req.AvatarID))
+	if req.AvatarID.IsSpecified() {
+		if !req.AvatarID.IsNull() {
+			newID := req.AvatarID.MustGet()
+			if err := s.uploader.Confirm(ctx, newID); err != nil {
+				slog.WarnContext(ctx, "failed to confirm avatar", slog.String("avatar_id", newID))
+			}
 		}
 		if oldAvatarID != nil {
 			if err := s.uploader.Delete(ctx, *oldAvatarID); err != nil {

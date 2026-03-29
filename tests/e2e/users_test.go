@@ -3,6 +3,7 @@ package e2e
 import (
 	"testing"
 
+	"github.com/oapi-codegen/nullable"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -30,7 +31,7 @@ func TestUpdateCurrentUser(t *testing.T) {
 		bio := "my bio"
 
 		resp, err := c.UpdateCurrentUserWithResponse(t.Context(), client.UpdateCurrentUserJSONRequestBody{
-			Bio: &bio,
+			Bio: nullable.NewNullableWithValue(bio),
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode())
@@ -47,12 +48,32 @@ func TestUpdateCurrentUser(t *testing.T) {
 
 		bio := "partial update bio"
 		resp, err := c.UpdateCurrentUserWithResponse(t.Context(), client.UpdateCurrentUserJSONRequestBody{
-			Bio: &bio,
+			Bio: nullable.NewNullableWithValue(bio),
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode())
 		assert.Equal(t, originalUsername, resp.JSON200.Username)
 		assert.Equal(t, &bio, resp.JSON200.Bio)
+	})
+
+	t.Run("clears avatar when avatarId is null", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+
+		avatarID := uploadImage(t, c, generateTestImage(t))
+
+		setResp, err := c.UpdateCurrentUserWithResponse(t.Context(), client.UpdateCurrentUserJSONRequestBody{
+			AvatarId: nullable.NewNullableWithValue(avatarID),
+		})
+		require.NoError(t, err)
+		require.Equal(t, 200, setResp.StatusCode())
+		assert.Equal(t, &avatarID, setResp.JSON200.AvatarId)
+
+		clearResp, err := c.UpdateCurrentUserWithResponse(t.Context(), client.UpdateCurrentUserJSONRequestBody{
+			AvatarId: nullable.NewNullNullable[string](),
+		})
+		require.NoError(t, err)
+		require.Equal(t, 200, clearResp.StatusCode())
+		assert.Nil(t, clearResp.JSON200.AvatarId)
 	})
 
 	t.Run("returns 409 when username already taken", func(t *testing.T) {
@@ -76,7 +97,7 @@ func TestUpdateCurrentUser(t *testing.T) {
 		bio := "bio"
 
 		resp, err := unauth.UpdateCurrentUserWithResponse(t.Context(), client.UpdateCurrentUserJSONRequestBody{
-			Bio: &bio,
+			Bio: nullable.NewNullableWithValue(bio),
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode())
@@ -144,7 +165,7 @@ func TestGetUserProfile(t *testing.T) {
 		bio := "my public bio"
 
 		_, err := c.UpdateCurrentUserWithResponse(t.Context(), client.UpdateCurrentUserJSONRequestBody{
-			Bio: &bio,
+			Bio: nullable.NewNullableWithValue(bio),
 		})
 		require.NoError(t, err)
 

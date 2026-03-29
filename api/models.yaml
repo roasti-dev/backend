@@ -125,11 +125,9 @@ components:
           description: Detailed instructions for the step
         duration_seconds:
           type: integer
-          nullable: true
           description: Optional duration of the step in seconds
         image_id:
           type: string
-          nullable: true
           description: ID of the uploaded image. Can be resolved via the image upload endpoint.
       required:
         - id
@@ -152,11 +150,9 @@ components:
           description: Detailed instructions for the step
         duration_seconds:
           type: integer
-          nullable: true
           description: Optional duration of the step in seconds
         image_id:
           type: string
-          nullable: true
           description: ID of the uploaded image. Can be resolved via the image upload endpoint.
       required:
         - order
@@ -177,7 +173,6 @@ components:
           description: Author of the recipe
         origin:
           $ref: "#/components/schemas/RecipeOrigin"
-          nullable: true
           description: Present if this recipe was cloned from another recipe
         title:
           type: string
@@ -187,7 +182,6 @@ components:
           description: Detailed description of the recipe
         image_id:
           type: string
-          nullable: true
           description: ID of the uploaded image. Can be resolved via the image upload endpoint.
         brew_method:
           $ref: "#/components/schemas/BrewMethod"
@@ -197,11 +191,9 @@ components:
           $ref: "#/components/schemas/RoastLevel"
         beans:
           type: string
-          nullable: true
           description: Coffee beans used for the recipe
         note:
           type: string
-          nullable: true
           description: Private note visible only to the recipe author
         public:
           type: boolean
@@ -255,13 +247,11 @@ components:
           $ref: "#/components/schemas/RecipeAuthor"
         origin:
           $ref: "#/components/schemas/RecipeOrigin"
-          nullable: true
         title:
           type: string
           description: Recipe title
         image_id:
           type: string
-          nullable: true
           description: ID of the uploaded image. Can be resolved via the image upload endpoint.
         brew_method:
           $ref: "#/components/schemas/BrewMethod"
@@ -309,7 +299,6 @@ components:
           description: Detailed description of the recipe
         image_id:
           type: string
-          nullable: true
           description: ID of the uploaded image. Can be resolved via the image upload endpoint.
         brew_method:
           $ref: "#/components/schemas/BrewMethod"
@@ -319,11 +308,9 @@ components:
           $ref: "#/components/schemas/RoastLevel"
         beans:
           type: string
-          nullable: true
           description: Coffee beans used for the recipe
         note:
           type: string
-          nullable: true
           description: Private note visible only to the recipe author
         public:
           type: boolean
@@ -381,11 +368,9 @@ components:
           description: User password. Must be 8-32 characters.
         bio:
           type: string
-          nullable: true
           description: Short user biography
         avatar_id:
           type: string
-          nullable: true
           description: ID of the uploaded avatar image. Can be resolved via the image upload endpoint.
 
     LoginRequest:
@@ -469,11 +454,9 @@ components:
           description: Unique username
         bio:
           type: string
-          nullable: true
           description: Short user biography
         avatar_id:
           type: string
-          nullable: true
           description: ID of the uploaded avatar image. Can be resolved via the image upload endpoint.
 
     UserAccount:
@@ -566,7 +549,6 @@ components:
           description: Author's username
         avatar_id:
           type: string
-          nullable: true
           description: ID of the author's avatar image
 
     RecipeOrigin:

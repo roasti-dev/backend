@@ -84,11 +84,19 @@ func (r *UserRepository) Update(ctx context.Context, userID string, req UpdateUs
 	if req.Username != nil {
 		q = q.Set("username", *req.Username)
 	}
-	if req.Bio != nil {
-		q = q.Set("bio", *req.Bio)
+	if req.Bio.IsSpecified() {
+		if req.Bio.IsNull() {
+			q = q.Set("bio", nil)
+		} else {
+			q = q.Set("bio", req.Bio.MustGet())
+		}
 	}
-	if req.AvatarID != nil {
-		q = q.Set("avatar_id", *req.AvatarID)
+	if req.AvatarID.IsSpecified() {
+		if req.AvatarID.IsNull() {
+			q = q.Set("avatar_id", nil)
+		} else {
+			q = q.Set("avatar_id", req.AvatarID.MustGet())
+		}
 	}
 	if _, err := q.ExecContext(ctx); err != nil {
 		return fmt.Errorf("update user: %w", err)

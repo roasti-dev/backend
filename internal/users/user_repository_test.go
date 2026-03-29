@@ -3,6 +3,7 @@ package users_test
 import (
 	"testing"
 
+	"github.com/oapi-codegen/nullable"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -34,7 +35,7 @@ func TestUserRepository_Update(t *testing.T) {
 
 	t.Run("updates bio", func(t *testing.T) {
 		err := repo.Update(t.Context(), "user-1", users.UpdateUserFields{
-			Bio: ptr("my bio"),
+			Bio: nullable.NewNullableWithValue("my bio"),
 		})
 		require.NoError(t, err)
 
@@ -45,7 +46,7 @@ func TestUserRepository_Update(t *testing.T) {
 
 	t.Run("updates avatar_id", func(t *testing.T) {
 		err := repo.Update(t.Context(), "user-1", users.UpdateUserFields{
-			AvatarID: ptr("avatar-123"),
+			AvatarID: nullable.NewNullableWithValue("avatar-123"),
 		})
 		require.NoError(t, err)
 
@@ -59,12 +60,12 @@ func TestUserRepository_Update(t *testing.T) {
 		// Set username first
 		require.NoError(t, repo.Update(t.Context(), "user-2", users.UpdateUserFields{
 			Username: ptr("original_name"),
-			Bio:      ptr("original bio"),
+			Bio:      nullable.NewNullableWithValue("original bio"),
 		}))
 
 		// Update only bio — username must stay the same
 		require.NoError(t, repo.Update(t.Context(), "user-2", users.UpdateUserFields{
-			Bio: ptr("updated bio"),
+			Bio: nullable.NewNullableWithValue("updated bio"),
 		}))
 
 		user, err := repo.GetByID(t.Context(), "user-2")

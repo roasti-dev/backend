@@ -3,6 +3,7 @@ package users
 import (
 	"time"
 
+	"github.com/oapi-codegen/nullable"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
@@ -36,13 +37,13 @@ func (u User) ToAccount() models.UserAccount {
 	}
 }
 
-// UpdateUserFields holds the fields to update. nil means "not provided, skip".
+// UpdateUserFields holds the fields to update. nil / zero value means "not provided, skip".
 type UpdateUserFields struct {
 	Username *string
-	Bio      *string
-	AvatarID *string
+	Bio      nullable.Nullable[string]
+	AvatarID nullable.Nullable[string]
 }
 
 func (r UpdateUserFields) HasFields() bool {
-	return r.Username != nil || r.Bio != nil || r.AvatarID != nil
+	return r.Username != nil || r.Bio.IsSpecified() || r.AvatarID.IsSpecified()
 }
