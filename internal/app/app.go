@@ -247,11 +247,15 @@ func runPeriodic(ctx context.Context, name string, interval time.Duration, fn fu
 	run := func() {
 		defer func() {
 			if r := recover(); r != nil {
-				slog.ErrorContext(ctx, "panic in background task", "name", name, "panic", r)
+				slog.ErrorContext(ctx, "panic in background task",
+					slog.String("name", name),
+					slog.Any("panic", r),
+				)
 			}
 		}()
 		if err := fn(ctx); err != nil {
-			slog.ErrorContext(ctx, "background task failed", "name", name, log.Err(err))
+			slog.ErrorContext(ctx, "background task failed",
+				slog.String("name", name), log.Err(err))
 		}
 	}
 

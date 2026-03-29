@@ -161,12 +161,26 @@ func (s *Service) Copy(ctx context.Context, srcID string) (string, error) {
 	defer dst.Close()
 
 	if _, err := io.Copy(dst, src); err != nil {
-		os.Remove(dstPath)
+		if rmErr := os.Remove(dstPath); rmErr != nil {
+			slog.ErrorContext(ctx, "Failed to remove destionation file",
+				slog.String("upload_id", srcID),
+				slog.String("source", srcPath),
+				slog.String("destination", dstPath),
+				log.Err(err),
+			)
+		}
 		return "", fmt.Errorf("copy file: %w", err)
 	}
 
 	if err := s.repo.Copy(ctx, srcID, newID, dstPath); err != nil {
-		os.Remove(dstPath)
+		if rmErr := os.Remove(dstPath); rmErr != nil {
+			slog.ErrorContext(ctx, "Failed to remove destionation file",
+				slog.String("upload_id", srcID),
+				slog.String("source", srcPath),
+				slog.String("destination", dstPath),
+				log.Err(err),
+			)
+		}
 		return "", fmt.Errorf("save copied upload: %w", err)
 	}
 

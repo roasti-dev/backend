@@ -515,7 +515,6 @@ func (r *Repository) DeleteRecipe(ctx context.Context, userID, recipeID string) 
 	return err
 }
 
-
 func (r *Repository) getBrewStepsByRecipeIDs(
 	ctx context.Context,
 	recipeIDs []string,

@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	identityToolkitScope      = "https://www.googleapis.com/auth/cloud-platform"
-	passwordPolicyEndpoint    = "https://identitytoolkit.googleapis.com/admin/v2/projects/%s/config"
+	identityToolkitScope   = "https://www.googleapis.com/auth/cloud-platform"
+	passwordPolicyEndpoint = "https://identitytoolkit.googleapis.com/admin/v2/projects/%s/config"
 )
 
 // PasswordPolicy holds the password constraints fetched from Firebase.

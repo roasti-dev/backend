@@ -75,6 +75,7 @@ func (s *ServerHandler) LogoutUser(ctx context.Context, request LogoutUserReques
 
 type RegisterUser201WithCookieResponse struct {
 	RegisterUser201JSONResponse
+
 	secure bool
 }
 
@@ -85,6 +86,7 @@ func (r RegisterUser201WithCookieResponse) VisitRegisterUserResponse(w http.Resp
 
 type LoginUser200WithCookieResponse struct {
 	LoginUser200JSONResponse
+
 	secure bool
 }
 
@@ -95,6 +97,7 @@ func (r LoginUser200WithCookieResponse) VisitLoginUserResponse(w http.ResponseWr
 
 type RefreshToken200WithCookieResponse struct {
 	RefreshToken200JSONResponse
+
 	secure bool
 }
 
@@ -114,6 +117,7 @@ func (r LogoutUser204WithCookieResponse) VisitLogoutUserResponse(w http.Response
 
 type ChangePassword200WithCookieResponse struct {
 	ChangePassword200JSONResponse
+
 	secure bool
 }
 

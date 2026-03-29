@@ -168,5 +168,3 @@ func (s *Service) UpdateProfile(ctx context.Context, userID string, req UpdateUs
 
 	return s.CurrentUser(ctx, userID)
 }
-
-
