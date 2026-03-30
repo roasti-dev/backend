@@ -13,6 +13,8 @@ Restart=always
 RestartSec=3
 StartLimitIntervalSec=60
 StartLimitBurst=5
+TimeoutStartSec=10
+TimeoutStopSec=30
 
 StandardOutput=journal
 StandardError=journal
