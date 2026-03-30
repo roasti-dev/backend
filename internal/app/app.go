@@ -41,7 +41,7 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 		return nil, fmt.Errorf("create db: %w", err)
 	}
 
-	if err := db.InitSchema(database); err != nil {
+	if err := db.Migrate(database); err != nil {
 		return nil, fmt.Errorf("init schema: %w", err)
 	}
 

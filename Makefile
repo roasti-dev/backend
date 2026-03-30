@@ -34,6 +34,7 @@ build-%:
 	$(eval GOOS  := $(word 1, $(PARTS)))
 	$(eval GOARCH := $(word 2, $(PARTS)))
 	GOOS=$(GOOS) GOARCH=$(GOARCH) $(GO) build \
+		-tags='no_postgres no_mysql no_mssql no_ydb no_vertica no_starrocks no_clickhouse no_turso' \
 		-ldflags="-s -w -X main.appVersion=$(GIT_COMMIT)" \
 		-o app-$(GOOS)-$(GOARCH) ./cmd/server
 

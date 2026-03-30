@@ -35,6 +35,21 @@ make lint
 make test-e2e
 ```
 
+## Database Migrations
+
+Migrations are managed with [goose](https://github.com/pressly/goose) and live in `internal/db/migrations/`. They run automatically on app startup.
+
+To add a new migration, create a file following the naming convention:
+```
+internal/db/migrations/000012_your_migration_name.sql
+```
+
+**Migrating an existing database to goose** (run once before first deploy with goose):
+```bash
+scp -i ~/.ssh/roasti_deploy deploy/seed_goose_versions.sql roasti@<server-ip>:/tmp/
+ssh -i ~/.ssh/roasti_deploy roasti@<server-ip> "sqlite3 /var/lib/roasti/data.db < /tmp/seed_goose_versions.sql"
+```
+
 ## Deploy
 
 Deployment is automated with Ansible.
@@ -86,7 +101,7 @@ sudo journalctl -u roasti-backup.service -n 50
 **Restore:**
 ```bash
 # Copy credentials to the server if needed
-scp -i ~/.ssh/roasti_deploy deploy/backup.env roasti@79.141.79.38:/var/lib/roasti/backup.env
+scp -i ~/.ssh/roasti_deploy deploy/backup.env roasti@<server-ip>:/var/lib/roasti/backup.env
 
 # On the server:
 source /var/lib/roasti/backup.env

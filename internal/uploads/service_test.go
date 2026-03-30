@@ -18,7 +18,7 @@ func setupTestService(t *testing.T) *uploads.Service {
 	dir := t.TempDir()
 	database, err := db.NewSQLite(t.Context(), ":memory:")
 	require.NoError(t, err)
-	require.NoError(t, db.InitSchema(database))
+	require.NoError(t, db.Migrate(database))
 	t.Cleanup(func() { database.Close() }) //nolint: errcheck
 	return uploads.NewService(dir, uploads.NewRepository(database))
 }

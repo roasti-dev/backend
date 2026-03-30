@@ -43,7 +43,7 @@ func realMain() error {
 	}
 	defer database.Close() //nolint:errcheck
 
-	if err := db.InitSchema(database); err != nil {
+	if err := db.Migrate(database); err != nil {
 		return fmt.Errorf("init schema: %w", err)
 	}
 
