@@ -22,5 +22,10 @@ func NewSQLite(ctx context.Context, file string) (*sql.DB, error) {
 	if err := db.PingContext(ctx); err != nil {
 		return nil, fmt.Errorf("ping sqlite: %w", err)
 	}
+
+	if _, err := db.ExecContext(ctx, "PRAGMA foreign_keys = ON"); err != nil {
+		return nil, fmt.Errorf("enable foreign keys: %w", err)
+	}
+
 	return db, nil
 }

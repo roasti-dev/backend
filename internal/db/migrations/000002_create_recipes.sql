@@ -9,8 +9,8 @@ CREATE TABLE IF NOT EXISTS recipes (
     difficulty TEXT NOT NULL,
     roast_level TEXT,
     beans TEXT,
-    public BOOLEAN NOT NULL DEFAULT 0
-    -- FOREIGN KEY(author_id) REFERENCES users(id)
+    public BOOLEAN NOT NULL DEFAULT 0,
+    FOREIGN KEY(author_id) REFERENCES users(id)
 );
 
 -- +goose Down
