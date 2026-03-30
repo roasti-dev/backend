@@ -1,0 +1,56 @@
+- name: Setup Backup
+  hosts: all
+  become: yes
+  vars:
+    app_user: roasti
+    app_dir: /var/lib/roasti
+
+  tasks:
+    - name: Install restic and sqlite3
+      ansible.builtin.apt:
+        name:
+          - restic
+          - sqlite3
+        state: present
+        update_cache: yes
+
+    - name: Copy backup script
+      copy:
+        src: ./backup.sh
+        dest: /usr/local/bin/roasti-backup.sh
+        mode: '0755'
+
+    - name: Copy backup env file
+      copy:
+        src: ./backup.env
+        dest: "{{ app_dir }}/backup.env"
+        owner: "{{ app_user }}"
+        mode: '0600'
+
+    - name: Copy backup systemd service
+      copy:
+        src: ./roasti-backup.service
+        dest: /etc/systemd/system/roasti-backup.service
+
+    - name: Copy backup systemd timer
+      copy:
+        src: ./roasti-backup.timer
+        dest: /etc/systemd/system/roasti-backup.timer
+
+    - name: Initialize restic repository (idempotent)
+      become_user: "{{ app_user }}"
+      shell: |
+        set -a && source {{ app_dir }}/backup.env && set +a
+        restic snapshots > /dev/null 2>&1 || restic init
+      args:
+        executable: /bin/bash
+      register: restic_init
+      changed_when: "'created restic repository' in restic_init.stdout"
+      failed_when: restic_init.rc != 0
+
+    - name: Enable and start backup timer
+      systemd:
+        daemon_reload: yes
+        name: roasti-backup.timer
+        enabled: yes
+        state: started

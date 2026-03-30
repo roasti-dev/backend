@@ -15,8 +15,8 @@ coverage.out
 !*.example.ini
 
 # Environment variables
-.env*
-!.env.example
+*.env*
+!*.env.example
 
 # Editor / tools
 /.ogrep/
