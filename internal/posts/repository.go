@@ -175,6 +175,53 @@ func (r *Repository) ListPosts(ctx context.Context, pag models.PaginationParams)
 	return posts, total, nil
 }
 
+func (r *Repository) UpdatePost(ctx context.Context, postID, title string, blocks []models.PostBlock) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback() //nolint:errcheck
+
+	_, err = r.psql.Update(postsTable).
+		Set("title", title).
+		Set("updated_at", sq.Expr("datetime('now')")).
+		Where(sq.Eq{"id": postID}).
+		RunWith(tx).
+		ExecContext(ctx)
+	if err != nil {
+		return fmt.Errorf("update post: %w", err)
+	}
+
+	if _, err := r.psql.Delete(blocksTable).
+		Where(sq.Eq{"post_id": postID}).
+		RunWith(tx).
+		ExecContext(ctx); err != nil {
+		return fmt.Errorf("delete blocks: %w", err)
+	}
+
+	if len(blocks) > 0 {
+		q := r.psql.Insert(blocksTable).
+			Columns("id", "post_id", "block_order", "type", "images", "text", "recipe_id")
+		for i, block := range blocks {
+			var imagesJSON *string
+			if block.Images != nil && len(*block.Images) > 0 {
+				b, err := json.Marshal(*block.Images)
+				if err != nil {
+					return fmt.Errorf("marshal block images: %w", err)
+				}
+				s := string(b)
+				imagesJSON = &s
+			}
+			q = q.Values(id.NewID(), postID, i, block.Type, imagesJSON, block.Text, block.RecipeId)
+		}
+		if _, err := q.RunWith(tx).ExecContext(ctx); err != nil {
+			return fmt.Errorf("insert blocks: %w", err)
+		}
+	}
+
+	return tx.Commit()
+}
+
 func (r *Repository) DeletePost(ctx context.Context, postID string) error {
 	_, err := r.psql.Delete(postsTable).
 		Where(sq.Eq{"id": postID}).

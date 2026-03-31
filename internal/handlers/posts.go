@@ -29,6 +29,15 @@ func (s *ServerHandler) GetPost(ctx context.Context, request GetPostRequestObjec
 	return GetPost200JSONResponse(post), nil
 }
 
+func (s *ServerHandler) UpdatePost(ctx context.Context, request UpdatePostRequestObject) (UpdatePostResponseObject, error) {
+	userID := requestctx.GetUserID(ctx)
+	post, err := s.postService.UpdatePost(ctx, userID, request.PostId, *request.Body)
+	if err != nil {
+		return nil, err
+	}
+	return UpdatePost200JSONResponse(post), nil
+}
+
 func (s *ServerHandler) DeletePost(ctx context.Context, request DeletePostRequestObject) (DeletePostResponseObject, error) {
 	userID := requestctx.GetUserID(ctx)
 	if err := s.postService.DeletePost(ctx, userID, request.PostId); err != nil {

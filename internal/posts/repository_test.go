@@ -145,6 +145,44 @@ func TestPostRepository_GetPostByID(t *testing.T) {
 	})
 }
 
+func TestPostRepository_UpdatePost(t *testing.T) {
+	t.Run("updates title and replaces blocks", func(t *testing.T) {
+		repo, _ := setupPostRepo(t)
+		p := testutil.CreateTestPost(t, repo, "post-1", "user-1")
+
+		text := "new text"
+		err := repo.UpdatePost(t.Context(), p.Id, "New Title", []models.PostBlock{
+			{Type: models.PostBlockTypeText, Text: &text},
+		})
+		require.NoError(t, err)
+
+		got, err := repo.GetPostByID(t.Context(), p.Id)
+		require.NoError(t, err)
+		assert.Equal(t, "New Title", got.Title)
+		require.Len(t, got.Blocks, 1)
+		assert.Equal(t, text, *got.Blocks[0].Text)
+	})
+
+	t.Run("clears blocks when updated with empty list", func(t *testing.T) {
+		repo, _ := setupPostRepo(t)
+		text := "original"
+		p := models.Post{
+			Id:     "post-1",
+			Title:  "Original",
+			Author: models.UserPreview{Id: "user-1"},
+			Blocks: []models.PostBlock{{Type: models.PostBlockTypeText, Text: &text}},
+		}
+		require.NoError(t, repo.Create(t.Context(), p))
+
+		err := repo.UpdatePost(t.Context(), p.Id, "Updated", []models.PostBlock{})
+		require.NoError(t, err)
+
+		got, err := repo.GetPostByID(t.Context(), p.Id)
+		require.NoError(t, err)
+		assert.Empty(t, got.Blocks)
+	})
+}
+
 func TestPostRepository_DeletePost(t *testing.T) {
 	t.Run("deletes existing post", func(t *testing.T) {
 		repo, _ := setupPostRepo(t)

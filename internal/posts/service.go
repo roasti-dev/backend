@@ -13,6 +13,7 @@ type PostRepository interface {
 	Create(ctx context.Context, post models.Post) error
 	GetPostByID(ctx context.Context, postID string) (models.Post, error)
 	GetPostsByIDs(ctx context.Context, ids []string) ([]models.Post, error)
+	UpdatePost(ctx context.Context, postID, title string, blocks []models.PostBlock) error
 	DeletePost(ctx context.Context, postID string) error
 	ListPosts(ctx context.Context, pag models.PaginationParams) ([]models.Post, int, error)
 }
@@ -124,6 +125,20 @@ func (s *Service) GetPost(ctx context.Context, userID, postID string) (models.Po
 	post.IsLiked = likedIDs[postID]
 	post.LikesCount = int32(likesCounts[postID])
 	return post, nil
+}
+
+func (s *Service) UpdatePost(ctx context.Context, userID, postID string, req models.UpdatePostRequest) (models.Post, error) {
+	post, err := s.repo.GetPostByID(ctx, postID)
+	if err != nil {
+		return models.Post{}, err
+	}
+	if post.Author.Id != userID {
+		return models.Post{}, ErrForbidden
+	}
+	if err := s.repo.UpdatePost(ctx, postID, req.Title, blockPayloadsToModel(req.Blocks)); err != nil {
+		return models.Post{}, err
+	}
+	return s.GetPost(ctx, userID, postID)
 }
 
 func (s *Service) DeletePost(ctx context.Context, userID, postID string) error {

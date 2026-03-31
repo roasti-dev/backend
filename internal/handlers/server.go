@@ -30,6 +30,7 @@ type PostService interface {
 	CreatePost(ctx context.Context, userID string, req models.CreatePostRequest) (models.Post, error)
 	DeletePost(ctx context.Context, userID, postID string) error
 	GetPost(ctx context.Context, userID, postID string) (models.Post, error)
+	UpdatePost(ctx context.Context, userID, postID string, req models.UpdatePostRequest) (models.Post, error)
 	ListPosts(ctx context.Context, userID string, params posts.ListPostsParams) (models.GenericPage[models.Post], error)
 }
 

@@ -117,6 +117,50 @@ paths:
               schema:
                 $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
 
+    put:
+      summary: Update post
+      operationId: updatePost
+      description: Updates an existing post. Only the author can update their own post.
+      tags: [posts]
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique post identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./models.yaml#/components/schemas/UpdatePostRequest"
+      responses:
+        "200":
+          description: Post updated
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/Post"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
+        "403":
+          description: Not allowed (not author)
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
+        "404":
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
+
     delete:
       summary: Delete post
       operationId: deletePost

@@ -100,6 +100,9 @@ type RegisterUserJSONRequestBody = externalRef0.RegisterRequest
 // CreatePostJSONRequestBody defines body for CreatePost for application/json ContentType.
 type CreatePostJSONRequestBody = externalRef0.CreatePostRequest
 
+// UpdatePostJSONRequestBody defines body for UpdatePost for application/json ContentType.
+type UpdatePostJSONRequestBody = externalRef0.UpdatePostRequest
+
 // CreateRecipeJSONRequestBody defines body for CreateRecipe for application/json ContentType.
 type CreateRecipeJSONRequestBody = externalRef0.CreateRecipeRequest
 
@@ -223,6 +226,11 @@ type ClientInterface interface {
 
 	// GetPost request
 	GetPost(ctx context.Context, postId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdatePostWithBody request with any body
+	UpdatePostWithBody(ctx context.Context, postId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdatePost(ctx context.Context, postId string, body UpdatePostJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListRecipes request
 	ListRecipes(ctx context.Context, params *ListRecipesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -446,6 +454,30 @@ func (c *Client) DeletePost(ctx context.Context, postId string, reqEditors ...Re
 
 func (c *Client) GetPost(ctx context.Context, postId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetPostRequest(c.Server, postId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdatePostWithBody(ctx context.Context, postId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdatePostRequestWithBody(c.Server, postId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdatePost(ctx context.Context, postId string, body UpdatePostJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdatePostRequest(c.Server, postId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1041,6 +1073,53 @@ func NewGetPostRequest(server string, postId string) (*http.Request, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewUpdatePostRequest calls the generic UpdatePost builder with application/json body
+func NewUpdatePostRequest(server string, postId string, body UpdatePostJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdatePostRequestWithBody(server, postId, "application/json", bodyReader)
+}
+
+// NewUpdatePostRequestWithBody generates requests for UpdatePost with any type of body
+func NewUpdatePostRequestWithBody(server string, postId string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "post_id", postId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/posts/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -1863,6 +1942,11 @@ type ClientWithResponsesInterface interface {
 	// GetPostWithResponse request
 	GetPostWithResponse(ctx context.Context, postId string, reqEditors ...RequestEditorFn) (*GetPostResponse, error)
 
+	// UpdatePostWithBodyWithResponse request with any body
+	UpdatePostWithBodyWithResponse(ctx context.Context, postId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatePostResponse, error)
+
+	UpdatePostWithResponse(ctx context.Context, postId string, body UpdatePostJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdatePostResponse, error)
+
 	// ListRecipesWithResponse request
 	ListRecipesWithResponse(ctx context.Context, params *ListRecipesParams, reqEditors ...RequestEditorFn) (*ListRecipesResponse, error)
 
@@ -2117,6 +2201,31 @@ func (r GetPostResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetPostResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdatePostResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *externalRef0.Post
+	JSON400      *externalRef0.ApiErrorResponse
+	JSON403      *externalRef0.ApiErrorResponse
+	JSON404      *externalRef0.ApiErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdatePostResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdatePostResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -2595,6 +2704,23 @@ func (c *ClientWithResponses) GetPostWithResponse(ctx context.Context, postId st
 	return ParseGetPostResponse(rsp)
 }
 
+// UpdatePostWithBodyWithResponse request with arbitrary body returning *UpdatePostResponse
+func (c *ClientWithResponses) UpdatePostWithBodyWithResponse(ctx context.Context, postId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatePostResponse, error) {
+	rsp, err := c.UpdatePostWithBody(ctx, postId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdatePostResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdatePostWithResponse(ctx context.Context, postId string, body UpdatePostJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdatePostResponse, error) {
+	rsp, err := c.UpdatePost(ctx, postId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdatePostResponse(rsp)
+}
+
 // ListRecipesWithResponse request returning *ListRecipesResponse
 func (c *ClientWithResponses) ListRecipesWithResponse(ctx context.Context, params *ListRecipesParams, reqEditors ...RequestEditorFn) (*ListRecipesResponse, error) {
 	rsp, err := c.ListRecipes(ctx, params, reqEditors...)
@@ -3042,6 +3168,53 @@ func ParseGetPostResponse(rsp *http.Response) (*GetPostResponse, error) {
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdatePostResponse parses an HTTP response from a UpdatePostWithResponse call
+func ParseUpdatePostResponse(rsp *http.Response) (*UpdatePostResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdatePostResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest externalRef0.Post
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
 		var dest externalRef0.ApiErrorResponse

@@ -128,6 +128,73 @@ func TestGetPost(t *testing.T) {
 	})
 }
 
+func TestUpdatePost(t *testing.T) {
+	srv := setupTestServer(t)
+
+	updatedPayload := models.UpdatePostRequest{
+		Title:  "Updated Title",
+		Blocks: []models.PostBlockPayload{},
+	}
+
+	t.Run("author can update own post", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		created := createPost(t, c, defaultPostPayload)
+
+		resp, err := c.UpdatePostWithResponse(t.Context(), created.Id, updatedPayload)
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode())
+		assert.Equal(t, updatedPayload.Title, resp.JSON200.Title)
+		assert.Equal(t, created.Id, resp.JSON200.Id)
+	})
+
+	t.Run("updates blocks", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		created := createPost(t, c, defaultPostPayload)
+
+		text := "new block"
+		payload := models.UpdatePostRequest{
+			Title: "Updated",
+			Blocks: []models.PostBlockPayload{
+				{Type: models.PostBlockTypeText, Text: &text},
+			},
+		}
+
+		resp, err := c.UpdatePostWithResponse(t.Context(), created.Id, payload)
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode())
+		require.Len(t, resp.JSON200.Blocks, 1)
+		assert.Equal(t, text, *resp.JSON200.Blocks[0].Text)
+	})
+
+	t.Run("non-author cannot update post", func(t *testing.T) {
+		c1 := newAuthenticatedTestClient(t, srv)
+		c2 := newAuthenticatedTestClient(t, srv)
+		created := createPost(t, c1, defaultPostPayload)
+
+		resp, err := c2.UpdatePostWithResponse(t.Context(), created.Id, updatedPayload)
+		require.NoError(t, err)
+		assert.Equal(t, 403, resp.StatusCode())
+	})
+
+	t.Run("non-existent post returns 404", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+
+		resp, err := c.UpdatePostWithResponse(t.Context(), "non-existent-id", updatedPayload)
+		require.NoError(t, err)
+		assert.Equal(t, 404, resp.StatusCode())
+	})
+
+	t.Run("unauthenticated returns 401", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		created := createPost(t, c, defaultPostPayload)
+
+		unauth := newTestClient(t, srv)
+		resp, err := unauth.UpdatePostWithResponse(t.Context(), created.Id, updatedPayload)
+		require.NoError(t, err)
+		assert.Equal(t, 401, resp.StatusCode())
+	})
+}
+
 func TestDeletePost(t *testing.T) {
 	srv := setupTestServer(t)
 
