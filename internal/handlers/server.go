@@ -6,6 +6,7 @@ import (
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
 	"github.com/nikpivkin/roasti-app-backend/internal/auth"
+	"github.com/nikpivkin/roasti-app-backend/internal/likes"
 	"github.com/nikpivkin/roasti-app-backend/internal/posts"
 	"github.com/nikpivkin/roasti-app-backend/internal/recipes"
 	"github.com/nikpivkin/roasti-app-backend/internal/uploads"
@@ -31,6 +32,7 @@ type PostService interface {
 	DeletePost(ctx context.Context, userID, postID string) error
 	GetPost(ctx context.Context, userID, postID string) (models.Post, error)
 	UpdatePost(ctx context.Context, userID, postID string, req models.UpdatePostRequest) (models.Post, error)
+	ToggleLike(ctx context.Context, userID, postID string) (likes.ToggleResult, error)
 	ListPosts(ctx context.Context, userID string, params posts.ListPostsParams) (models.GenericPage[models.Post], error)
 }
 

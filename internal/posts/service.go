@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
+	"github.com/nikpivkin/roasti-app-backend/internal/likes"
 	"github.com/nikpivkin/roasti-app-backend/internal/x/id"
 )
 
@@ -21,6 +22,10 @@ type PostRepository interface {
 type LikeChecker interface {
 	GetLikedIDs(ctx context.Context, userID string, targetType models.LikeTargetType, targetIDs []string) (map[string]bool, error)
 	CountByTargets(ctx context.Context, targetIDs []string, targetType models.LikeTargetType) (map[string]int, error)
+}
+
+type LikeToggler interface {
+	Toggle(ctx context.Context, userID, targetID string, targetType models.LikeTargetType) (likes.ToggleResult, error)
 }
 
 type ListPostsParams struct {
@@ -41,12 +46,20 @@ func (p ListPostsParams) Pagination() models.PaginationParams {
 }
 
 type Service struct {
-	repo        PostRepository
-	likeChecker LikeChecker
+	repo         PostRepository
+	likeChecker  LikeChecker
+	likeToggler  LikeToggler
 }
 
-func NewService(repo PostRepository, likeChecker LikeChecker) *Service {
-	return &Service{repo: repo, likeChecker: likeChecker}
+func NewService(repo PostRepository, likeChecker LikeChecker, likeToggler LikeToggler) *Service {
+	return &Service{repo: repo, likeChecker: likeChecker, likeToggler: likeToggler}
+}
+
+func (s *Service) ToggleLike(ctx context.Context, userID, postID string) (likes.ToggleResult, error) {
+	if _, err := s.repo.GetPostByID(ctx, postID); err != nil {
+		return likes.ToggleResult{}, err
+	}
+	return s.likeToggler.Toggle(ctx, userID, postID, models.LikeTargetTypePost)
 }
 
 func (s *Service) CreatePost(ctx context.Context, userID string, req models.CreatePostRequest) (models.Post, error) {

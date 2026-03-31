@@ -29,6 +29,18 @@ func (s *ServerHandler) GetPost(ctx context.Context, request GetPostRequestObjec
 	return GetPost200JSONResponse(post), nil
 }
 
+func (s *ServerHandler) TogglePostLike(ctx context.Context, request TogglePostLikeRequestObject) (TogglePostLikeResponseObject, error) {
+	userID := requestctx.GetUserID(ctx)
+	result, err := s.postService.ToggleLike(ctx, userID, request.PostId)
+	if err != nil {
+		return nil, err
+	}
+	return TogglePostLike200JSONResponse(models.ToggleLikeResponse{
+		Liked:      result.Liked,
+		LikesCount: int32(result.LikesCount),
+	}), nil
+}
+
 func (s *ServerHandler) UpdatePost(ctx context.Context, request UpdatePostRequestObject) (UpdatePostResponseObject, error) {
 	userID := requestctx.GetUserID(ctx)
 	post, err := s.postService.UpdatePost(ctx, userID, request.PostId, *request.Body)

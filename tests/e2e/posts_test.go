@@ -128,6 +128,66 @@ func TestGetPost(t *testing.T) {
 	})
 }
 
+func TestTogglePostLike(t *testing.T) {
+	srv := setupTestServer(t)
+
+	t.Run("like post", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		post := createPost(t, c, defaultPostPayload)
+
+		resp, err := c.TogglePostLikeWithResponse(t.Context(), post.Id)
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode())
+		assert.True(t, resp.JSON200.Liked)
+		assert.Equal(t, int32(1), resp.JSON200.LikesCount)
+	})
+
+	t.Run("unlike post", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		post := createPost(t, c, defaultPostPayload)
+
+		_, err := c.TogglePostLikeWithResponse(t.Context(), post.Id)
+		require.NoError(t, err)
+
+		resp, err := c.TogglePostLikeWithResponse(t.Context(), post.Id)
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode())
+		assert.False(t, resp.JSON200.Liked)
+		assert.Equal(t, int32(0), resp.JSON200.LikesCount)
+	})
+
+	t.Run("is_liked reflects in get post", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		post := createPost(t, c, defaultPostPayload)
+
+		_, err := c.TogglePostLikeWithResponse(t.Context(), post.Id)
+		require.NoError(t, err)
+
+		resp, err := c.GetPostWithResponse(t.Context(), post.Id)
+		require.NoError(t, err)
+		assert.True(t, resp.JSON200.IsLiked)
+		assert.Equal(t, int32(1), resp.JSON200.LikesCount)
+	})
+
+	t.Run("non-existent post returns 404", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+
+		resp, err := c.TogglePostLikeWithResponse(t.Context(), "non-existent-id")
+		require.NoError(t, err)
+		assert.Equal(t, 404, resp.StatusCode())
+	})
+
+	t.Run("unauthenticated returns 401", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		post := createPost(t, c, defaultPostPayload)
+
+		unauth := newTestClient(t, srv)
+		resp, err := unauth.TogglePostLikeWithResponse(t.Context(), post.Id)
+		require.NoError(t, err)
+		assert.Equal(t, 401, resp.StatusCode())
+	})
+}
+
 func TestUpdatePost(t *testing.T) {
 	srv := setupTestServer(t)
 
