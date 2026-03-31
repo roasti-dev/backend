@@ -366,6 +366,73 @@ func TestCreatePostComment(t *testing.T) {
 	})
 }
 
+func TestDeletePostComment(t *testing.T) {
+	srv := setupTestServer(t)
+
+	t.Run("author can delete own comment", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		post := createPost(t, c, defaultPostPayload)
+
+		commentResp, err := c.CreatePostCommentWithResponse(t.Context(), post.Id, models.CreatePostCommentRequest{Text: "hello"})
+		require.NoError(t, err)
+		require.Equal(t, 201, commentResp.StatusCode())
+
+		resp, err := c.DeletePostCommentWithResponse(t.Context(), post.Id, commentResp.JSON201.Id)
+		require.NoError(t, err)
+		assert.Equal(t, 204, resp.StatusCode())
+	})
+
+	t.Run("deleted comment no longer appears in post", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		post := createPost(t, c, defaultPostPayload)
+
+		commentResp, err := c.CreatePostCommentWithResponse(t.Context(), post.Id, models.CreatePostCommentRequest{Text: "hello"})
+		require.NoError(t, err)
+
+		_, err = c.DeletePostCommentWithResponse(t.Context(), post.Id, commentResp.JSON201.Id)
+		require.NoError(t, err)
+
+		getResp, err := c.GetPostWithResponse(t.Context(), post.Id)
+		require.NoError(t, err)
+		assert.Empty(t, getResp.JSON200.Comments)
+	})
+
+	t.Run("non-author cannot delete comment", func(t *testing.T) {
+		c1 := newAuthenticatedTestClient(t, srv)
+		c2 := newAuthenticatedTestClient(t, srv)
+		post := createPost(t, c1, defaultPostPayload)
+
+		commentResp, err := c1.CreatePostCommentWithResponse(t.Context(), post.Id, models.CreatePostCommentRequest{Text: "hello"})
+		require.NoError(t, err)
+
+		resp, err := c2.DeletePostCommentWithResponse(t.Context(), post.Id, commentResp.JSON201.Id)
+		require.NoError(t, err)
+		assert.Equal(t, 403, resp.StatusCode())
+	})
+
+	t.Run("non-existent comment returns 404", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		post := createPost(t, c, defaultPostPayload)
+
+		resp, err := c.DeletePostCommentWithResponse(t.Context(), post.Id, "non-existent-id")
+		require.NoError(t, err)
+		assert.Equal(t, 404, resp.StatusCode())
+	})
+
+	t.Run("unauthenticated returns 401", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		post := createPost(t, c, defaultPostPayload)
+
+		commentResp, err := c.CreatePostCommentWithResponse(t.Context(), post.Id, models.CreatePostCommentRequest{Text: "hello"})
+		require.NoError(t, err)
+
+		unauth := newTestClient(t, srv)
+		resp, err := unauth.DeletePostCommentWithResponse(t.Context(), post.Id, commentResp.JSON201.Id)
+		require.NoError(t, err)
+		assert.Equal(t, 401, resp.StatusCode())
+	})
+}
+
 func TestListPosts(t *testing.T) {
 	srv := setupTestServer(t)
 

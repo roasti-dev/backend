@@ -17,6 +17,8 @@ type PostRepository interface {
 	UpdatePost(ctx context.Context, postID, title string, blocks []models.PostBlock) error
 	DeletePost(ctx context.Context, postID string) error
 	CreateComment(ctx context.Context, comment models.PostComment, postID string) (models.PostComment, error)
+	GetCommentAuthorID(ctx context.Context, commentID string) (string, error)
+	DeleteComment(ctx context.Context, commentID string) error
 	ListPosts(ctx context.Context, pag models.PaginationParams) ([]models.Post, int, error)
 }
 
@@ -177,6 +179,17 @@ func (s *Service) DeletePost(ctx context.Context, userID, postID string) error {
 		return ErrForbidden
 	}
 	return s.repo.DeletePost(ctx, postID)
+}
+
+func (s *Service) DeleteComment(ctx context.Context, userID, commentID string) error {
+	authorID, err := s.repo.GetCommentAuthorID(ctx, commentID)
+	if err != nil {
+		return err
+	}
+	if authorID != userID {
+		return ErrForbidden
+	}
+	return s.repo.DeleteComment(ctx, commentID)
 }
 
 func (s *Service) GetPostsByIDs(ctx context.Context, currentUserID string, ids []string) ([]models.Post, error) {

@@ -216,6 +216,41 @@ paths:
               schema:
                 $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
 
+  /api/v1/posts/{post_id}/comments/{comment_id}:
+    delete:
+      summary: Delete comment
+      operationId: deletePostComment
+      description: Deletes a comment. Only the comment author can delete it.
+      tags: [posts]
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique post identifier
+        - name: comment_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique comment identifier
+      responses:
+        "204":
+          description: Comment deleted
+        "403":
+          description: Not the comment author
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
+        "404":
+          description: Comment not found
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
+
   /api/v1/posts/{post_id}/comments:
     post:
       summary: Add comment to post

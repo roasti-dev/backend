@@ -7,6 +7,7 @@ import (
 )
 
 var (
-	ErrNotFound  = apierr.NewApiError(http.StatusNotFound, "post not found")
-	ErrForbidden = apierr.NewApiError(http.StatusForbidden, "not allowed")
+	ErrNotFound        = apierr.NewApiError(http.StatusNotFound, "post not found")
+	ErrCommentNotFound = apierr.NewApiError(http.StatusNotFound, "comment not found")
+	ErrForbidden       = apierr.NewApiError(http.StatusForbidden, "not allowed")
 )

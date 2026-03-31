@@ -263,6 +263,38 @@ func (r *Repository) DeletePost(ctx context.Context, postID string) error {
 	return err
 }
 
+func (r *Repository) DeleteComment(ctx context.Context, commentID string) error {
+	result, err := r.psql.Delete(commentsTable).
+		Where(sq.Eq{"id": commentID, "target_type": commentTargetType}).
+		RunWith(r.runner).
+		ExecContext(ctx)
+	if err != nil {
+		return err
+	}
+	n, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return ErrCommentNotFound
+	}
+	return nil
+}
+
+func (r *Repository) GetCommentAuthorID(ctx context.Context, commentID string) (string, error) {
+	var authorID string
+	err := r.psql.Select("author_id").
+		From(commentsTable).
+		Where(sq.Eq{"id": commentID, "target_type": commentTargetType}).
+		Limit(1).
+		RunWith(r.runner).
+		QueryRowContext(ctx).Scan(&authorID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", ErrCommentNotFound
+	}
+	return authorID, err
+}
+
 func (r *Repository) GetPostsByIDs(ctx context.Context, ids []string) ([]models.Post, error) {
 	rows, err := r.psql.
 		Select(postSelectColumns...).

@@ -237,6 +237,9 @@ type ClientInterface interface {
 
 	CreatePostComment(ctx context.Context, postId string, body CreatePostCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// DeletePostComment request
+	DeletePostComment(ctx context.Context, postId string, commentId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// DeletePost request
 	DeletePost(ctx context.Context, postId string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -501,6 +504,18 @@ func (c *Client) CreatePostCommentWithBody(ctx context.Context, postId string, c
 
 func (c *Client) CreatePostComment(ctx context.Context, postId string, body CreatePostCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewCreatePostCommentRequest(c.Server, postId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeletePostComment(ctx context.Context, postId string, commentId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeletePostCommentRequest(c.Server, postId, commentId)
 	if err != nil {
 		return nil, err
 	}
@@ -1180,6 +1195,47 @@ func NewCreatePostCommentRequestWithBody(server string, postId string, contentTy
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeletePostCommentRequest generates requests for DeletePostComment
+func NewDeletePostCommentRequest(server string, postId string, commentId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "post_id", postId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "comment_id", commentId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/posts/%s/comments/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -2077,6 +2133,9 @@ type ClientWithResponsesInterface interface {
 
 	CreatePostCommentWithResponse(ctx context.Context, postId string, body CreatePostCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*CreatePostCommentResponse, error)
 
+	// DeletePostCommentWithResponse request
+	DeletePostCommentWithResponse(ctx context.Context, postId string, commentId string, reqEditors ...RequestEditorFn) (*DeletePostCommentResponse, error)
+
 	// DeletePostWithResponse request
 	DeletePostWithResponse(ctx context.Context, postId string, reqEditors ...RequestEditorFn) (*DeletePostResponse, error)
 
@@ -2363,6 +2422,29 @@ func (r CreatePostCommentResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r CreatePostCommentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeletePostCommentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON403      *externalRef0.ApiErrorResponse
+	JSON404      *externalRef0.ApiErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r DeletePostCommentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeletePostCommentResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -2912,6 +2994,15 @@ func (c *ClientWithResponses) CreatePostCommentWithResponse(ctx context.Context,
 	return ParseCreatePostCommentResponse(rsp)
 }
 
+// DeletePostCommentWithResponse request returning *DeletePostCommentResponse
+func (c *ClientWithResponses) DeletePostCommentWithResponse(ctx context.Context, postId string, commentId string, reqEditors ...RequestEditorFn) (*DeletePostCommentResponse, error) {
+	rsp, err := c.DeletePostComment(ctx, postId, commentId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeletePostCommentResponse(rsp)
+}
+
 // DeletePostWithResponse request returning *DeletePostResponse
 func (c *ClientWithResponses) DeletePostWithResponse(ctx context.Context, postId string, reqEditors ...RequestEditorFn) (*DeletePostResponse, error) {
 	rsp, err := c.DeletePost(ctx, postId, reqEditors...)
@@ -3431,6 +3522,39 @@ func ParseCreatePostCommentResponse(rsp *http.Response) (*CreatePostCommentRespo
 			return nil, err
 		}
 		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeletePostCommentResponse parses an HTTP response from a DeletePostCommentWithResponse call
+func ParseDeletePostCommentResponse(rsp *http.Response) (*DeletePostCommentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeletePostCommentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
 		var dest externalRef0.ApiErrorResponse
