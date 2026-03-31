@@ -105,6 +105,27 @@ func (s *Service) ListPosts(ctx context.Context, userID string, params ListPosts
 	return models.NewPage(postList, pag, total), nil
 }
 
+func (s *Service) GetPost(ctx context.Context, userID, postID string) (models.Post, error) {
+	post, err := s.repo.GetPostByID(ctx, postID)
+	if err != nil {
+		return models.Post{}, err
+	}
+
+	likedIDs, err := s.likeChecker.GetLikedIDs(ctx, userID, models.LikeTargetTypePost, []string{postID})
+	if err != nil {
+		return models.Post{}, fmt.Errorf("get liked ids: %w", err)
+	}
+
+	likesCounts, err := s.likeChecker.CountByTargets(ctx, []string{postID}, models.LikeTargetTypePost)
+	if err != nil {
+		return models.Post{}, fmt.Errorf("count likes: %w", err)
+	}
+
+	post.IsLiked = likedIDs[postID]
+	post.LikesCount = int32(likesCounts[postID])
+	return post, nil
+}
+
 func (s *Service) DeletePost(ctx context.Context, userID, postID string) error {
 	post, err := s.repo.GetPostByID(ctx, postID)
 	if err != nil {

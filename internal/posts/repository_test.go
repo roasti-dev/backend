@@ -35,12 +35,6 @@ func TestPostRepository_Create(t *testing.T) {
 	assert.Empty(t, got.Comments)
 }
 
-func TestPostRepository_GetPostByID_NotFound(t *testing.T) {
-	repo, _ := setupPostRepo(t)
-
-	_, err := repo.GetPostByID(t.Context(), "non-existent")
-	assert.ErrorIs(t, err, posts.ErrNotFound)
-}
 
 func TestPostRepository_Create_WithBlocks(t *testing.T) {
 	t.Run("text block", func(t *testing.T) {
@@ -127,6 +121,27 @@ func TestPostRepository_Create_WithBlocks(t *testing.T) {
 		require.Len(t, got.Blocks, 2)
 		assert.Equal(t, text1, *got.Blocks[0].Text)
 		assert.Equal(t, text2, *got.Blocks[1].Text)
+	})
+}
+
+func TestPostRepository_GetPostByID(t *testing.T) {
+	t.Run("returns post with author info", func(t *testing.T) {
+		repo, _ := setupPostRepo(t)
+		p := testutil.CreateTestPost(t, repo, "post-1", "user-1")
+
+		got, err := repo.GetPostByID(t.Context(), p.Id)
+		require.NoError(t, err)
+		assert.Equal(t, p.Id, got.Id)
+		assert.Equal(t, p.Title, got.Title)
+		assert.Equal(t, "user-1", got.Author.Id)
+		assert.Equal(t, "user-1", got.Author.Username)
+	})
+
+	t.Run("not found returns ErrNotFound", func(t *testing.T) {
+		repo, _ := setupPostRepo(t)
+
+		_, err := repo.GetPostByID(t.Context(), "non-existent")
+		assert.ErrorIs(t, err, posts.ErrNotFound)
 	})
 }
 

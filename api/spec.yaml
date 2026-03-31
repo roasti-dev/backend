@@ -91,6 +91,32 @@ paths:
                 $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
 
   /api/v1/posts/{post_id}:
+    get:
+      summary: Get post by ID
+      operationId: getPost
+      description: Returns a single post by its ID.
+      tags: [posts]
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique post identifier
+      responses:
+        "200":
+          description: Post
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/Post"
+        "404":
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
+
     delete:
       summary: Delete post
       operationId: deletePost

@@ -147,6 +147,9 @@ type ServerInterface interface {
 	// Delete post
 	// (DELETE /api/v1/posts/{post_id})
 	DeletePost(w http.ResponseWriter, r *http.Request, postId string)
+	// Get post by ID
+	// (GET /api/v1/posts/{post_id})
+	GetPost(w http.ResponseWriter, r *http.Request, postId string)
 	// List recipes
 	// (GET /api/v1/recipes)
 	ListRecipes(w http.ResponseWriter, r *http.Request, params ListRecipesParams)
@@ -384,6 +387,39 @@ func (siw *ServerInterfaceWrapper) DeletePost(w http.ResponseWriter, r *http.Req
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.DeletePost(w, r, postId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetPost operation middleware
+func (siw *ServerInterfaceWrapper) GetPost(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "post_id" -------------
+	var postId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "post_id", r.PathValue("post_id"), &postId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "post_id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, AccessTokenCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetPost(w, r, postId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1046,6 +1082,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/posts", wrapper.ListPosts)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/posts", wrapper.CreatePost)
 	m.HandleFunc("DELETE "+options.BaseURL+"/api/v1/posts/{post_id}", wrapper.DeletePost)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/posts/{post_id}", wrapper.GetPost)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/recipes", wrapper.ListRecipes)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/recipes", wrapper.CreateRecipe)
 	m.HandleFunc("DELETE "+options.BaseURL+"/api/v1/recipes/{recipe_id}", wrapper.DeleteRecipe)
@@ -1348,6 +1385,32 @@ func (response DeletePost403JSONResponse) VisitDeletePostResponse(w http.Respons
 type DeletePost404JSONResponse externalRef0.ApiErrorResponse
 
 func (response DeletePost404JSONResponse) VisitDeletePostResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetPostRequestObject struct {
+	PostId string `json:"post_id"`
+}
+
+type GetPostResponseObject interface {
+	VisitGetPostResponse(w http.ResponseWriter) error
+}
+
+type GetPost200JSONResponse externalRef0.Post
+
+func (response GetPost200JSONResponse) VisitGetPostResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetPost404JSONResponse externalRef0.ApiErrorResponse
+
+func (response GetPost404JSONResponse) VisitGetPostResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
 
@@ -1918,6 +1981,9 @@ type StrictServerInterface interface {
 	// Delete post
 	// (DELETE /api/v1/posts/{post_id})
 	DeletePost(ctx context.Context, request DeletePostRequestObject) (DeletePostResponseObject, error)
+	// Get post by ID
+	// (GET /api/v1/posts/{post_id})
+	GetPost(ctx context.Context, request GetPostRequestObject) (GetPostResponseObject, error)
 	// List recipes
 	// (GET /api/v1/recipes)
 	ListRecipes(ctx context.Context, request ListRecipesRequestObject) (ListRecipesResponseObject, error)
@@ -2231,6 +2297,32 @@ func (sh *strictHandler) DeletePost(w http.ResponseWriter, r *http.Request, post
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(DeletePostResponseObject); ok {
 		if err := validResponse.VisitDeletePostResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetPost operation middleware
+func (sh *strictHandler) GetPost(w http.ResponseWriter, r *http.Request, postId string) {
+	var request GetPostRequestObject
+
+	request.PostId = postId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetPost(ctx, request.(GetPostRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetPost")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetPostResponseObject); ok {
+		if err := validResponse.VisitGetPostResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -2709,29 +2801,30 @@ var swaggerSpec = []string{
 	"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",
-	"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",
+	"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",
+	"9uL2/wMAAP//+NKt+059AAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

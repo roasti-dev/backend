@@ -84,6 +84,50 @@ func TestCreatePost(t *testing.T) {
 	})
 }
 
+func TestGetPost(t *testing.T) {
+	srv := setupTestServer(t)
+
+	t.Run("returns post by id", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		created := createPost(t, c, defaultPostPayload)
+
+		resp, err := c.GetPostWithResponse(t.Context(), created.Id)
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode())
+		assert.Equal(t, created.Id, resp.JSON200.Id)
+		assert.Equal(t, defaultPostPayload.Title, resp.JSON200.Title)
+		assert.Equal(t, c.Username, resp.JSON200.Author.Username)
+	})
+
+	t.Run("populates is_liked", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		created := createPost(t, c, defaultPostPayload)
+
+		resp, err := c.GetPostWithResponse(t.Context(), created.Id)
+		require.NoError(t, err)
+		assert.False(t, resp.JSON200.IsLiked)
+		assert.Zero(t, resp.JSON200.LikesCount)
+	})
+
+	t.Run("non-existent post returns 404", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+
+		resp, err := c.GetPostWithResponse(t.Context(), "non-existent-id")
+		require.NoError(t, err)
+		assert.Equal(t, 404, resp.StatusCode())
+	})
+
+	t.Run("unauthenticated returns 401", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		created := createPost(t, c, defaultPostPayload)
+
+		unauth := newTestClient(t, srv)
+		resp, err := unauth.GetPostWithResponse(t.Context(), created.Id)
+		require.NoError(t, err)
+		assert.Equal(t, 401, resp.StatusCode())
+	})
+}
+
 func TestDeletePost(t *testing.T) {
 	srv := setupTestServer(t)
 

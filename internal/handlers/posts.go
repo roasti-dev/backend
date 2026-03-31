@@ -20,6 +20,15 @@ func (s *ServerHandler) ListPosts(ctx context.Context, request ListPostsRequestO
 	return ListPosts200JSONResponse(models.PostPage(page)), nil
 }
 
+func (s *ServerHandler) GetPost(ctx context.Context, request GetPostRequestObject) (GetPostResponseObject, error) {
+	userID := requestctx.GetUserID(ctx)
+	post, err := s.postService.GetPost(ctx, userID, request.PostId)
+	if err != nil {
+		return nil, err
+	}
+	return GetPost200JSONResponse(post), nil
+}
+
 func (s *ServerHandler) DeletePost(ctx context.Context, request DeletePostRequestObject) (DeletePostResponseObject, error) {
 	userID := requestctx.GetUserID(ctx)
 	if err := s.postService.DeletePost(ctx, userID, request.PostId); err != nil {
