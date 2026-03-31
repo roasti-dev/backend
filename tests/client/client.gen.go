@@ -218,6 +218,9 @@ type ClientInterface interface {
 
 	CreatePost(ctx context.Context, body CreatePostJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// DeletePost request
+	DeletePost(ctx context.Context, postId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListRecipes request
 	ListRecipes(ctx context.Context, params *ListRecipesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -416,6 +419,18 @@ func (c *Client) CreatePostWithBody(ctx context.Context, contentType string, bod
 
 func (c *Client) CreatePost(ctx context.Context, body CreatePostJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewCreatePostRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeletePost(ctx context.Context, postId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeletePostRequest(c.Server, postId)
 	if err != nil {
 		return nil, err
 	}
@@ -943,6 +958,40 @@ func NewCreatePostRequestWithBody(server string, contentType string, body io.Rea
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeletePostRequest generates requests for DeletePost
+func NewDeletePostRequest(server string, postId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "post_id", postId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/posts/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -1759,6 +1808,9 @@ type ClientWithResponsesInterface interface {
 
 	CreatePostWithResponse(ctx context.Context, body CreatePostJSONRequestBody, reqEditors ...RequestEditorFn) (*CreatePostResponse, error)
 
+	// DeletePostWithResponse request
+	DeletePostWithResponse(ctx context.Context, postId string, reqEditors ...RequestEditorFn) (*DeletePostResponse, error)
+
 	// ListRecipesWithResponse request
 	ListRecipesWithResponse(ctx context.Context, params *ListRecipesParams, reqEditors ...RequestEditorFn) (*ListRecipesResponse, error)
 
@@ -1967,6 +2019,29 @@ func (r CreatePostResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r CreatePostResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeletePostResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON403      *externalRef0.ApiErrorResponse
+	JSON404      *externalRef0.ApiErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r DeletePostResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeletePostResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -2427,6 +2502,15 @@ func (c *ClientWithResponses) CreatePostWithResponse(ctx context.Context, body C
 	return ParseCreatePostResponse(rsp)
 }
 
+// DeletePostWithResponse request returning *DeletePostResponse
+func (c *ClientWithResponses) DeletePostWithResponse(ctx context.Context, postId string, reqEditors ...RequestEditorFn) (*DeletePostResponse, error) {
+	rsp, err := c.DeletePost(ctx, postId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeletePostResponse(rsp)
+}
+
 // ListRecipesWithResponse request returning *ListRecipesResponse
 func (c *ClientWithResponses) ListRecipesWithResponse(ctx context.Context, params *ListRecipesParams, reqEditors ...RequestEditorFn) (*ListRecipesResponse, error) {
 	rsp, err := c.ListRecipes(ctx, params, reqEditors...)
@@ -2815,6 +2899,39 @@ func ParseCreatePostResponse(rsp *http.Response) (*CreatePostResponse, error) {
 			return nil, err
 		}
 		response.JSON400 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeletePostResponse parses an HTTP response from a DeletePostWithResponse call
+func ParseDeletePostResponse(rsp *http.Response) (*DeletePostResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeletePostResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
 
 	}
 

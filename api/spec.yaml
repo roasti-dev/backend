@@ -90,6 +90,35 @@ paths:
               schema:
                 $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
 
+  /api/v1/posts/{post_id}:
+    delete:
+      summary: Delete post
+      operationId: deletePost
+      description: Permanently deletes a post. Only the author can delete their own post.
+      tags: [posts]
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique post identifier
+      responses:
+        "204":
+          description: Deleted
+        "403":
+          description: Not allowed (not author)
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
+        "404":
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
+
   /api/v1/recipes:
     get:
       summary: List recipes

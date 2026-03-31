@@ -13,6 +13,7 @@ type PostRepository interface {
 	Create(ctx context.Context, post models.Post) error
 	GetPostByID(ctx context.Context, postID string) (models.Post, error)
 	GetPostsByIDs(ctx context.Context, ids []string) ([]models.Post, error)
+	DeletePost(ctx context.Context, postID string) error
 	ListPosts(ctx context.Context, pag models.PaginationParams) ([]models.Post, int, error)
 }
 
@@ -102,6 +103,17 @@ func (s *Service) ListPosts(ctx context.Context, userID string, params ListPosts
 	}
 
 	return models.NewPage(postList, pag, total), nil
+}
+
+func (s *Service) DeletePost(ctx context.Context, userID, postID string) error {
+	post, err := s.repo.GetPostByID(ctx, postID)
+	if err != nil {
+		return err
+	}
+	if post.Author.Id != userID {
+		return ErrForbidden
+	}
+	return s.repo.DeletePost(ctx, postID)
 }
 
 func (s *Service) GetPostsByIDs(ctx context.Context, currentUserID string, ids []string) ([]models.Post, error) {

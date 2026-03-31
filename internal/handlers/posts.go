@@ -20,6 +20,14 @@ func (s *ServerHandler) ListPosts(ctx context.Context, request ListPostsRequestO
 	return ListPosts200JSONResponse(models.PostPage(page)), nil
 }
 
+func (s *ServerHandler) DeletePost(ctx context.Context, request DeletePostRequestObject) (DeletePostResponseObject, error) {
+	userID := requestctx.GetUserID(ctx)
+	if err := s.postService.DeletePost(ctx, userID, request.PostId); err != nil {
+		return nil, err
+	}
+	return DeletePost204Response{}, nil
+}
+
 func (s *ServerHandler) CreatePost(ctx context.Context, request CreatePostRequestObject) (CreatePostResponseObject, error) {
 	userID := requestctx.GetUserID(ctx)
 	post, err := s.postService.CreatePost(ctx, userID, *request.Body)

@@ -175,6 +175,14 @@ func (r *Repository) ListPosts(ctx context.Context, pag models.PaginationParams)
 	return posts, total, nil
 }
 
+func (r *Repository) DeletePost(ctx context.Context, postID string) error {
+	_, err := r.psql.Delete(postsTable).
+		Where(sq.Eq{"id": postID}).
+		RunWith(r.runner).
+		ExecContext(ctx)
+	return err
+}
+
 func (r *Repository) GetPostsByIDs(ctx context.Context, ids []string) ([]models.Post, error) {
 	rows, err := r.psql.
 		Select(postSelectColumns...).

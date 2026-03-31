@@ -130,6 +130,25 @@ func TestPostRepository_Create_WithBlocks(t *testing.T) {
 	})
 }
 
+func TestPostRepository_DeletePost(t *testing.T) {
+	t.Run("deletes existing post", func(t *testing.T) {
+		repo, _ := setupPostRepo(t)
+		p := testutil.CreateTestPost(t, repo, "post-1", "user-1")
+
+		require.NoError(t, repo.DeletePost(t.Context(), p.Id))
+
+		_, err := repo.GetPostByID(t.Context(), p.Id)
+		assert.ErrorIs(t, err, posts.ErrNotFound)
+	})
+
+	t.Run("no error on non-existent post", func(t *testing.T) {
+		repo, _ := setupPostRepo(t)
+
+		err := repo.DeletePost(t.Context(), "non-existent")
+		assert.NoError(t, err)
+	})
+}
+
 func TestPostRepository_ListPosts(t *testing.T) {
 	t.Run("returns posts with author info", func(t *testing.T) {
 		repo, _ := setupPostRepo(t)

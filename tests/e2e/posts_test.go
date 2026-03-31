@@ -84,6 +84,59 @@ func TestCreatePost(t *testing.T) {
 	})
 }
 
+func TestDeletePost(t *testing.T) {
+	srv := setupTestServer(t)
+
+	t.Run("author can delete own post", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		post := createPost(t, c, defaultPostPayload)
+
+		resp, err := c.DeletePostWithResponse(t.Context(), post.Id)
+		require.NoError(t, err)
+		assert.Equal(t, 204, resp.StatusCode())
+	})
+
+	t.Run("deleted post no longer appears in feed", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		post := createPost(t, c, defaultPostPayload)
+
+		_, err := c.DeletePostWithResponse(t.Context(), post.Id)
+		require.NoError(t, err)
+
+		resp, err := c.ListPostsWithResponse(t.Context(), &client.ListPostsParams{})
+		require.NoError(t, err)
+		assert.Empty(t, resp.JSON200.Items)
+	})
+
+	t.Run("non-author cannot delete post", func(t *testing.T) {
+		c1 := newAuthenticatedTestClient(t, srv)
+		c2 := newAuthenticatedTestClient(t, srv)
+		post := createPost(t, c1, defaultPostPayload)
+
+		resp, err := c2.DeletePostWithResponse(t.Context(), post.Id)
+		require.NoError(t, err)
+		assert.Equal(t, 403, resp.StatusCode())
+	})
+
+	t.Run("delete non-existent post returns 404", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+
+		resp, err := c.DeletePostWithResponse(t.Context(), "non-existent-id")
+		require.NoError(t, err)
+		assert.Equal(t, 404, resp.StatusCode())
+	})
+
+	t.Run("unauthenticated returns 401", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		post := createPost(t, c, defaultPostPayload)
+
+		unauth := newTestClient(t, srv)
+		resp, err := unauth.DeletePostWithResponse(t.Context(), post.Id)
+		require.NoError(t, err)
+		assert.Equal(t, 401, resp.StatusCode())
+	})
+}
+
 func TestListPosts(t *testing.T) {
 	srv := setupTestServer(t)
 

@@ -28,6 +28,7 @@ type UserLibrary interface {
 // PostService handles post creation and feed listing.
 type PostService interface {
 	CreatePost(ctx context.Context, userID string, req models.CreatePostRequest) (models.Post, error)
+	DeletePost(ctx context.Context, userID, postID string) error
 	ListPosts(ctx context.Context, userID string, params posts.ListPostsParams) (models.GenericPage[models.Post], error)
 }
 
