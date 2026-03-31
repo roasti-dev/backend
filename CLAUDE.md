@@ -94,6 +94,15 @@ Copy `.env.example` to `.env` for local development.
 - Model fields use `camelCase`
 - All endpoints and fields must have a `description`
 
+## SQLite / Squirrel Notes
+
+- Use `sq.Expr("datetime('now')")` for current timestamp — SQLite does not support `NOW()`
+- To detect "not found" on DELETE/UPDATE, check `result.RowsAffected() == 0` (no error is returned for missing rows)
+
+## Generated Code
+
+LSP diagnostics for types in `server.gen.go` and `client.gen.go` are often stale after `make oapi`. Always use `go build ./...` as the source of truth — if it compiles, the types exist.
+
 ## Git Commits
 
 Use Conventional Commits format: `<type>(<scope>): <description>`
@@ -102,7 +111,7 @@ For breaking changes: `<type>(<scope>)!: <description>`
 **Types:** `feat`, `fix`, `refactor`, `perf`, `test`, `chore`
 
 **Scopes:**
-- `auth`, `users`, `recipes`, `likes`, `uploads` — domain changes
+- `auth`, `users`, `recipes`, `likes`, `uploads`, `posts` — domain changes
 - `api` — api/spec.yaml, api/models.yaml
 
 Always sign commits with `-s` flag (DCO sign-off).
