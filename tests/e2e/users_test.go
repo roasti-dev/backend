@@ -1,6 +1,7 @@
 package e2e
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/oapi-codegen/nullable"
@@ -219,6 +220,13 @@ func TestCheckUsernameAvailability(t *testing.T) {
 	})
 }
 
+func parseLikedRecipePage(t *testing.T, resp *client.ListUserLikesResponse) models.LikedRecipePage {
+	t.Helper()
+	var page models.LikedRecipePage
+	require.NoError(t, json.Unmarshal(resp.Body, &page))
+	return page
+}
+
 func TestListUserLikes(t *testing.T) {
 	srv := setupTestServer(t)
 
@@ -241,7 +249,7 @@ func TestListUserLikes(t *testing.T) {
 
 		resp := listLikes(t, c, c.ID)
 		assert.Equal(t, 200, resp.StatusCode())
-		assert.Len(t, resp.JSON200.Items, 2)
+		assert.Len(t, parseLikedRecipePage(t, resp).Items, 2)
 	})
 
 	t.Run("does not return unliked recipes", func(t *testing.T) {
@@ -253,7 +261,7 @@ func TestListUserLikes(t *testing.T) {
 
 		resp := listLikes(t, c, c.ID)
 		assert.Equal(t, 200, resp.StatusCode())
-		assert.Empty(t, resp.JSON200.Items)
+		assert.Empty(t, parseLikedRecipePage(t, resp).Items)
 	})
 
 	t.Run("does not return other user likes", func(t *testing.T) {
@@ -265,7 +273,7 @@ func TestListUserLikes(t *testing.T) {
 
 		resp := listLikes(t, c2, c2.ID)
 		assert.Equal(t, 200, resp.StatusCode())
-		assert.Empty(t, resp.JSON200.Items)
+		assert.Empty(t, parseLikedRecipePage(t, resp).Items)
 	})
 
 	t.Run("can view other user likes", func(t *testing.T) {
@@ -277,7 +285,7 @@ func TestListUserLikes(t *testing.T) {
 
 		resp := listLikes(t, c2, c1.ID)
 		assert.Equal(t, 200, resp.StatusCode())
-		assert.Len(t, resp.JSON200.Items, 1)
+		assert.Len(t, parseLikedRecipePage(t, resp).Items, 1)
 	})
 
 	t.Run("does not expose private recipes to other users", func(t *testing.T) {
@@ -292,7 +300,7 @@ func TestListUserLikes(t *testing.T) {
 
 		resp := listLikes(t, c2, c1.ID)
 		assert.Equal(t, 200, resp.StatusCode())
-		assert.Empty(t, resp.JSON200.Items)
+		assert.Empty(t, parseLikedRecipePage(t, resp).Items)
 	})
 
 	t.Run("liked_at is returned", func(t *testing.T) {
@@ -303,7 +311,7 @@ func TestListUserLikes(t *testing.T) {
 
 		resp := listLikes(t, c, c.ID)
 		assert.Equal(t, 200, resp.StatusCode())
-		assert.NotZero(t, resp.JSON200.Items[0].LikedAt)
+		assert.NotZero(t, parseLikedRecipePage(t, resp).Items[0].LikedAt)
 	})
 
 	t.Run("respects pagination", func(t *testing.T) {
@@ -321,7 +329,7 @@ func TestListUserLikes(t *testing.T) {
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode())
-		assert.Len(t, resp.JSON200.Items, 1)
+		assert.Len(t, parseLikedRecipePage(t, resp).Items, 1)
 	})
 
 	t.Run("unknown user returns 404", func(t *testing.T) {
@@ -352,7 +360,8 @@ func TestListUserLikes(t *testing.T) {
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode())
-		assert.NotEmpty(t, resp.JSON200.Items[0].Recipe.Author.Id)
-		assert.NotEmpty(t, resp.JSON200.Items[0].Recipe.Author.Username)
+		page := parseLikedRecipePage(t, resp)
+		assert.NotEmpty(t, page.Items[0].Recipe.Author.Id)
+		assert.NotEmpty(t, page.Items[0].Recipe.Author.Username)
 	})
 }

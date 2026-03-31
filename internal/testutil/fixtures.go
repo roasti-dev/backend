@@ -9,6 +9,7 @@ import (
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
 	"github.com/nikpivkin/roasti-app-backend/internal/likes"
+	"github.com/nikpivkin/roasti-app-backend/internal/posts"
 	"github.com/nikpivkin/roasti-app-backend/internal/recipes"
 	"github.com/nikpivkin/roasti-app-backend/internal/users"
 )
@@ -40,6 +41,29 @@ func CreateTestRecipe(t *testing.T, repo *recipes.Repository, recipeID, authorID
 	}
 	require.NoError(t, repo.UpsertRecipe(t.Context(), r))
 	return r
+}
+
+func CreateTestPost(t *testing.T, repo *posts.Repository, postID, authorID string) models.Post {
+	t.Helper()
+	p := models.Post{
+		Id:        postID,
+		Title:     "Test Post",
+		Blocks:    []models.PostBlock{},
+		Author:    models.UserPreview{Id: authorID},
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
+	}
+	require.NoError(t, repo.Create(t.Context(), p))
+	return p
+}
+
+func CreateTestComment(t *testing.T, db *sql.DB, commentID, postID, authorID, text string) {
+	t.Helper()
+	_, err := db.ExecContext(t.Context(),
+		`INSERT INTO comments (id, target_id, target_type, author_id, text, created_at) VALUES (?, ?, 'post', ?, ?, ?)`,
+		commentID, postID, authorID, text, time.Now().UTC(),
+	)
+	require.NoError(t, err)
 }
 
 func CreateTestLike(t *testing.T, repo *likes.Repository, userID, targetID string, targetType models.LikeTargetType) likes.Like {

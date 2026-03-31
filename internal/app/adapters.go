@@ -9,6 +9,7 @@ import (
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
 	"github.com/nikpivkin/roasti-app-backend/internal/likes"
+	"github.com/nikpivkin/roasti-app-backend/internal/posts"
 	"github.com/nikpivkin/roasti-app-backend/internal/recipes"
 	"github.com/nikpivkin/roasti-app-backend/internal/users"
 )
@@ -33,6 +34,54 @@ type userLibrary struct {
 	users   users.UserStore
 	likes   *likes.Service
 	recipes *recipes.Service
+	posts   *posts.Service
+}
+
+// TODO: ListLikedPosts and ListLikedRecipes share identical pagination/like-fetching logic.
+// Consider extracting a generic helper if more likeable types are added.
+func (f *userLibrary) ListLikedPosts(ctx context.Context, currentUserID, targetUserID string, params models.ListUserLikesParams) (models.GenericPage[models.LikedPost], error) {
+	if _, err := f.users.GetByID(ctx, targetUserID); err != nil {
+		return models.GenericPage[models.LikedPost]{}, err
+	}
+
+	pag := params.Pagination()
+
+	total, err := f.likes.CountByUser(ctx, targetUserID, models.LikeTargetTypePost)
+	if err != nil {
+		return models.GenericPage[models.LikedPost]{}, fmt.Errorf("count liked posts: %w", err)
+	}
+
+	if total == 0 {
+		return models.NewPage([]models.LikedPost{}, pag, 0), nil
+	}
+
+	likedList, err := f.likes.ListByUser(ctx, targetUserID, models.LikeTargetTypePost, int(pag.GetLimit()), int(pag.Offset()))
+	if err != nil {
+		return models.GenericPage[models.LikedPost]{}, fmt.Errorf("list liked posts: %w", err)
+	}
+
+	if len(likedList) == 0 {
+		return models.NewPage([]models.LikedPost{}, pag, 0), nil
+	}
+
+	ids := make([]string, len(likedList))
+	likedAtMap := make(map[string]time.Time, len(likedList))
+	for i, l := range likedList {
+		ids[i] = l.TargetID
+		likedAtMap[l.TargetID] = l.CreatedAt
+	}
+
+	postList, err := f.posts.GetPostsByIDs(ctx, currentUserID, ids)
+	if err != nil {
+		return models.GenericPage[models.LikedPost]{}, fmt.Errorf("get posts: %w", err)
+	}
+
+	result := make([]models.LikedPost, len(postList))
+	for i, p := range postList {
+		result[i] = models.LikedPost{LikedAt: likedAtMap[p.Id], Post: p}
+	}
+
+	return models.NewPage(result, pag, total), nil
 }
 
 func (f *userLibrary) ListLikedRecipes(ctx context.Context, currentUserID, targetUserID string, params models.ListUserLikesParams) (models.GenericPage[models.LikedRecipe], error) {

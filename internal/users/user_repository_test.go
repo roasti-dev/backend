@@ -93,6 +93,7 @@ func TestLikeRepository_ListByUser(t *testing.T) {
 	likesRepo := likes.NewRepository(db)
 	recipesRepo := recipes.NewRepository(db, db)
 
+	testutil.CreateTestUser(t, db, "user-1")
 	testutil.CreateTestRecipe(t, recipesRepo, "recipe-1", "user-1")
 	testutil.CreateTestRecipe(t, recipesRepo, "recipe-2", "user-1")
 	testutil.CreateTestLike(t, likesRepo, "user-1", "recipe-1", models.LikeTargetTypeRecipe)

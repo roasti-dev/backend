@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
 	"github.com/nikpivkin/roasti-app-backend/internal/users"
@@ -48,14 +50,29 @@ func (s *ServerHandler) CheckUsernameAvailability(ctx context.Context, request C
 
 func (s *ServerHandler) ListUserLikes(ctx context.Context, request ListUserLikesRequestObject) (ListUserLikesResponseObject, error) {
 	currentUserID := requestctx.GetUserID(ctx)
-	liked, err := s.userLibrary.ListLikedRecipes(ctx, currentUserID, request.UserId, models.ListUserLikesParams{
+	params := models.ListUserLikesParams{
 		Type:          request.Params.Type,
 		Limit:         request.Params.Limit,
 		Page:          request.Params.Page,
 		SortDirection: request.Params.SortDirection,
-	})
+	}
+
+	var page any
+	var err error
+	switch request.Params.Type {
+	case models.LikeTargetTypePost:
+		page, err = s.userLibrary.ListLikedPosts(ctx, currentUserID, request.UserId, params)
+	case models.LikeTargetTypeRecipe:
+		page, err = s.userLibrary.ListLikedRecipes(ctx, currentUserID, request.UserId, params)
+	default:
+		return ListUserLikes400JSONResponse{Error: fmt.Sprintf("unsupported type: %s", request.Params.Type)}, nil
+	}
 	if err != nil {
 		return nil, err
 	}
-	return ListUserLikes200JSONResponse(liked), nil
+	data, err := json.Marshal(page)
+	if err != nil {
+		return nil, err
+	}
+	return ListUserLikes200JSONResponse{union: data}, nil
 }

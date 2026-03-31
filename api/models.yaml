@@ -169,7 +169,7 @@ components:
           type: string
           description: ID of the user who created the recipe
         author:
-          $ref: "#/components/schemas/RecipeAuthor"
+          $ref: "#/components/schemas/UserPreview"
           description: Author of the recipe
         origin:
           $ref: "#/components/schemas/RecipeOrigin"
@@ -244,7 +244,7 @@ components:
           type: string
           description: ID of the user who created the recipe
         author:
-          $ref: "#/components/schemas/RecipeAuthor"
+          $ref: "#/components/schemas/UserPreview"
         origin:
           $ref: "#/components/schemas/RecipeOrigin"
         title:
@@ -505,6 +505,7 @@ components:
       type: string
       enum:
         - recipe
+        - post
       description: Type of likeable resource
 
     ToggleLikeResponse:
@@ -534,9 +535,9 @@ components:
         recipe:
           $ref: "#/components/schemas/Recipe"
 
-    RecipeAuthor:
+    UserPreview:
       type: object
-      description: Brief author information embedded in recipe responses
+      description: Brief user information embedded in resource responses
       required:
         - id
         - username
@@ -562,7 +563,7 @@ components:
           type: string
           description: ID of the original recipe
         author:
-          $ref: "#/components/schemas/RecipeAuthor"
+          $ref: "#/components/schemas/UserPreview"
           description: Author of the original recipe
 
     ListRecipesParams:
@@ -626,3 +627,197 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/LikedRecipe"
+
+    PostBlockType:
+      type: string
+      description: Type of a post content block
+      enum:
+        - images
+        - text
+        - recipe
+
+    PostBlock:
+      type: object
+      description: A single content block within a post. The active field is determined by `type`; other fields are omitted.
+      required:
+        - type
+      properties:
+        type:
+          $ref: "#/components/schemas/PostBlockType"
+        images:
+          type: array
+          description: Ordered list of image IDs (populated when type=images)
+          items:
+            type: string
+        text:
+          type: string
+          description: Text content (populated when type=text)
+        recipe_id:
+          type: string
+          description: Recipe ID reference (populated when type=recipe)
+
+    PostBlockPayload:
+      type: object
+      description: Content block for post create/update requests
+      additionalProperties: false
+      required:
+        - type
+      properties:
+        type:
+          $ref: "#/components/schemas/PostBlockType"
+        images:
+          type: array
+          description: Ordered list of image IDs (required when type=images)
+          items:
+            type: string
+        text:
+          type: string
+          description: Text content (required when type=text)
+        recipe_id:
+          type: string
+          description: Recipe ID reference (required when type=recipe)
+
+    PostComment:
+      type: object
+      description: A comment on a post
+      required:
+        - id
+        - author
+        - text
+        - created_at
+      properties:
+        id:
+          type: string
+          description: Unique comment identifier
+        author:
+          $ref: "#/components/schemas/UserPreview"
+        text:
+          type: string
+          description: Comment text
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when the comment was published
+
+    Post:
+      type: object
+      description: A user post in the feed
+      required:
+        - id
+        - title
+        - blocks
+        - author
+        - comments
+        - created_at
+        - updated_at
+        - is_liked
+        - likes_count
+      properties:
+        id:
+          type: string
+          description: Unique post identifier
+        title:
+          type: string
+          description: Post title
+        blocks:
+          type: array
+          description: Ordered list of content blocks
+          items:
+            $ref: "#/components/schemas/PostBlock"
+        author:
+          $ref: "#/components/schemas/UserPreview"
+        comments:
+          type: array
+          description: Comments on this post
+          items:
+            $ref: "#/components/schemas/PostComment"
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when the post was created
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp when the post was last updated
+        is_liked:
+          type: boolean
+          description: Whether the current user has liked this post
+        likes_count:
+          type: integer
+          format: int32
+          description: Total number of likes
+
+    CreatePostRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - title
+        - blocks
+      properties:
+        title:
+          type: string
+          description: Post title
+        blocks:
+          type: array
+          description: Ordered list of content blocks
+          items:
+            $ref: "#/components/schemas/PostBlockPayload"
+
+    UpdatePostRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - title
+        - blocks
+      properties:
+        title:
+          type: string
+          description: Post title
+        blocks:
+          type: array
+          description: Ordered list of content blocks
+          items:
+            $ref: "#/components/schemas/PostBlockPayload"
+
+    CreatePostCommentRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - text
+      properties:
+        text:
+          type: string
+          description: Comment text
+
+    PostPage:
+      allOf:
+        - $ref: "#/components/schemas/Page"
+        - type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/Post"
+
+    LikedPost:
+      type: object
+      required:
+        - liked_at
+        - post
+      properties:
+        liked_at:
+          type: string
+          format: date-time
+          description: Timestamp when the post was liked
+        post:
+          $ref: "#/components/schemas/Post"
+
+    LikedPostPage:
+      allOf:
+        - $ref: "#/components/schemas/Page"
+        - type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/LikedPost"

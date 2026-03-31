@@ -462,7 +462,7 @@ func scanRecipe(s scanner) (models.Recipe, error) {
 	if originRecipeID.Valid {
 		recipe.Origin = &models.RecipeOrigin{
 			RecipeId: originRecipeID.String,
-			Author: models.RecipeAuthor{
+			Author: models.UserPreview{
 				Id:       originAuthorID.String,
 				Username: originUsername.String,
 				AvatarId: &originAvatarID.String,
@@ -495,7 +495,7 @@ func scanRecipePreview(s scanner) (models.RecipePreview, error) {
 	if originRecipeID.Valid {
 		p.Origin = &models.RecipeOrigin{
 			RecipeId: originRecipeID.String,
-			Author: models.RecipeAuthor{
+			Author: models.UserPreview{
 				Id:       originAuthorID.String,
 				Username: originUsername.String,
 				AvatarId: &originAvatarID.String,

@@ -26,6 +26,7 @@ import (
 	"github.com/nikpivkin/roasti-app-backend/internal/handlers"
 	"github.com/nikpivkin/roasti-app-backend/internal/likes"
 	"github.com/nikpivkin/roasti-app-backend/internal/log"
+	"github.com/nikpivkin/roasti-app-backend/internal/posts"
 	"github.com/nikpivkin/roasti-app-backend/internal/recipes"
 	"github.com/nikpivkin/roasti-app-backend/internal/uploads"
 	"github.com/nikpivkin/roasti-app-backend/internal/users"
@@ -89,6 +90,8 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 	likeRepo := likes.NewRepository(database)
 	likeService := likes.NewService(likeRepo)
 	recipeService := recipes.NewService(recipeRepo, uploader, likeService, likeService).WithPublisher(bus)
+	postRepo := posts.NewRepository(database, runner)
+	postService := posts.NewService(postRepo, likeService)
 	userRepo := users.NewUserRepository(database)
 	userService := users.NewUserService(userRepo, &firebaseIdentityCreator{firebaseAuth}, uploader)
 
@@ -108,7 +111,8 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 	strictHandler := handlers.NewServerHandler(
 		recipeService, authService,
 		userService, uploader,
-		&userLibrary{users: userRepo, likes: likeService, recipes: recipeService},
+		postService,
+		&userLibrary{users: userRepo, likes: likeService, recipes: recipeService, posts: postService},
 		handlers.Config{
 			SecureCookies: cfg.SecureCookies,
 		},

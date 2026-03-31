@@ -14,6 +14,8 @@ import (
 
 func setupLikeService(t *testing.T) (*likes.Service, *recipes.Repository) {
 	database := testutil.SetupTestDB(t)
+	testutil.CreateTestUser(t, database, "user-1")
+	testutil.CreateTestUser(t, database, "user-2")
 	likeRepo := likes.NewRepository(database)
 	recipeRepo := recipes.NewRepository(database, database)
 	svc := likes.NewService(likeRepo)

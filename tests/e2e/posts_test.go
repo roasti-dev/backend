@@ -1,0 +1,134 @@
+package e2e
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
+	"github.com/nikpivkin/roasti-app-backend/tests/client"
+)
+
+var defaultPostPayload = models.CreatePostRequest{
+	Title:  "Test Post",
+	Blocks: []models.PostBlockPayload{},
+}
+
+func createPost(t *testing.T, c *authenticatedClient, payload models.CreatePostRequest) *models.Post {
+	t.Helper()
+	resp, err := c.CreatePostWithResponse(t.Context(), payload)
+	require.NoError(t, err)
+	require.Equal(t, 201, resp.StatusCode())
+	return resp.JSON201
+}
+
+func TestCreatePost(t *testing.T) {
+	srv := setupTestServer(t)
+
+	t.Run("happy path - no blocks", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		resp, err := c.CreatePostWithResponse(t.Context(), defaultPostPayload)
+		require.NoError(t, err)
+		assert.Equal(t, 201, resp.StatusCode())
+		assert.Equal(t, defaultPostPayload.Title, resp.JSON201.Title)
+		assert.NotEmpty(t, resp.JSON201.Id)
+		assert.Equal(t, c.Username, resp.JSON201.Author.Username)
+		assert.Empty(t, resp.JSON201.Blocks)
+		assert.Empty(t, resp.JSON201.Comments)
+		assert.False(t, resp.JSON201.IsLiked)
+		assert.Zero(t, resp.JSON201.LikesCount)
+	})
+
+	t.Run("happy path - with text block", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		text := "Some text content"
+		payload := models.CreatePostRequest{
+			Title: "Post with text",
+			Blocks: []models.PostBlockPayload{
+				{Type: models.PostBlockTypeText, Text: &text},
+			},
+		}
+		resp, err := c.CreatePostWithResponse(t.Context(), payload)
+		require.NoError(t, err)
+		assert.Equal(t, 201, resp.StatusCode())
+		require.Len(t, resp.JSON201.Blocks, 1)
+		assert.Equal(t, models.PostBlockTypeText, resp.JSON201.Blocks[0].Type)
+		require.NotNil(t, resp.JSON201.Blocks[0].Text)
+		assert.Equal(t, text, *resp.JSON201.Blocks[0].Text)
+	})
+
+	t.Run("happy path - with images block", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		images := []string{"img-1", "img-2"}
+		payload := models.CreatePostRequest{
+			Title: "Post with images",
+			Blocks: []models.PostBlockPayload{
+				{Type: models.PostBlockTypeImages, Images: &images},
+			},
+		}
+		resp, err := c.CreatePostWithResponse(t.Context(), payload)
+		require.NoError(t, err)
+		assert.Equal(t, 201, resp.StatusCode())
+		require.Len(t, resp.JSON201.Blocks, 1)
+		assert.Equal(t, models.PostBlockTypeImages, resp.JSON201.Blocks[0].Type)
+		require.NotNil(t, resp.JSON201.Blocks[0].Images)
+		assert.Equal(t, images, *resp.JSON201.Blocks[0].Images)
+	})
+
+	t.Run("unauthorized", func(t *testing.T) {
+		c := newTestClient(t, srv)
+		resp, err := c.CreatePostWithResponse(t.Context(), defaultPostPayload)
+		require.NoError(t, err)
+		assert.Equal(t, 401, resp.StatusCode())
+	})
+}
+
+func TestListPosts(t *testing.T) {
+	srv := setupTestServer(t)
+
+	t.Run("returns empty list", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		resp, err := c.ListPostsWithResponse(t.Context(), &client.ListPostsParams{})
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode())
+		assert.Empty(t, resp.JSON200.Items)
+	})
+
+	t.Run("returns created posts", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		createPost(t, c, defaultPostPayload)
+
+		resp, err := c.ListPostsWithResponse(t.Context(), &client.ListPostsParams{})
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode())
+		require.Len(t, resp.JSON200.Items, 1)
+		assert.Equal(t, defaultPostPayload.Title, resp.JSON200.Items[0].Title)
+		assert.Equal(t, c.Username, resp.JSON200.Items[0].Author.Username)
+	})
+
+	t.Run("populates is_liked for current user", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		createPost(t, c, defaultPostPayload)
+
+		resp, err := c.ListPostsWithResponse(t.Context(), &client.ListPostsParams{})
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode())
+		assert.False(t, resp.JSON200.Items[0].IsLiked)
+		assert.Zero(t, resp.JSON200.Items[0].LikesCount)
+	})
+
+	t.Run("respects pagination", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		createPost(t, c, defaultPostPayload)
+		createPost(t, c, defaultPostPayload)
+		createPost(t, c, defaultPostPayload)
+
+		limit := int32(2)
+		resp, err := c.ListPostsWithResponse(t.Context(), &client.ListPostsParams{Limit: &limit})
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode())
+		assert.Len(t, resp.JSON200.Items, 2)
+		assert.Equal(t, int32(3), resp.JSON200.Pagination.LastPage)
+	})
+}

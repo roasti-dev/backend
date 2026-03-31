@@ -6,6 +6,7 @@ import (
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
 	"github.com/nikpivkin/roasti-app-backend/internal/auth"
+	"github.com/nikpivkin/roasti-app-backend/internal/posts"
 	"github.com/nikpivkin/roasti-app-backend/internal/recipes"
 	"github.com/nikpivkin/roasti-app-backend/internal/uploads"
 	"github.com/nikpivkin/roasti-app-backend/internal/users"
@@ -21,6 +22,13 @@ type Config struct {
 // UserLibrary provides access to a user's saved/liked content.
 type UserLibrary interface {
 	ListLikedRecipes(ctx context.Context, currentUserID, targetUserID string, params models.ListUserLikesParams) (models.GenericPage[models.LikedRecipe], error)
+	ListLikedPosts(ctx context.Context, currentUserID, targetUserID string, params models.ListUserLikesParams) (models.GenericPage[models.LikedPost], error)
+}
+
+// PostService handles post creation and feed listing.
+type PostService interface {
+	CreatePost(ctx context.Context, userID string, req models.CreatePostRequest) (models.Post, error)
+	ListPosts(ctx context.Context, userID string, params posts.ListPostsParams) (models.GenericPage[models.Post], error)
 }
 
 type ServerHandler struct {
@@ -30,6 +38,7 @@ type ServerHandler struct {
 	uploadService *uploads.Service
 	userService   *users.Service
 	recipeService *recipes.Service
+	postService   PostService
 	userLibrary   UserLibrary
 }
 
@@ -38,6 +47,7 @@ func NewServerHandler(
 	authService *auth.Service,
 	userService *users.Service,
 	uploader *uploads.Service,
+	postService PostService,
 	userLibrary UserLibrary,
 	cfg Config,
 ) *ServerHandler {
@@ -48,6 +58,7 @@ func NewServerHandler(
 		authService:   authService,
 		userService:   userService,
 		uploadService: uploader,
+		postService:   postService,
 		userLibrary:   userLibrary,
 	}
 }

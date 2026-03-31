@@ -11,8 +11,16 @@ import (
 	"github.com/nikpivkin/roasti-app-backend/internal/testutil"
 )
 
+func setupLikeRepo(t *testing.T) *likes.Repository {
+	t.Helper()
+	database := testutil.SetupTestDB(t)
+	testutil.CreateTestUser(t, database, "user-1")
+	testutil.CreateTestUser(t, database, "user-2")
+	return likes.NewRepository(database)
+}
+
 func TestLikeRepository_Delete(t *testing.T) {
-	repo := likes.NewRepository(testutil.SetupTestDB(t))
+	repo := setupLikeRepo(t)
 
 	t.Run("deletes existing like", func(t *testing.T) {
 		testutil.CreateTestLike(t, repo, "user-1", "recipe-1", models.LikeTargetTypeRecipe)
@@ -32,7 +40,7 @@ func TestLikeRepository_Delete(t *testing.T) {
 }
 
 func TestLikeRepository_Exists(t *testing.T) {
-	repo := likes.NewRepository(testutil.SetupTestDB(t))
+	repo := setupLikeRepo(t)
 
 	t.Run("returns false when not found", func(t *testing.T) {
 		exists, err := repo.Exists(t.Context(), "user-1", "recipe-1", models.LikeTargetTypeRecipe)
@@ -42,7 +50,7 @@ func TestLikeRepository_Exists(t *testing.T) {
 }
 
 func TestLikeRepository_GetLikedIDs(t *testing.T) {
-	repo := likes.NewRepository(testutil.SetupTestDB(t))
+	repo := setupLikeRepo(t)
 
 	testutil.CreateTestLike(t, repo, "user-1", "recipe-1", models.LikeTargetTypeRecipe)
 	testutil.CreateTestLike(t, repo, "user-1", "recipe-2", models.LikeTargetTypeRecipe)
@@ -65,7 +73,7 @@ func TestLikeRepository_GetLikedIDs(t *testing.T) {
 }
 
 func TestLikesRepository_ListByUser(t *testing.T) {
-	repo := likes.NewRepository(testutil.SetupTestDB(t))
+	repo := setupLikeRepo(t)
 
 	l1 := testutil.CreateTestLike(t, repo, "user-1", "recipe-1", models.LikeTargetTypeRecipe)
 	l2 := testutil.CreateTestLike(t, repo, "user-1", "recipe-2", models.LikeTargetTypeRecipe)
@@ -112,7 +120,7 @@ func TestLikesRepository_ListByUser(t *testing.T) {
 }
 
 func TestLikesRepository_CountByUser(t *testing.T) {
-	repo := likes.NewRepository(testutil.SetupTestDB(t))
+	repo := setupLikeRepo(t)
 
 	testutil.CreateTestLike(t, repo, "user-1", "recipe-1", models.LikeTargetTypeRecipe)
 	testutil.CreateTestLike(t, repo, "user-1", "recipe-2", models.LikeTargetTypeRecipe)
