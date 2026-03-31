@@ -16,6 +16,7 @@ type PostRepository interface {
 	GetPostsByIDs(ctx context.Context, ids []string) ([]models.Post, error)
 	UpdatePost(ctx context.Context, postID, title string, blocks []models.PostBlock) error
 	DeletePost(ctx context.Context, postID string) error
+	CreateComment(ctx context.Context, comment models.PostComment, postID string) (models.PostComment, error)
 	ListPosts(ctx context.Context, pag models.PaginationParams) ([]models.Post, int, error)
 }
 
@@ -53,6 +54,19 @@ type Service struct {
 
 func NewService(repo PostRepository, likeChecker LikeChecker, likeToggler LikeToggler) *Service {
 	return &Service{repo: repo, likeChecker: likeChecker, likeToggler: likeToggler}
+}
+
+func (s *Service) CreateComment(ctx context.Context, userID, postID, text string) (models.PostComment, error) {
+	if _, err := s.repo.GetPostByID(ctx, postID); err != nil {
+		return models.PostComment{}, err
+	}
+	comment := models.PostComment{
+		Id:        id.NewID(),
+		Author:    models.UserPreview{Id: userID},
+		Text:      text,
+		CreatedAt: time.Now().UTC(),
+	}
+	return s.repo.CreateComment(ctx, comment, postID)
 }
 
 func (s *Service) ToggleLike(ctx context.Context, userID, postID string) (likes.ToggleResult, error) {

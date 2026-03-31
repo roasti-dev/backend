@@ -103,6 +103,9 @@ type CreatePostJSONRequestBody = externalRef0.CreatePostRequest
 // UpdatePostJSONRequestBody defines body for UpdatePost for application/json ContentType.
 type UpdatePostJSONRequestBody = externalRef0.UpdatePostRequest
 
+// CreatePostCommentJSONRequestBody defines body for CreatePostComment for application/json ContentType.
+type CreatePostCommentJSONRequestBody = externalRef0.CreatePostCommentRequest
+
 // CreateRecipeJSONRequestBody defines body for CreateRecipe for application/json ContentType.
 type CreateRecipeJSONRequestBody = externalRef0.CreateRecipeRequest
 
@@ -228,6 +231,11 @@ type ClientInterface interface {
 	UpdatePostWithBody(ctx context.Context, postId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	UpdatePost(ctx context.Context, postId string, body UpdatePostJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreatePostCommentWithBody request with any body
+	CreatePostCommentWithBody(ctx context.Context, postId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreatePostComment(ctx context.Context, postId string, body CreatePostCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeletePost request
 	DeletePost(ctx context.Context, postId string, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -469,6 +477,30 @@ func (c *Client) UpdatePostWithBody(ctx context.Context, postId string, contentT
 
 func (c *Client) UpdatePost(ctx context.Context, postId string, body UpdatePostJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdatePostRequest(c.Server, postId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreatePostCommentWithBody(ctx context.Context, postId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreatePostCommentRequestWithBody(c.Server, postId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreatePostComment(ctx context.Context, postId string, body CreatePostCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreatePostCommentRequest(c.Server, postId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1096,6 +1128,53 @@ func NewUpdatePostRequestWithBody(server string, postId string, contentType stri
 	}
 
 	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewCreatePostCommentRequest calls the generic CreatePostComment builder with application/json body
+func NewCreatePostCommentRequest(server string, postId string, body CreatePostCommentJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreatePostCommentRequestWithBody(server, postId, "application/json", bodyReader)
+}
+
+// NewCreatePostCommentRequestWithBody generates requests for CreatePostComment with any type of body
+func NewCreatePostCommentRequestWithBody(server string, postId string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "post_id", postId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/posts/%s/comments", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -1993,6 +2072,11 @@ type ClientWithResponsesInterface interface {
 
 	UpdatePostWithResponse(ctx context.Context, postId string, body UpdatePostJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdatePostResponse, error)
 
+	// CreatePostCommentWithBodyWithResponse request with any body
+	CreatePostCommentWithBodyWithResponse(ctx context.Context, postId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreatePostCommentResponse, error)
+
+	CreatePostCommentWithResponse(ctx context.Context, postId string, body CreatePostCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*CreatePostCommentResponse, error)
+
 	// DeletePostWithResponse request
 	DeletePostWithResponse(ctx context.Context, postId string, reqEditors ...RequestEditorFn) (*DeletePostResponse, error)
 
@@ -2255,6 +2339,30 @@ func (r UpdatePostResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r UpdatePostResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreatePostCommentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *externalRef0.PostComment
+	JSON400      *externalRef0.ApiErrorResponse
+	JSON404      *externalRef0.ApiErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r CreatePostCommentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreatePostCommentResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -2787,6 +2895,23 @@ func (c *ClientWithResponses) UpdatePostWithResponse(ctx context.Context, postId
 	return ParseUpdatePostResponse(rsp)
 }
 
+// CreatePostCommentWithBodyWithResponse request with arbitrary body returning *CreatePostCommentResponse
+func (c *ClientWithResponses) CreatePostCommentWithBodyWithResponse(ctx context.Context, postId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreatePostCommentResponse, error) {
+	rsp, err := c.CreatePostCommentWithBody(ctx, postId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreatePostCommentResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreatePostCommentWithResponse(ctx context.Context, postId string, body CreatePostCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*CreatePostCommentResponse, error) {
+	rsp, err := c.CreatePostComment(ctx, postId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreatePostCommentResponse(rsp)
+}
+
 // DeletePostWithResponse request returning *DeletePostResponse
 func (c *ClientWithResponses) DeletePostWithResponse(ctx context.Context, postId string, reqEditors ...RequestEditorFn) (*DeletePostResponse, error) {
 	rsp, err := c.DeletePost(ctx, postId, reqEditors...)
@@ -3266,6 +3391,46 @@ func ParseUpdatePostResponse(rsp *http.Response) (*UpdatePostResponse, error) {
 			return nil, err
 		}
 		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreatePostCommentResponse parses an HTTP response from a CreatePostCommentWithResponse call
+func ParseCreatePostCommentResponse(rsp *http.Response) (*CreatePostCommentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreatePostCommentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest externalRef0.PostComment
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
 		var dest externalRef0.ApiErrorResponse

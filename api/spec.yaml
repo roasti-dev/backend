@@ -216,6 +216,45 @@ paths:
               schema:
                 $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
 
+  /api/v1/posts/{post_id}/comments:
+    post:
+      summary: Add comment to post
+      operationId: createPostComment
+      description: Adds a comment to a post on behalf of the authenticated user.
+      tags: [posts]
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique post identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./models.yaml#/components/schemas/CreatePostCommentRequest"
+      responses:
+        "201":
+          description: Comment created
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/PostComment"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
+        "404":
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
+
   /api/v1/recipes:
     get:
       summary: List recipes

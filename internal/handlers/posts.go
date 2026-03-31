@@ -66,3 +66,12 @@ func (s *ServerHandler) CreatePost(ctx context.Context, request CreatePostReques
 	}
 	return CreatePost201JSONResponse(post), nil
 }
+
+func (s *ServerHandler) CreatePostComment(ctx context.Context, request CreatePostCommentRequestObject) (CreatePostCommentResponseObject, error) {
+	userID := requestctx.GetUserID(ctx)
+	comment, err := s.postService.CreateComment(ctx, userID, request.PostId, request.Body.Text)
+	if err != nil {
+		return nil, err
+	}
+	return CreatePostComment201JSONResponse(comment), nil
+}

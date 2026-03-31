@@ -308,6 +308,64 @@ func TestDeletePost(t *testing.T) {
 	})
 }
 
+func TestCreatePostComment(t *testing.T) {
+	srv := setupTestServer(t)
+
+	t.Run("author can comment on own post", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		post := createPost(t, c, defaultPostPayload)
+
+		resp, err := c.CreatePostCommentWithResponse(t.Context(), post.Id, models.CreatePostCommentRequest{Text: "nice post"})
+		require.NoError(t, err)
+		assert.Equal(t, 201, resp.StatusCode())
+		assert.Equal(t, "nice post", resp.JSON201.Text)
+		assert.Equal(t, c.Username, resp.JSON201.Author.Username)
+		assert.NotEmpty(t, resp.JSON201.Id)
+	})
+
+	t.Run("another user can comment", func(t *testing.T) {
+		c1 := newAuthenticatedTestClient(t, srv)
+		c2 := newAuthenticatedTestClient(t, srv)
+		post := createPost(t, c1, defaultPostPayload)
+
+		resp, err := c2.CreatePostCommentWithResponse(t.Context(), post.Id, models.CreatePostCommentRequest{Text: "great!"})
+		require.NoError(t, err)
+		assert.Equal(t, 201, resp.StatusCode())
+		assert.Equal(t, c2.Username, resp.JSON201.Author.Username)
+	})
+
+	t.Run("comment appears in get post", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		post := createPost(t, c, defaultPostPayload)
+
+		_, err := c.CreatePostCommentWithResponse(t.Context(), post.Id, models.CreatePostCommentRequest{Text: "hello"})
+		require.NoError(t, err)
+
+		resp, err := c.GetPostWithResponse(t.Context(), post.Id)
+		require.NoError(t, err)
+		require.Len(t, resp.JSON200.Comments, 1)
+		assert.Equal(t, "hello", resp.JSON200.Comments[0].Text)
+	})
+
+	t.Run("non-existent post returns 404", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+
+		resp, err := c.CreatePostCommentWithResponse(t.Context(), "non-existent-id", models.CreatePostCommentRequest{Text: "hi"})
+		require.NoError(t, err)
+		assert.Equal(t, 404, resp.StatusCode())
+	})
+
+	t.Run("unauthenticated returns 401", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		post := createPost(t, c, defaultPostPayload)
+
+		unauth := newTestClient(t, srv)
+		resp, err := unauth.CreatePostCommentWithResponse(t.Context(), post.Id, models.CreatePostCommentRequest{Text: "hi"})
+		require.NoError(t, err)
+		assert.Equal(t, 401, resp.StatusCode())
+	})
+}
+
 func TestListPosts(t *testing.T) {
 	srv := setupTestServer(t)
 

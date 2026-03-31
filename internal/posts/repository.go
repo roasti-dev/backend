@@ -175,6 +175,39 @@ func (r *Repository) ListPosts(ctx context.Context, pag models.PaginationParams)
 	return posts, total, nil
 }
 
+func (r *Repository) CreateComment(ctx context.Context, comment models.PostComment, postID string) (models.PostComment, error) {
+	_, err := r.psql.Insert(commentsTable).
+		Columns("id", "target_id", "target_type", "author_id", "text", "created_at").
+		Values(comment.Id, postID, commentTargetType, comment.Author.Id, comment.Text, comment.CreatedAt).
+		RunWith(r.runner).
+		ExecContext(ctx)
+	if err != nil {
+		return models.PostComment{}, fmt.Errorf("insert comment: %w", err)
+	}
+
+	row := r.psql.
+		Select("comments.id", "comments.text", "comments.created_at", "users.id", "users.username", "users.avatar_id").
+		From(commentsTable).
+		Join("users ON users.id = comments.author_id").
+		Where(sq.Eq{"comments.id": comment.Id}).
+		Limit(1).
+		RunWith(r.runner).
+		QueryRowContext(ctx)
+
+	var avatarID sql.NullString
+	err = row.Scan(
+		&comment.Id, &comment.Text, &comment.CreatedAt,
+		&comment.Author.Id, &comment.Author.Username, &avatarID,
+	)
+	if err != nil {
+		return models.PostComment{}, fmt.Errorf("fetch comment: %w", err)
+	}
+	if avatarID.Valid {
+		comment.Author.AvatarId = &avatarID.String
+	}
+	return comment, nil
+}
+
 func (r *Repository) UpdatePost(ctx context.Context, postID, title string, blocks []models.PostBlock) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {

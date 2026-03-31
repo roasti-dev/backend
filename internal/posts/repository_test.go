@@ -263,6 +263,44 @@ func TestPostRepository_ListPosts(t *testing.T) {
 	})
 }
 
+func TestPostRepository_CreateComment(t *testing.T) {
+	t.Run("inserts comment and returns it with author info", func(t *testing.T) {
+		repo, _ := setupPostRepo(t)
+		p := testutil.CreateTestPost(t, repo, "post-1", "user-1")
+
+		comment := models.PostComment{
+			Id:     "comment-1",
+			Author: models.UserPreview{Id: "user-2"},
+			Text:   "Great post!",
+		}
+		got, err := repo.CreateComment(t.Context(), comment, p.Id)
+		require.NoError(t, err)
+		assert.Equal(t, "comment-1", got.Id)
+		assert.Equal(t, "Great post!", got.Text)
+		assert.Equal(t, "user-2", got.Author.Id)
+		assert.Equal(t, "user-2", got.Author.Username)
+	})
+
+	t.Run("comment appears in post", func(t *testing.T) {
+		repo, _ := setupPostRepo(t)
+		p := testutil.CreateTestPost(t, repo, "post-1", "user-1")
+
+		comment := models.PostComment{
+			Id:     "comment-1",
+			Author: models.UserPreview{Id: "user-2"},
+			Text:   "Nice!",
+		}
+		_, err := repo.CreateComment(t.Context(), comment, p.Id)
+		require.NoError(t, err)
+
+		got, err := repo.GetPostByID(t.Context(), p.Id)
+		require.NoError(t, err)
+		require.Len(t, got.Comments, 1)
+		assert.Equal(t, "comment-1", got.Comments[0].Id)
+		assert.Equal(t, "Nice!", got.Comments[0].Text)
+	})
+}
+
 func TestPostRepository_ListPosts_WithComments(t *testing.T) {
 	repo, db := setupPostRepo(t)
 	testutil.CreateTestPost(t, repo, "post-1", "user-1")
