@@ -30,14 +30,15 @@ var postSelectColumns = []string{
 	"users.avatar_id",
 }
 
-var blockColumns = []string{
-	"id",
-	"post_id",
-	"block_order",
-	"type",
-	"images",
-	"text",
-	"recipe_id",
+var blockSelectColumns = []string{
+	"post_blocks.id",
+	"post_blocks.post_id",
+	"post_blocks.block_order",
+	"post_blocks.type",
+	"post_blocks.images",
+	"post_blocks.text",
+	"post_blocks.recipe_id",
+	"CASE WHEN post_blocks.recipe_id IS NULL THEN NULL WHEN recipes.id IS NOT NULL THEN 'available' ELSE 'unavailable' END",
 }
 
 var commentColumns = []string{
@@ -93,7 +94,11 @@ func (r *Repository) Create(ctx context.Context, post models.Post) error {
 				s := string(b)
 				imagesJSON = &s
 			}
-			q = q.Values(id.NewID(), post.Id, i, block.Type, imagesJSON, block.Text, block.RecipeId)
+			var recipeID *string
+			if block.Recipe != nil {
+				recipeID = &block.Recipe.Id
+			}
+			q = q.Values(id.NewID(), post.Id, i, block.Type, imagesJSON, block.Text, recipeID)
 		}
 		if _, err := q.RunWith(tx).ExecContext(ctx); err != nil {
 			return fmt.Errorf("insert blocks: %w", err)
@@ -245,7 +250,11 @@ func (r *Repository) UpdatePost(ctx context.Context, postID, title string, block
 				s := string(b)
 				imagesJSON = &s
 			}
-			q = q.Values(id.NewID(), postID, i, block.Type, imagesJSON, block.Text, block.RecipeId)
+			var recipeID *string
+			if block.Recipe != nil {
+				recipeID = &block.Recipe.Id
+			}
+			q = q.Values(id.NewID(), postID, i, block.Type, imagesJSON, block.Text, recipeID)
 		}
 		if _, err := q.RunWith(tx).ExecContext(ctx); err != nil {
 			return fmt.Errorf("insert blocks: %w", err)
@@ -367,10 +376,11 @@ func (r *Repository) enrichPosts(ctx context.Context, posts []*models.Post) erro
 
 func (r *Repository) getBlocksByPostIDs(ctx context.Context, postIDs []string) (map[string][]models.PostBlock, error) {
 	rows, err := r.psql.
-		Select(blockColumns...).
+		Select(blockSelectColumns...).
 		From(blocksTable).
-		Where(sq.Eq{"post_id": postIDs}).
-		OrderBy("block_order ASC").
+		LeftJoin("recipes ON recipes.id = post_blocks.recipe_id AND recipes.public = 1").
+		Where(sq.Eq{"post_blocks.post_id": postIDs}).
+		OrderBy("post_blocks.block_order ASC").
 		RunWith(r.runner).
 		QueryContext(ctx)
 	if err != nil {
@@ -385,16 +395,24 @@ func (r *Repository) getBlocksByPostIDs(ctx context.Context, postIDs []string) (
 			blockOrder      int
 			block           models.PostBlock
 			imagesJSON      sql.NullString
+			recipeID        sql.NullString
+			recipeStatus    sql.NullString
 		)
 		if err := rows.Scan(
 			&blockID, &postID, &blockOrder,
-			&block.Type, &imagesJSON, &block.Text, &block.RecipeId,
+			&block.Type, &imagesJSON, &block.Text, &recipeID, &recipeStatus,
 		); err != nil {
 			return nil, err
 		}
 		if imagesJSON.Valid {
 			if err := json.Unmarshal([]byte(imagesJSON.String), &block.Images); err != nil {
 				return nil, fmt.Errorf("unmarshal block images: %w", err)
+			}
+		}
+		if recipeID.Valid {
+			block.Recipe = &models.PostRecipeRef{
+				Id:     recipeID.String,
+				Status: models.PostRecipeRefStatus(recipeStatus.String),
 			}
 		}
 		blocksMap[postID] = append(blocksMap[postID], block)

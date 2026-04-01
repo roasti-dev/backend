@@ -226,11 +226,15 @@ func (s *Service) GetPostsByIDs(ctx context.Context, currentUserID string, ids [
 func blockPayloadsToModel(payloads []models.PostBlockPayload) []models.PostBlock {
 	blocks := make([]models.PostBlock, len(payloads))
 	for i, p := range payloads {
+		var recipe *models.PostRecipeRef
+		if p.RecipeId != nil {
+			recipe = &models.PostRecipeRef{Id: *p.RecipeId}
+		}
 		blocks[i] = models.PostBlock{
-			Type:     p.Type,
-			Images:   p.Images,
-			Text:     p.Text,
-			RecipeId: p.RecipeId,
+			Type:   p.Type,
+			Images: p.Images,
+			Text:   p.Text,
+			Recipe: recipe,
 		}
 	}
 	return blocks

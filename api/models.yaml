@@ -636,6 +636,23 @@ components:
         - text
         - recipe
 
+    PostRecipeRef:
+      type: object
+      description: Reference to a recipe embedded in a post block
+      required:
+        - id
+        - status
+      properties:
+        id:
+          type: string
+          description: Recipe ID
+        status:
+          type: string
+          enum:
+            - available
+            - unavailable
+          description: Whether the recipe is currently accessible
+
     PostBlock:
       type: object
       description: A single content block within a post. The active field is determined by `type`; other fields are omitted.
@@ -652,9 +669,9 @@ components:
         text:
           type: string
           description: Text content (populated when type=text)
-        recipe_id:
-          type: string
-          description: Recipe ID reference (populated when type=recipe)
+        recipe:
+          $ref: "#/components/schemas/PostRecipeRef"
+          description: Recipe reference (populated when type=recipe)
 
     PostBlockPayload:
       type: object

@@ -9,6 +9,7 @@ import (
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
 	"github.com/nikpivkin/roasti-app-backend/internal/posts"
+	"github.com/nikpivkin/roasti-app-backend/internal/recipes"
 	"github.com/nikpivkin/roasti-app-backend/internal/testutil"
 )
 
@@ -57,7 +58,7 @@ func TestPostRepository_Create_WithBlocks(t *testing.T) {
 		require.NotNil(t, got.Blocks[0].Text)
 		assert.Equal(t, text, *got.Blocks[0].Text)
 		assert.Nil(t, got.Blocks[0].Images)
-		assert.Nil(t, got.Blocks[0].RecipeId)
+		assert.Nil(t, got.Blocks[0].Recipe)
 	})
 
 	t.Run("images block", func(t *testing.T) {
@@ -81,7 +82,7 @@ func TestPostRepository_Create_WithBlocks(t *testing.T) {
 		assert.Equal(t, images, *got.Blocks[0].Images)
 	})
 
-	t.Run("recipe block", func(t *testing.T) {
+	t.Run("recipe block - unavailable when recipe does not exist", func(t *testing.T) {
 		repo, _ := setupPostRepo(t)
 		recipeID := "recipe-1"
 		p := models.Post{
@@ -89,7 +90,7 @@ func TestPostRepository_Create_WithBlocks(t *testing.T) {
 			Title:  "Post with recipe",
 			Author: models.UserPreview{Id: "user-1"},
 			Blocks: []models.PostBlock{
-				{Type: models.PostBlockTypeRecipe, RecipeId: &recipeID},
+				{Type: models.PostBlockTypeRecipe, Recipe: &models.PostRecipeRef{Id: recipeID}},
 			},
 		}
 		require.NoError(t, repo.Create(t.Context(), p))
@@ -98,8 +99,51 @@ func TestPostRepository_Create_WithBlocks(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, got.Blocks, 1)
 		assert.Equal(t, models.PostBlockTypeRecipe, got.Blocks[0].Type)
-		require.NotNil(t, got.Blocks[0].RecipeId)
-		assert.Equal(t, recipeID, *got.Blocks[0].RecipeId)
+		require.NotNil(t, got.Blocks[0].Recipe)
+		assert.Equal(t, recipeID, got.Blocks[0].Recipe.Id)
+		assert.Equal(t, models.Unavailable, got.Blocks[0].Recipe.Status)
+	})
+
+	t.Run("recipe block - unavailable when recipe is private", func(t *testing.T) {
+		repo, db := setupPostRepo(t)
+		recipeRepo := recipes.NewRepository(db, db)
+		recipe := testutil.CreateTestRecipe(t, recipeRepo, "recipe-1", "user-1")
+		recipe.Public = false
+		require.NoError(t, recipeRepo.UpsertRecipe(t.Context(), recipe))
+		p := models.Post{
+			Id:     "post-1",
+			Title:  "Post with recipe",
+			Author: models.UserPreview{Id: "user-1"},
+			Blocks: []models.PostBlock{
+				{Type: models.PostBlockTypeRecipe, Recipe: &models.PostRecipeRef{Id: recipe.Id}},
+			},
+		}
+		require.NoError(t, repo.Create(t.Context(), p))
+
+		got, err := repo.GetPostByID(t.Context(), p.Id)
+		require.NoError(t, err)
+		require.NotNil(t, got.Blocks[0].Recipe)
+		assert.Equal(t, models.Unavailable, got.Blocks[0].Recipe.Status)
+	})
+
+	t.Run("recipe block - available when recipe is public", func(t *testing.T) {
+		repo, db := setupPostRepo(t)
+		recipeRepo := recipes.NewRepository(db, db)
+		recipe := testutil.CreateTestRecipe(t, recipeRepo, "recipe-1", "user-1")
+		p := models.Post{
+			Id:     "post-1",
+			Title:  "Post with recipe",
+			Author: models.UserPreview{Id: "user-1"},
+			Blocks: []models.PostBlock{
+				{Type: models.PostBlockTypeRecipe, Recipe: &models.PostRecipeRef{Id: recipe.Id}},
+			},
+		}
+		require.NoError(t, repo.Create(t.Context(), p))
+
+		got, err := repo.GetPostByID(t.Context(), p.Id)
+		require.NoError(t, err)
+		require.NotNil(t, got.Blocks[0].Recipe)
+		assert.Equal(t, models.Available, got.Blocks[0].Recipe.Status)
 	})
 
 	t.Run("preserves block order", func(t *testing.T) {
