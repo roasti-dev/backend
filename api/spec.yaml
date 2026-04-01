@@ -161,33 +161,6 @@ paths:
               schema:
                 $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
 
-  /api/v1/posts/{post_id}/like:
-    post:
-      summary: Toggle like on a post
-      operationId: togglePostLike
-      description: Adds a like if not liked, removes if already liked.
-      tags: [likes]
-      parameters:
-        - name: post_id
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Unique post identifier
-      responses:
-        "200":
-          description: Like toggled
-          content:
-            application/json:
-              schema:
-                $ref: "./models.yaml#/components/schemas/ToggleLikeResponse"
-        "404":
-          description: Post not found
-          content:
-            application/json:
-              schema:
-                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
-
     delete:
       summary: Delete post
       operationId: deletePost
@@ -209,6 +182,33 @@ paths:
             application/json:
               schema:
                 $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
+        "404":
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
+
+  /api/v1/posts/{post_id}/like:
+    post:
+      summary: Toggle like on a post
+      operationId: togglePostLike
+      description: Adds a like if not liked, removes if already liked.
+      tags: [likes]
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique post identifier
+      responses:
+        "200":
+          description: Like toggled
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ToggleLikeResponse"
         "404":
           description: Post not found
           content:
