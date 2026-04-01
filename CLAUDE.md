@@ -94,6 +94,11 @@ Copy `.env.example` to `.env` for local development.
 - Model fields use `camelCase`
 - All endpoints and fields must have a `description`
 
+## Error Handling
+
+Domain errors live in `internal/<package>/errors.go` and use `apierr.NewApiError(httpStatus, message)`. The middleware converts these directly to HTTP responses — no mapping needed in handlers. Return the right error from the service layer and the correct status code is sent automatically.
+- Private resources inaccessible to the requester should return `ErrNotFound` (not `ErrForbidden`) to avoid leaking existence.
+
 ## SQLite / Squirrel Notes
 
 - Use `sq.Expr("datetime('now')")` for current timestamp — SQLite does not support `NOW()`

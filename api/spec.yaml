@@ -413,8 +413,18 @@ paths:
       responses:
         "204":
           description: Deleted
-        "400":
-          description: Bad request
+        "403":
+          description: Not allowed (not author)
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
+        "404":
+          description: Recipe not found
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
 
     put:
       summary: Update recipe
