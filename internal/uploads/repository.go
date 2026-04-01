@@ -3,7 +3,6 @@ package uploads
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"time"
 
@@ -42,9 +41,6 @@ func (r *Repository) GetPath(ctx context.Context, id string) (string, error) {
 		Where(sq.Eq{"id": id}).
 		QueryRowContext(ctx).
 		Scan(&path)
-	if errors.Is(err, sql.ErrNoRows) {
-		return "", ErrNotFound
-	}
 	if err != nil {
 		return "", fmt.Errorf("get upload path: %w", err)
 	}
@@ -64,7 +60,7 @@ func (r *Repository) Confirm(ctx context.Context, id string) error {
 		return fmt.Errorf("confirm upload rows affected: %w", err)
 	}
 	if n == 0 {
-		return ErrNotFound
+		return sql.ErrNoRows
 	}
 	return nil
 }
@@ -76,9 +72,6 @@ func (r *Repository) Delete(ctx context.Context, id string) (string, error) {
 		Where(sq.Eq{"id": id}).
 		QueryRowContext(ctx).
 		Scan(&path)
-	if errors.Is(err, sql.ErrNoRows) {
-		return "", ErrNotFound
-	}
 	if err != nil {
 		return "", fmt.Errorf("get upload path: %w", err)
 	}
@@ -100,9 +93,6 @@ func (r *Repository) Copy(ctx context.Context, srcID, dstID, dstPath string) err
 		Where(sq.Eq{"id": srcID}).
 		QueryRowContext(ctx).
 		Scan(&mimeType)
-	if errors.Is(err, sql.ErrNoRows) {
-		return ErrNotFound
-	}
 	if err != nil {
 		return fmt.Errorf("get upload mime_type: %w", err)
 	}

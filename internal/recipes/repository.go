@@ -3,7 +3,6 @@ package recipes
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"slices"
 	"strings"
@@ -203,9 +202,6 @@ func (r *Repository) GetRecipeByID(ctx context.Context, recipeID string) (models
 
 	recipe, err := scanRecipe(row)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return models.Recipe{}, ErrNotFound
-		}
 		return models.Recipe{}, err
 	}
 

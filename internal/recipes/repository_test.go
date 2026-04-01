@@ -1,6 +1,7 @@
 package recipes_test
 
 import (
+	"database/sql"
 	"testing"
 	"time"
 
@@ -118,7 +119,7 @@ func TestRecipeRepository_GetRecipeByID_NotFound(t *testing.T) {
 	repo := setupRecipeRepo(t)
 
 	_, err := repo.GetRecipeByID(t.Context(), "non-existent")
-	assert.ErrorIs(t, err, recipes.ErrNotFound)
+	assert.ErrorIs(t, err, sql.ErrNoRows)
 }
 
 func TestRecipeRepository_ListRecipes(t *testing.T) {
@@ -300,7 +301,7 @@ func TestRecipeRepository_DeleteRecipe(t *testing.T) {
 	require.NoError(t, repo.DeleteRecipe(t.Context(), r.AuthorId, r.Id))
 
 	_, err := repo.GetRecipeByID(t.Context(), r.Id)
-	assert.ErrorIs(t, err, recipes.ErrNotFound)
+	assert.ErrorIs(t, err, sql.ErrNoRows)
 }
 
 func TestRecipeRepository_GetPreviewsByIDs(t *testing.T) {

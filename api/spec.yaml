@@ -176,18 +176,6 @@ paths:
       responses:
         "204":
           description: Deleted
-        "403":
-          description: Not allowed (not author)
-          content:
-            application/json:
-              schema:
-                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
-        "404":
-          description: Post not found
-          content:
-            application/json:
-              schema:
-                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
 
   /api/v1/posts/{post_id}/like:
     post:
@@ -413,18 +401,6 @@ paths:
       responses:
         "204":
           description: Deleted
-        "403":
-          description: Not allowed (not author)
-          content:
-            application/json:
-              schema:
-                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
-        "404":
-          description: Recipe not found
-          content:
-            application/json:
-              schema:
-                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
 
     put:
       summary: Update recipe

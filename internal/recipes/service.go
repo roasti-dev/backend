@@ -245,6 +245,9 @@ func (s *Service) UpdateRecipe(
 func (s *Service) CloneRecipe(ctx context.Context, userID, recipeID string) (models.Recipe, error) {
 	original, err := s.repo.GetRecipeByID(ctx, recipeID)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return models.Recipe{}, ErrNotFound
+		}
 		return models.Recipe{}, err
 	}
 
@@ -326,7 +329,7 @@ func (s *Service) DeleteRecipe(ctx context.Context, userID, recipeID string) err
 	}
 
 	if recipe.AuthorId != userID {
-		return ErrForbidden
+		return nil
 	}
 
 	if err := s.repo.DeleteRecipe(ctx, userID, recipeID); err != nil {

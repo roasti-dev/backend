@@ -2359,8 +2359,6 @@ func (r CreatePostResponse) StatusCode() int {
 type DeletePostResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON403      *externalRef0.ApiErrorResponse
-	JSON404      *externalRef0.ApiErrorResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -2544,8 +2542,6 @@ func (r CreateRecipeResponse) StatusCode() int {
 type DeleteRecipeResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON403      *externalRef0.ApiErrorResponse
-	JSON404      *externalRef0.ApiErrorResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -3429,23 +3425,6 @@ func ParseDeletePostResponse(rsp *http.Response) (*DeletePostResponse, error) {
 		HTTPResponse: rsp,
 	}
 
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest externalRef0.ApiErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON403 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest externalRef0.ApiErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON404 = &dest
-
-	}
-
 	return response, nil
 }
 
@@ -3698,23 +3677,6 @@ func ParseDeleteRecipeResponse(rsp *http.Response) (*DeleteRecipeResponse, error
 	response := &DeleteRecipeResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest externalRef0.ApiErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON403 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest externalRef0.ApiErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON404 = &dest
-
 	}
 
 	return response, nil

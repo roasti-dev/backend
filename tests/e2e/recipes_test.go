@@ -116,14 +116,47 @@ func TestDeleteRecipe(t *testing.T) {
 		assert.Equal(t, 204, resp.StatusCode())
 	})
 
-	t.Run("forbidden - not author", func(t *testing.T) {
+	t.Run("non-author delete returns 204", func(t *testing.T) {
 		c := newAuthenticatedTestClient(t, srv)
 		recipe := createRecipe(t, c, defaultPayload)
 
 		other := newAuthenticatedTestClient(t, srv)
 		resp, err := other.DeleteRecipeWithResponse(t.Context(), recipe.Id)
 		require.NoError(t, err)
-		assert.Equal(t, 403, resp.StatusCode())
+		assert.Equal(t, 204, resp.StatusCode())
+	})
+
+	t.Run("non-author delete does not remove recipe", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		recipe := createRecipe(t, c, defaultPayload)
+
+		other := newAuthenticatedTestClient(t, srv)
+		_, err := other.DeleteRecipeWithResponse(t.Context(), recipe.Id)
+		require.NoError(t, err)
+
+		resp, err := c.GetRecipeWithResponse(t.Context(), recipe.Id)
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode())
+	})
+
+	t.Run("non-existent recipe returns 204", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+
+		resp, err := c.DeleteRecipeWithResponse(t.Context(), "non-existent-id")
+		require.NoError(t, err)
+		assert.Equal(t, 204, resp.StatusCode())
+	})
+
+	t.Run("deleting already deleted recipe returns 204", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		recipe := createRecipe(t, c, defaultPayload)
+
+		_, err := c.DeleteRecipeWithResponse(t.Context(), recipe.Id)
+		require.NoError(t, err)
+
+		resp, err := c.DeleteRecipeWithResponse(t.Context(), recipe.Id)
+		require.NoError(t, err)
+		assert.Equal(t, 204, resp.StatusCode())
 	})
 }
 

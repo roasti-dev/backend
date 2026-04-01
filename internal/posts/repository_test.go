@@ -181,11 +181,11 @@ func TestPostRepository_GetPostByID(t *testing.T) {
 		assert.Equal(t, "user-1", got.Author.Username)
 	})
 
-	t.Run("not found returns ErrNotFound", func(t *testing.T) {
+	t.Run("not found returns sql.ErrNoRows", func(t *testing.T) {
 		repo, _ := setupPostRepo(t)
 
 		_, err := repo.GetPostByID(t.Context(), "non-existent")
-		assert.ErrorIs(t, err, posts.ErrNotFound)
+		assert.ErrorIs(t, err, sql.ErrNoRows)
 	})
 }
 
@@ -235,7 +235,7 @@ func TestPostRepository_DeletePost(t *testing.T) {
 		require.NoError(t, repo.DeletePost(t.Context(), p.Id))
 
 		_, err := repo.GetPostByID(t.Context(), p.Id)
-		assert.ErrorIs(t, err, posts.ErrNotFound)
+		assert.ErrorIs(t, err, sql.ErrNoRows)
 	})
 
 	t.Run("no error on non-existent post", func(t *testing.T) {

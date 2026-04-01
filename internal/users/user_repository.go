@@ -3,7 +3,6 @@ package users
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"time"
 
@@ -34,9 +33,6 @@ func (r *UserRepository) GetByID(ctx context.Context, userID string) (User, erro
 		QueryRowContext(ctx).
 		Scan(&user.ID, &user.Email, &user.Username, &user.AvatarID, &user.Bio, &user.CreatedAt)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return User{}, ErrNotFound
-		}
 		return User{}, fmt.Errorf("get user by id: %w", err)
 	}
 	return user, nil
@@ -68,9 +64,6 @@ func (r *UserRepository) GetByUsername(ctx context.Context, username string) (Us
 		QueryRowContext(ctx).
 		Scan(&user.ID, &user.Email, &user.Username, &user.AvatarID, &user.Bio, &user.CreatedAt)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return User{}, ErrNotFound
-		}
 		return User{}, fmt.Errorf("select user: %w", err)
 	}
 	return user, nil

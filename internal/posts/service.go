@@ -2,6 +2,8 @@ package posts
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -60,6 +62,9 @@ func NewService(repo PostRepository, likeChecker LikeChecker, likeToggler LikeTo
 
 func (s *Service) CreateComment(ctx context.Context, userID, postID, text string) (models.PostComment, error) {
 	if _, err := s.repo.GetPostByID(ctx, postID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return models.PostComment{}, ErrNotFound
+		}
 		return models.PostComment{}, err
 	}
 	comment := models.PostComment{
@@ -73,6 +78,9 @@ func (s *Service) CreateComment(ctx context.Context, userID, postID, text string
 
 func (s *Service) ToggleLike(ctx context.Context, userID, postID string) (likes.ToggleResult, error) {
 	if _, err := s.repo.GetPostByID(ctx, postID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return likes.ToggleResult{}, ErrNotFound
+		}
 		return likes.ToggleResult{}, err
 	}
 	return s.likeToggler.Toggle(ctx, userID, postID, models.LikeTargetTypePost)
@@ -138,6 +146,9 @@ func (s *Service) ListPosts(ctx context.Context, userID string, params ListPosts
 func (s *Service) GetPost(ctx context.Context, userID, postID string) (models.Post, error) {
 	post, err := s.repo.GetPostByID(ctx, postID)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return models.Post{}, ErrNotFound
+		}
 		return models.Post{}, err
 	}
 
@@ -159,6 +170,9 @@ func (s *Service) GetPost(ctx context.Context, userID, postID string) (models.Po
 func (s *Service) UpdatePost(ctx context.Context, userID, postID string, req models.UpdatePostRequest) (models.Post, error) {
 	post, err := s.repo.GetPostByID(ctx, postID)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return models.Post{}, ErrNotFound
+		}
 		return models.Post{}, err
 	}
 	if post.Author.Id != userID {
@@ -173,10 +187,13 @@ func (s *Service) UpdatePost(ctx context.Context, userID, postID string, req mod
 func (s *Service) DeletePost(ctx context.Context, userID, postID string) error {
 	post, err := s.repo.GetPostByID(ctx, postID)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
 		return err
 	}
 	if post.Author.Id != userID {
-		return ErrForbidden
+		return nil
 	}
 	return s.repo.DeletePost(ctx, postID)
 }

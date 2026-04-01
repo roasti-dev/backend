@@ -2,6 +2,8 @@ package uploads
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -122,6 +124,9 @@ func (s *Service) Resolve(ctx context.Context, imageId string) (*ImageFile, erro
 
 	path, err := s.repo.GetPath(ctx, imageId)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotFound
+		}
 		return nil, err
 	}
 
@@ -132,7 +137,13 @@ func (s *Service) Confirm(ctx context.Context, imageId string) error {
 	if !id.IsValidID(imageId) {
 		return ErrNotFound
 	}
-	return s.repo.Confirm(ctx, imageId)
+	if err := s.repo.Confirm(ctx, imageId); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrNotFound
+		}
+		return err
+	}
+	return nil
 }
 
 func (s *Service) Copy(ctx context.Context, srcID string) (string, error) {
@@ -142,6 +153,9 @@ func (s *Service) Copy(ctx context.Context, srcID string) (string, error) {
 
 	srcPath, err := s.repo.GetPath(ctx, srcID)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", ErrNotFound
+		}
 		return "", fmt.Errorf("get source path: %w", err)
 	}
 
@@ -172,7 +186,9 @@ func (s *Service) Copy(ctx context.Context, srcID string) (string, error) {
 		return "", fmt.Errorf("copy file: %w", err)
 	}
 
-	if err := s.repo.Copy(ctx, srcID, newID, dstPath); err != nil {
+	if err := s.repo.Copy(ctx, srcID, newID, dstPath); errors.Is(err, sql.ErrNoRows) {
+		return "", ErrNotFound
+	} else if err != nil {
 		if rmErr := os.Remove(dstPath); rmErr != nil {
 			slog.ErrorContext(ctx, "Failed to remove destionation file",
 				slog.String("upload_id", srcID),

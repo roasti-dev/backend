@@ -120,9 +120,6 @@ func (r *Repository) GetPostByID(ctx context.Context, postID string) (models.Pos
 
 	post, err := scanPost(row)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return models.Post{}, ErrNotFound
-		}
 		return models.Post{}, err
 	}
 

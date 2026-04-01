@@ -2,6 +2,8 @@ package app
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -41,6 +43,9 @@ type userLibrary struct {
 // Consider extracting a generic helper if more likeable types are added.
 func (f *userLibrary) ListLikedPosts(ctx context.Context, currentUserID, targetUserID string, params models.ListUserLikesParams) (models.GenericPage[models.LikedPost], error) {
 	if _, err := f.users.GetByID(ctx, targetUserID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return models.GenericPage[models.LikedPost]{}, users.ErrNotFound
+		}
 		return models.GenericPage[models.LikedPost]{}, err
 	}
 
@@ -86,6 +91,9 @@ func (f *userLibrary) ListLikedPosts(ctx context.Context, currentUserID, targetU
 
 func (f *userLibrary) ListLikedRecipes(ctx context.Context, currentUserID, targetUserID string, params models.ListUserLikesParams) (models.GenericPage[models.LikedRecipe], error) {
 	if _, err := f.users.GetByID(ctx, targetUserID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return models.GenericPage[models.LikedRecipe]{}, users.ErrNotFound
+		}
 		return models.GenericPage[models.LikedRecipe]{}, err
 	}
 

@@ -2,6 +2,8 @@ package users
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -104,16 +106,27 @@ func (s *Service) Register(ctx context.Context, input RegisterInput) (User, erro
 }
 
 func (s *Service) FindByUsername(ctx context.Context, username string) (User, error) {
-	return s.repo.GetByUsername(ctx, username)
+	user, err := s.repo.GetByUsername(ctx, username)
+	if errors.Is(err, sql.ErrNoRows) {
+		return User{}, ErrNotFound
+	}
+	return user, err
 }
 
 func (s *Service) FindByID(ctx context.Context, userID string) (User, error) {
-	return s.repo.GetByID(ctx, userID)
+	user, err := s.repo.GetByID(ctx, userID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return User{}, ErrNotFound
+	}
+	return user, err
 }
 
 func (s *Service) CurrentUser(ctx context.Context, userID string) (models.UserAccount, error) {
 	user, err := s.repo.GetByID(ctx, userID)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return models.UserAccount{}, ErrNotFound
+		}
 		return models.UserAccount{}, fmt.Errorf("get user by id: %w", err)
 	}
 	return user.ToAccount(), nil
@@ -122,6 +135,9 @@ func (s *Service) CurrentUser(ctx context.Context, userID string) (models.UserAc
 func (s *Service) GetPublicProfile(ctx context.Context, userID string) (models.UserProfile, error) {
 	user, err := s.repo.GetByID(ctx, userID)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return models.UserProfile{}, ErrNotFound
+		}
 		return models.UserProfile{}, fmt.Errorf("get user by id: %w", err)
 	}
 	return user.ToPublicProfile(), nil
