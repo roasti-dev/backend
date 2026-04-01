@@ -162,7 +162,7 @@ func TestGetRecipeByID(t *testing.T) {
 		assert.Equal(t, 404, resp.StatusCode())
 	})
 
-	t.Run("forbidden - another user's private recipe", func(t *testing.T) {
+	t.Run("not found - another user's private recipe", func(t *testing.T) {
 		c1 := newAuthenticatedTestClient(t, srv)
 		private := defaultPayload
 		private.Public = new(false)
@@ -171,7 +171,7 @@ func TestGetRecipeByID(t *testing.T) {
 		c2 := newAuthenticatedTestClient(t, srv)
 		resp, err := c2.GetRecipeWithResponse(t.Context(), recipe.Id)
 		require.NoError(t, err)
-		assert.Equal(t, 403, resp.StatusCode())
+		assert.Equal(t, 404, resp.StatusCode())
 	})
 
 	t.Run("recipe contains author", func(t *testing.T) {

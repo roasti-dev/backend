@@ -90,14 +90,14 @@ func TestRecipeService_GetRecipeByID(t *testing.T) {
 		assert.ErrorIs(t, err, recipes.ErrNotFound)
 	})
 
-	t.Run("returns forbidden for private recipe", func(t *testing.T) {
+	t.Run("returns not found for private recipe accessed by non-author", func(t *testing.T) {
 		svc, repo := setupRecipeService(t)
 		private := createTestRecipe(t, repo)
 		private.Public = false
 		require.NoError(t, repo.UpsertRecipe(t.Context(), private))
 
 		_, err := svc.GetRecipeByID(t.Context(), "other-user", private.Id)
-		assert.ErrorIs(t, err, recipes.ErrForbidden)
+		assert.ErrorIs(t, err, recipes.ErrNotFound)
 	})
 }
 
@@ -158,14 +158,14 @@ func TestRecipeService_ToggleLike(t *testing.T) {
 		assert.ErrorIs(t, err, recipes.ErrNotFound)
 	})
 
-	t.Run("returns forbidden for private recipe of another user", func(t *testing.T) {
+	t.Run("returns not found for private recipe of another user", func(t *testing.T) {
 		svc, repo := setupRecipeService(t)
 		r := createTestRecipe(t, repo)
 		r.Public = false
 		require.NoError(t, repo.UpsertRecipe(t.Context(), r))
 
 		_, err := svc.ToggleLike(t.Context(), "user-2", r.Id)
-		assert.ErrorIs(t, err, recipes.ErrForbidden)
+		assert.ErrorIs(t, err, recipes.ErrNotFound)
 	})
 
 	t.Run("toggles like on accessible recipe", func(t *testing.T) {

@@ -391,14 +391,8 @@ paths:
             application/json:
               schema:
                 $ref: "./models.yaml#/components/schemas/Recipe"
-        "403":
-          description: Not allowed (not author)
-          content:
-            application/json:
-              schema:
-                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
         "404":
-          description: Recipe not found
+          description: Recipe not found or not accessible
           content:
             application/json:
               schema:

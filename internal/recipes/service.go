@@ -79,7 +79,7 @@ func (s *Service) GetRecipeByID(ctx context.Context, userID, recipeID string) (m
 	}
 
 	if !recipe.Public && recipe.AuthorId != userID {
-		return models.Recipe{}, ErrForbidden
+		return models.Recipe{}, ErrNotFound
 	}
 
 	recipe.IsLiked, err = s.likeChecker.IsLiked(ctx, userID, recipeID, models.LikeTargetTypeRecipe)
