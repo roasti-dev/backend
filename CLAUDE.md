@@ -99,7 +99,7 @@ Copy `.env.example` to `.env` for local development.
 Domain errors live in `internal/<package>/errors.go` and use `apierr.NewApiError(httpStatus, message)`. The middleware converts these directly to HTTP responses — no mapping needed in handlers. Return the right error from the service layer and the correct status code is sent automatically.
 - Private resources inaccessible to the requester should return `ErrNotFound` (not `ErrForbidden`) to avoid leaking existence.
 - **Layer boundary**: repositories return `sql.ErrNoRows` (infrastructure errors); services map them to domain errors (`ErrNotFound`). Never return domain errors from the repository layer.
-- **DELETE idempotency**: delete endpoints always return 204 — for non-existent and unauthorized resources alike. No 403/404 on delete.
+- **DELETE idempotency**: delete endpoints return 204 for non-existent resources. For unauthorized requests (not the owner): return 403 if the resource is public, 404 if the resource is private (to avoid leaking existence).
 
 ## SQLite / Squirrel Notes
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
@@ -295,9 +294,6 @@ func (r *Repository) GetCommentAuthorID(ctx context.Context, commentID string) (
 		Limit(1).
 		RunWith(r.runner).
 		QueryRowContext(ctx).Scan(&authorID)
-	if errors.Is(err, sql.ErrNoRows) {
-		return "", ErrCommentNotFound
-	}
 	return authorID, err
 }
 

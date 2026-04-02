@@ -245,7 +245,7 @@ func (s *Service) DeletePost(ctx context.Context, userID, postID string) error {
 		return err
 	}
 	if post.Author.Id != userID {
-		return nil
+		return ErrForbidden
 	}
 	return s.repo.DeletePost(ctx, postID)
 }
@@ -253,6 +253,9 @@ func (s *Service) DeletePost(ctx context.Context, userID, postID string) error {
 func (s *Service) DeleteComment(ctx context.Context, userID, commentID string) error {
 	authorID, err := s.repo.GetCommentAuthorID(ctx, commentID)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrCommentNotFound
+		}
 		return err
 	}
 	if authorID != userID {

@@ -377,11 +377,11 @@ func TestPostRepository_GetCommentAuthorID(t *testing.T) {
 		assert.Equal(t, "user-2", authorID)
 	})
 
-	t.Run("non-existent comment returns ErrCommentNotFound", func(t *testing.T) {
+	t.Run("non-existent comment returns sql.ErrNoRows", func(t *testing.T) {
 		repo, _ := setupPostRepo(t)
 
 		_, err := repo.GetCommentAuthorID(t.Context(), "non-existent")
-		assert.ErrorIs(t, err, posts.ErrCommentNotFound)
+		assert.ErrorIs(t, err, sql.ErrNoRows)
 	})
 }
 

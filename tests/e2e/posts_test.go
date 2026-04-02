@@ -279,27 +279,14 @@ func TestDeletePost(t *testing.T) {
 		assert.Empty(t, resp.JSON200.Items)
 	})
 
-	t.Run("non-author delete returns 204", func(t *testing.T) {
+	t.Run("non-author delete returns 403", func(t *testing.T) {
 		c1 := newAuthenticatedTestClient(t, srv)
 		c2 := newAuthenticatedTestClient(t, srv)
 		post := createPost(t, c1, defaultPostPayload)
 
 		resp, err := c2.DeletePostWithResponse(t.Context(), post.Id)
 		require.NoError(t, err)
-		assert.Equal(t, 204, resp.StatusCode())
-	})
-
-	t.Run("non-author delete does not remove post", func(t *testing.T) {
-		c1 := newAuthenticatedTestClient(t, srv)
-		c2 := newAuthenticatedTestClient(t, srv)
-		post := createPost(t, c1, defaultPostPayload)
-
-		_, err := c2.DeletePostWithResponse(t.Context(), post.Id)
-		require.NoError(t, err)
-
-		resp, err := c1.GetPostWithResponse(t.Context(), post.Id)
-		require.NoError(t, err)
-		assert.Equal(t, 200, resp.StatusCode())
+		assert.Equal(t, 403, resp.StatusCode())
 	})
 
 	t.Run("non-existent post returns 204", func(t *testing.T) {

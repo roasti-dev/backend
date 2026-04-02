@@ -344,7 +344,10 @@ func (s *Service) DeleteRecipe(ctx context.Context, userID, recipeID string) err
 	}
 
 	if recipe.AuthorId != userID {
-		return nil
+		if !recipe.Public {
+			return ErrNotFound
+		}
+		return ErrForbidden
 	}
 
 	if err := s.repo.DeleteRecipe(ctx, userID, recipeID); err != nil {
