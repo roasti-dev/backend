@@ -82,7 +82,7 @@ func NewService(repo PostRepository, uploader Uploader, likeChecker LikeChecker,
 }
 
 func (s *Service) CreateComment(ctx context.Context, userID, postID, text string) (models.PostComment, error) {
-	text = strings.TrimSpace(text)
+	text = normalizeCommentText(text)
 	if err := validateCommentText(text); err != nil {
 		return models.PostComment{}, err
 	}
@@ -139,6 +139,10 @@ func (s *Service) ToggleLike(ctx context.Context, userID, postID string) (likes.
 
 func normalizePostPayload(req *models.PostPayload) {
 	req.Title = strings.TrimSpace(req.Title)
+}
+
+func normalizeCommentText(text string) string {
+	return strings.TrimSpace(text)
 }
 
 func (s *Service) CreatePost(ctx context.Context, userID string, req models.CreatePostRequest) (models.Post, error) {
