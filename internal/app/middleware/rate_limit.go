@@ -91,7 +91,7 @@ func RateLimit(cfg RateLimitConfig) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ip := r.Header.Get("X-Real-IP")
 			if ip == "" {
-				ip, _, _ = net.SplitHostPort(r.RemoteAddr)
+				ip, _, _ = net.SplitHostPort(r.RemoteAddr) // nolint:errcheck
 			}
 			if !rl.get(ip).Allow() {
 				http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)

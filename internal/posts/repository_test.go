@@ -36,7 +36,6 @@ func TestPostRepository_Create(t *testing.T) {
 	assert.Empty(t, got.Comments)
 }
 
-
 func TestPostRepository_Create_WithBlocks(t *testing.T) {
 	t.Run("text block", func(t *testing.T) {
 		repo, _ := setupPostRepo(t)

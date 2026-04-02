@@ -257,22 +257,6 @@ func (s *Service) UpdatePost(ctx context.Context, userID, postID string, req mod
 	return updated, nil
 }
 
-func (s *Service) confirmPostImages(ctx context.Context, post models.Post) {
-	for _, block := range post.Blocks {
-		if block.Images == nil {
-			continue
-		}
-		for _, imageID := range *block.Images {
-			if err := s.uploader.Confirm(ctx, imageID); err != nil {
-				s.logger.WarnContext(ctx, "failed to confirm post block image",
-					slog.String("post_id", post.Id),
-					slog.String("image_id", imageID),
-				)
-			}
-		}
-	}
-}
-
 func (s *Service) DeletePost(ctx context.Context, userID, postID string) error {
 	post, err := s.repo.GetPostByID(ctx, postID)
 	if err != nil {
@@ -330,6 +314,22 @@ func (s *Service) GetPostsByIDs(ctx context.Context, currentUserID string, ids [
 		postList[i].LikesCount = int32(likesCounts[p.Id])
 	}
 	return postList, nil
+}
+
+func (s *Service) confirmPostImages(ctx context.Context, post models.Post) {
+	for _, block := range post.Blocks {
+		if block.Images == nil {
+			continue
+		}
+		for _, imageID := range *block.Images {
+			if err := s.uploader.Confirm(ctx, imageID); err != nil {
+				s.logger.WarnContext(ctx, "failed to confirm post block image",
+					slog.String("post_id", post.Id),
+					slog.String("image_id", imageID),
+				)
+			}
+		}
+	}
 }
 
 func blockPayloadsToModel(payloads []models.PostBlockPayload) []models.PostBlock {

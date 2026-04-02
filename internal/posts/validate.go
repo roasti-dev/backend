@@ -3,10 +3,10 @@ package posts
 import "github.com/nikpivkin/roasti-app-backend/internal/api/models"
 
 const (
-	postTitleMaxLen    = 200
-	blocksMaxCount     = 30
-	blockTextMaxLen    = 5000
-	commentTextMaxLen  = 1000
+	postTitleMaxLen   = 200
+	blocksMaxCount    = 30
+	blockTextMaxLen   = 5000
+	commentTextMaxLen = 1000
 )
 
 func validatePostPayload(req models.PostPayload) error {
