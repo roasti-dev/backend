@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
+	"github.com/nikpivkin/roasti-app-backend/internal/events"
 	"github.com/nikpivkin/roasti-app-backend/internal/likes"
 	"github.com/nikpivkin/roasti-app-backend/internal/x/id"
 )
@@ -39,6 +40,10 @@ type Uploader interface {
 	Confirm(ctx context.Context, fileID string) error
 }
 
+type EventPublisher interface {
+	Publish(e events.Event)
+}
+
 type ListPostsParams struct {
 	Limit *int32
 	Page  *int32
@@ -62,15 +67,17 @@ type Service struct {
 	uploader    Uploader
 	likeChecker LikeChecker
 	likeToggler LikeToggler
+	publisher   EventPublisher
 }
 
-func NewService(repo PostRepository, uploader Uploader, likeChecker LikeChecker, likeToggler LikeToggler) *Service {
+func NewService(repo PostRepository, uploader Uploader, likeChecker LikeChecker, likeToggler LikeToggler, publisher EventPublisher) *Service {
 	return &Service{
 		logger:      slog.Default(),
 		repo:        repo,
 		uploader:    uploader,
 		likeChecker: likeChecker,
 		likeToggler: likeToggler,
+		publisher:   publisher,
 	}
 }
 
@@ -79,7 +86,8 @@ func (s *Service) CreateComment(ctx context.Context, userID, postID, text string
 	if err := validateCommentText(text); err != nil {
 		return models.PostComment{}, err
 	}
-	if _, err := s.repo.GetPostByID(ctx, postID); err != nil {
+	post, err := s.repo.GetPostByID(ctx, postID)
+	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return models.PostComment{}, ErrNotFound
 		}
@@ -91,17 +99,42 @@ func (s *Service) CreateComment(ctx context.Context, userID, postID, text string
 		Text:      text,
 		CreatedAt: time.Now().UTC(),
 	}
-	return s.repo.CreateComment(ctx, comment, postID)
+	created, err := s.repo.CreateComment(ctx, comment, postID)
+	if err != nil {
+		return models.PostComment{}, err
+	}
+	if s.publisher != nil {
+		s.publisher.Publish(events.PostCommentCreated{
+			PostID:    postID,
+			OwnerID:   post.Author.Id,
+			ByUserID:  userID,
+			CommentID: created.Id,
+		})
+	}
+	return created, nil
 }
 
 func (s *Service) ToggleLike(ctx context.Context, userID, postID string) (likes.ToggleResult, error) {
-	if _, err := s.repo.GetPostByID(ctx, postID); err != nil {
+	post, err := s.repo.GetPostByID(ctx, postID)
+	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return likes.ToggleResult{}, ErrNotFound
 		}
 		return likes.ToggleResult{}, err
 	}
-	return s.likeToggler.Toggle(ctx, userID, postID, models.LikeTargetTypePost)
+	result, err := s.likeToggler.Toggle(ctx, userID, postID, models.LikeTargetTypePost)
+	if err != nil {
+		return likes.ToggleResult{}, err
+	}
+	if s.publisher != nil {
+		s.publisher.Publish(events.PostLikeToggled{
+			PostID:   postID,
+			OwnerID:  post.Author.Id,
+			ByUserID: userID,
+			Liked:    result.Liked,
+		})
+	}
+	return result, nil
 }
 
 func normalizePostPayload(req *models.PostPayload) {

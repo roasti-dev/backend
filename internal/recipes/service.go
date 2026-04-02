@@ -55,19 +55,15 @@ type Service struct {
 	publisher   EventPublisher
 }
 
-func NewService(repo RecipeRepository, uploader Uploader, likeChecker LikeChecker, likeToggler LikeToggler) *Service {
+func NewService(repo RecipeRepository, uploader Uploader, likeChecker LikeChecker, likeToggler LikeToggler, publisher EventPublisher) *Service {
 	return &Service{
 		logger:      slog.Default(),
 		repo:        repo,
 		uploader:    uploader,
 		likeChecker: likeChecker,
 		likeToggler: likeToggler,
+		publisher:   publisher,
 	}
-}
-
-func (s *Service) WithPublisher(p EventPublisher) *Service {
-	s.publisher = p
-	return s
 }
 
 func (s *Service) GetRecipeByID(ctx context.Context, userID, recipeID string) (models.Recipe, error) {

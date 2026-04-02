@@ -10,3 +10,19 @@ type RecipeLikeToggled struct {
 	ByUserID string
 	Liked    bool
 }
+
+// PostLikeToggled is published when a user likes or unlikes a post.
+type PostLikeToggled struct {
+	PostID   string
+	OwnerID  string
+	ByUserID string
+	Liked    bool
+}
+
+// PostCommentCreated is published when a user comments on a post.
+type PostCommentCreated struct {
+	PostID    string
+	OwnerID   string
+	ByUserID  string
+	CommentID string
+}
