@@ -1,18 +1,28 @@
 package recipes
 
-import (
-	"strings"
+import "github.com/nikpivkin/roasti-app-backend/internal/api/models"
 
-	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
+const (
+	titleMaxLen           = 100
+	descriptionMaxLen     = 2000
+	stepTitleMaxLen       = 100
+	stepDescriptionMaxLen = 1000
+	stepsMaxCount         = 30
 )
 
 func validateRecipePayload(req models.RecipePayload) error {
-	if strings.TrimSpace(req.Title) == "" {
+	if req.Title == "" {
 		return ErrInvalidTitle
 	}
+	if len(req.Title) > titleMaxLen {
+		return ErrTitleTooLong
+	}
 
-	if strings.TrimSpace(req.Description) == "" {
+	if req.Description == "" {
 		return ErrInvalidDescription
+	}
+	if len(req.Description) > descriptionMaxLen {
+		return ErrDescriptionTooLong
 	}
 
 	if !req.BrewMethod.Valid() {
@@ -27,12 +37,22 @@ func validateRecipePayload(req models.RecipePayload) error {
 		return ErrInvalidRoastLevel
 	}
 
+	if len(req.Steps) > stepsMaxCount {
+		return ErrTooManySteps
+	}
+
 	for _, step := range req.Steps {
-		if strings.TrimSpace(step.Title) == "" {
+		if step.Title == "" {
 			return ErrInvalidStepTitle
 		}
-		if step.Description != nil && strings.TrimSpace(*step.Description) == "" {
+		if len(step.Title) > stepTitleMaxLen {
+			return ErrStepTitleTooLong
+		}
+		if step.Description != nil && *step.Description == "" {
 			return ErrInvalidStepDescription
+		}
+		if step.Description != nil && len(*step.Description) > stepDescriptionMaxLen {
+			return ErrStepDescriptionTooLong
 		}
 	}
 

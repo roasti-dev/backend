@@ -764,7 +764,7 @@ components:
           format: int32
           description: Total number of likes
 
-    CreatePostRequest:
+    PostPayload:
       type: object
       additionalProperties: false
       required:
@@ -780,21 +780,11 @@ components:
           items:
             $ref: "#/components/schemas/PostBlockPayload"
 
+    CreatePostRequest:
+      $ref: "#/components/schemas/PostPayload"
+
     UpdatePostRequest:
-      type: object
-      additionalProperties: false
-      required:
-        - title
-        - blocks
-      properties:
-        title:
-          type: string
-          description: Post title
-        blocks:
-          type: array
-          description: Ordered list of content blocks
-          items:
-            $ref: "#/components/schemas/PostBlockPayload"
+      $ref: "#/components/schemas/PostPayload"
 
     CreatePostCommentRequest:
       type: object

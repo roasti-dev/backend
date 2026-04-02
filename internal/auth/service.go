@@ -62,17 +62,13 @@ func NewService(
 }
 
 func (s *Service) Register(ctx context.Context, req models.RegisterRequest) (models.AuthResponse, error) {
-	if err := validateRegisterRequest(req); err != nil {
-		return models.AuthResponse{}, err
-	}
-
 	password, err := NewPassword(req.Password, s.policy)
 	if err != nil {
 		return models.AuthResponse{}, err
 	}
 
 	user, err := s.users.Register(ctx, users.RegisterInput{
-		Email:    string(req.Email),
+		Email:    req.Email,
 		Username: req.Username,
 		Password: password.Value(),
 		AvatarID: req.AvatarId,
@@ -95,10 +91,6 @@ func (s *Service) Register(ctx context.Context, req models.RegisterRequest) (mod
 }
 
 func (s *Service) Login(ctx context.Context, req models.LoginRequest) (models.AuthResponse, error) {
-	if err := validateLoginRequest(req); err != nil {
-		return models.AuthResponse{}, err
-	}
-
 	user, err := s.users.FindByUsername(ctx, req.Username)
 	if err != nil {
 		if errors.Is(err, users.ErrNotFound) {
@@ -184,19 +176,3 @@ func (s *Service) Logout(ctx context.Context, refreshToken string) error {
 	return nil
 }
 
-func validateRegisterRequest(req models.RegisterRequest) error {
-	if strings.TrimSpace(string(req.Email)) == "" {
-		return ErrInvalidEmail
-	}
-	return nil
-}
-
-func validateLoginRequest(req models.LoginRequest) error {
-	if strings.TrimSpace(req.Username) == "" {
-		return ErrUsernameRequired
-	}
-	if strings.TrimSpace(req.Password) == "" {
-		return ErrPasswordRequired
-	}
-	return nil
-}

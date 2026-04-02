@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
@@ -61,6 +62,10 @@ func NewService(repo PostRepository, likeChecker LikeChecker, likeToggler LikeTo
 }
 
 func (s *Service) CreateComment(ctx context.Context, userID, postID, text string) (models.PostComment, error) {
+	text = strings.TrimSpace(text)
+	if err := validateCommentText(text); err != nil {
+		return models.PostComment{}, err
+	}
 	if _, err := s.repo.GetPostByID(ctx, postID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return models.PostComment{}, ErrNotFound
@@ -86,7 +91,15 @@ func (s *Service) ToggleLike(ctx context.Context, userID, postID string) (likes.
 	return s.likeToggler.Toggle(ctx, userID, postID, models.LikeTargetTypePost)
 }
 
+func normalizePostPayload(req *models.PostPayload) {
+	req.Title = strings.TrimSpace(req.Title)
+}
+
 func (s *Service) CreatePost(ctx context.Context, userID string, req models.CreatePostRequest) (models.Post, error) {
+	normalizePostPayload(&req)
+	if err := validatePostPayload(req); err != nil {
+		return models.Post{}, err
+	}
 	now := time.Now().UTC()
 	post := models.Post{
 		Id:        id.NewID(),
@@ -168,6 +181,10 @@ func (s *Service) GetPost(ctx context.Context, userID, postID string) (models.Po
 }
 
 func (s *Service) UpdatePost(ctx context.Context, userID, postID string, req models.UpdatePostRequest) (models.Post, error) {
+	normalizePostPayload(&req)
+	if err := validatePostPayload(req); err != nil {
+		return models.Post{}, err
+	}
 	post, err := s.repo.GetPostByID(ctx, postID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

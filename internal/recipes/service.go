@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
@@ -184,7 +185,20 @@ func (s *Service) GetPreviewsByIDs(ctx context.Context, currentUserID, ownerID s
 	return previews, nil
 }
 
+func normalizeRecipePayload(req *models.RecipePayload) {
+	req.Title = strings.TrimSpace(req.Title)
+	req.Description = strings.TrimSpace(req.Description)
+	for i := range req.Steps {
+		req.Steps[i].Title = strings.TrimSpace(req.Steps[i].Title)
+		if req.Steps[i].Description != nil {
+			trimmed := strings.TrimSpace(*req.Steps[i].Description)
+			req.Steps[i].Description = &trimmed
+		}
+	}
+}
+
 func (s *Service) CreateRecipe(ctx context.Context, userID string, request models.CreateRecipeRequest) (models.Recipe, error) {
+	normalizeRecipePayload(&request)
 	if err := validateRecipePayload(request); err != nil {
 		return models.Recipe{}, err
 	}
@@ -208,6 +222,7 @@ func (s *Service) CreateRecipe(ctx context.Context, userID string, request model
 func (s *Service) UpdateRecipe(
 	ctx context.Context, userID, recipeID string, request models.UpdateRecipeRequest,
 ) (models.Recipe, error) {
+	normalizeRecipePayload(&request)
 	if err := validateRecipePayload(request); err != nil {
 		return models.Recipe{}, err
 	}
