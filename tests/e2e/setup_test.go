@@ -9,7 +9,6 @@ import (
 	"os"
 	"testing"
 
-	openapi_types "github.com/oapi-codegen/runtime/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
@@ -64,7 +63,7 @@ func newAuthenticatedTestClient(t *testing.T, srv *httptest.Server) *authenticat
 
 	username := "user_" + randomString(5)
 	resp, err := c.RegisterUserWithResponse(t.Context(), models.RegisterRequest{
-		Email:    openapi_types.Email(username + "@test.com"),
+		Email:    username + "@test.com",
 		Password: "password123",
 		Username: username,
 	})

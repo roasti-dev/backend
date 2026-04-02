@@ -64,6 +64,11 @@ func (s *Service) Register(ctx context.Context, input RegisterInput) (User, erro
 		return User{}, err
 	}
 
+	email, err := NewEmail(input.Email)
+	if err != nil {
+		return User{}, err
+	}
+
 	exists, err := s.repo.ExistsByUsername(ctx, username.Value())
 	if err != nil {
 		return User{}, fmt.Errorf("check username: %w", err)
@@ -72,7 +77,7 @@ func (s *Service) Register(ctx context.Context, input RegisterInput) (User, erro
 		return User{}, ErrUsernameTaken
 	}
 
-	exists, err = s.repo.ExistsByEmail(ctx, input.Email)
+	exists, err = s.repo.ExistsByEmail(ctx, email.Value())
 	if err != nil {
 		return User{}, fmt.Errorf("check email: %w", err)
 	}
@@ -80,14 +85,14 @@ func (s *Service) Register(ctx context.Context, input RegisterInput) (User, erro
 		return User{}, ErrEmailTaken
 	}
 
-	uid, err := s.identity.CreateIdentity(ctx, input.Email, input.Password)
+	uid, err := s.identity.CreateIdentity(ctx, email.Value(), input.Password)
 	if err != nil {
 		return User{}, err
 	}
 
 	user := User{
 		ID:       uid,
-		Email:    input.Email,
+		Email:    email.Value(),
 		Username: username.Value(),
 		AvatarID: input.AvatarID,
 		Bio:      input.Bio,
@@ -149,7 +154,11 @@ func (s *Service) ExistsByUsername(ctx context.Context, username string) (bool, 
 
 func (s *Service) UpdateProfile(ctx context.Context, userID string, req UpdateUserFields) (models.UserAccount, error) {
 	if req.Username != nil {
-		exists, err := s.repo.ExistsByUsername(ctx, *req.Username)
+		username, err := NewUsername(*req.Username)
+		if err != nil {
+			return models.UserAccount{}, err
+		}
+		exists, err := s.repo.ExistsByUsername(ctx, username.Value())
 		if err != nil {
 			return models.UserAccount{}, fmt.Errorf("check username: %w", err)
 		}

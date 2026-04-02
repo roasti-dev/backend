@@ -6,7 +6,6 @@ import (
 	"os"
 	"testing"
 
-	openapi_types "github.com/oapi-codegen/runtime/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -29,7 +28,7 @@ func TestRegister(t *testing.T) {
 		username, email, password := randomCredentials()
 
 		resp, err := c.RegisterUserWithResponse(t.Context(), models.RegisterRequest{
-			Email:    openapi_types.Email(email),
+			Email:    email,
 			Username: username,
 			Password: password,
 		})
@@ -39,7 +38,7 @@ func TestRegister(t *testing.T) {
 		assert.NotEmpty(t, resp.JSON201.RefreshToken)
 		assert.Equal(t, username, resp.JSON201.User.Username)
 		assert.NotEmpty(t, resp.JSON201.User.Id)
-		assert.Equal(t, openapi_types.Email(email), resp.JSON201.User.Email)
+		assert.Equal(t, email, resp.JSON201.User.Email)
 	})
 
 	t.Run("duplicate username", func(t *testing.T) {
@@ -47,14 +46,14 @@ func TestRegister(t *testing.T) {
 		username, email, password := randomCredentials()
 
 		_, err := c.RegisterUserWithResponse(t.Context(), models.RegisterRequest{
-			Email:    openapi_types.Email(email),
+			Email:    email,
 			Username: username,
 			Password: password,
 		})
 		require.NoError(t, err)
 
 		resp, err := c.RegisterUserWithResponse(t.Context(), models.RegisterRequest{
-			Email:    openapi_types.Email("other_" + email),
+			Email:    "other_" + email,
 			Username: username,
 			Password: password,
 		})
@@ -67,14 +66,14 @@ func TestRegister(t *testing.T) {
 		username, email, password := randomCredentials()
 
 		_, err := c.RegisterUserWithResponse(t.Context(), models.RegisterRequest{
-			Email:    openapi_types.Email(email),
+			Email:    email,
 			Username: username,
 			Password: password,
 		})
 		require.NoError(t, err)
 
 		resp, err := c.RegisterUserWithResponse(t.Context(), models.RegisterRequest{
-			Email:    openapi_types.Email(email),
+			Email:    email,
 			Username: "f_" + username,
 			Password: password,
 		})
@@ -87,7 +86,7 @@ func TestRegister(t *testing.T) {
 		username, email, _ := randomCredentials()
 
 		resp, err := c.RegisterUserWithResponse(t.Context(), models.RegisterRequest{
-			Email:    openapi_types.Email(email),
+			Email:    email,
 			Username: username,
 			Password: "123",
 		})
@@ -100,7 +99,7 @@ func TestRegister(t *testing.T) {
 		_, email, password := randomCredentials()
 
 		resp, err := c.RegisterUserWithResponse(t.Context(), models.RegisterRequest{
-			Email:    openapi_types.Email(email),
+			Email:    email,
 			Username: "invalid username!",
 			Password: password,
 		})
@@ -117,7 +116,7 @@ func TestLogin(t *testing.T) {
 		username, email, password := randomCredentials()
 
 		_, err := c.RegisterUserWithResponse(t.Context(), models.RegisterRequest{
-			Email:    openapi_types.Email(email),
+			Email:    email,
 			Username: username,
 			Password: password,
 		})
@@ -131,7 +130,7 @@ func TestLogin(t *testing.T) {
 		assert.Equal(t, 200, resp.StatusCode())
 		assert.NotEmpty(t, resp.JSON200.AccessToken)
 		assert.NotEmpty(t, resp.JSON200.RefreshToken)
-		assert.Equal(t, openapi_types.Email(email), resp.JSON200.User.Email)
+		assert.Equal(t, email, resp.JSON200.User.Email)
 	})
 
 	t.Run("invalid credentials", func(t *testing.T) {
@@ -155,7 +154,7 @@ func TestRefresh(t *testing.T) {
 		username, email, password := randomCredentials()
 
 		reg, err := c.RegisterUserWithResponse(t.Context(), models.RegisterRequest{
-			Email:    openapi_types.Email(email),
+			Email:    email,
 			Username: username,
 			Password: password,
 		})
@@ -364,7 +363,7 @@ func TestCookieAuth(t *testing.T) {
 		username, email, password := randomCredentials()
 
 		_, err := c.RegisterUserWithResponse(t.Context(), models.RegisterRequest{
-			Email:    openapi_types.Email(email),
+			Email:    email,
 			Username: username,
 			Password: password,
 		})
@@ -380,7 +379,7 @@ func TestCookieAuth(t *testing.T) {
 		username, email, password := randomCredentials()
 
 		_, err := c.RegisterUserWithResponse(t.Context(), models.RegisterRequest{
-			Email:    openapi_types.Email(email),
+			Email:    email,
 			Username: username,
 			Password: password,
 		})
@@ -400,7 +399,7 @@ func TestCookieAuth(t *testing.T) {
 		username, email, password := randomCredentials()
 
 		_, err := c.RegisterUserWithResponse(t.Context(), models.RegisterRequest{
-			Email:    openapi_types.Email(email),
+			Email:    email,
 			Username: username,
 			Password: password,
 		})

@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/oapi-codegen/nullable"
-	openapi_types "github.com/oapi-codegen/runtime/types"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
 )
@@ -30,7 +29,7 @@ func (u User) ToPublicProfile() models.UserProfile {
 func (u User) ToAccount() models.UserAccount {
 	return models.UserAccount{
 		Id:       u.ID,
-		Email:    openapi_types.Email(u.Email),
+		Email:    u.Email,
 		Username: u.Username,
 		AvatarId: u.AvatarID,
 		Bio:      u.Bio,

@@ -357,7 +357,7 @@ components:
       properties:
         email:
           type: string
-          format: email
+
           description: User email address
         username:
           type: string
@@ -469,7 +469,7 @@ components:
           properties:
             email:
               type: string
-              format: email
+    
               description: User email address
 
     UpdateProfileRequest:
