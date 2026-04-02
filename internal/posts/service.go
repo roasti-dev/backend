@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -34,6 +35,10 @@ type LikeToggler interface {
 	Toggle(ctx context.Context, userID, targetID string, targetType models.LikeTargetType) (likes.ToggleResult, error)
 }
 
+type Uploader interface {
+	Confirm(ctx context.Context, fileID string) error
+}
+
 type ListPostsParams struct {
 	Limit *int32
 	Page  *int32
@@ -52,13 +57,21 @@ func (p ListPostsParams) Pagination() models.PaginationParams {
 }
 
 type Service struct {
-	repo         PostRepository
-	likeChecker  LikeChecker
-	likeToggler  LikeToggler
+	logger      *slog.Logger
+	repo        PostRepository
+	uploader    Uploader
+	likeChecker LikeChecker
+	likeToggler LikeToggler
 }
 
-func NewService(repo PostRepository, likeChecker LikeChecker, likeToggler LikeToggler) *Service {
-	return &Service{repo: repo, likeChecker: likeChecker, likeToggler: likeToggler}
+func NewService(repo PostRepository, uploader Uploader, likeChecker LikeChecker, likeToggler LikeToggler) *Service {
+	return &Service{
+		logger:      slog.Default(),
+		repo:        repo,
+		uploader:    uploader,
+		likeChecker: likeChecker,
+		likeToggler: likeToggler,
+	}
 }
 
 func (s *Service) CreateComment(ctx context.Context, userID, postID, text string) (models.PostComment, error) {
@@ -118,6 +131,7 @@ func (s *Service) CreatePost(ctx context.Context, userID string, req models.Crea
 	if err != nil {
 		return models.Post{}, err
 	}
+	s.confirmPostImages(ctx, created)
 	return created, nil
 }
 
@@ -198,7 +212,28 @@ func (s *Service) UpdatePost(ctx context.Context, userID, postID string, req mod
 	if err := s.repo.UpdatePost(ctx, postID, req.Title, blockPayloadsToModel(req.Blocks)); err != nil {
 		return models.Post{}, err
 	}
-	return s.GetPost(ctx, userID, postID)
+	updated, err := s.GetPost(ctx, userID, postID)
+	if err != nil {
+		return models.Post{}, err
+	}
+	s.confirmPostImages(ctx, updated)
+	return updated, nil
+}
+
+func (s *Service) confirmPostImages(ctx context.Context, post models.Post) {
+	for _, block := range post.Blocks {
+		if block.Images == nil {
+			continue
+		}
+		for _, imageID := range *block.Images {
+			if err := s.uploader.Confirm(ctx, imageID); err != nil {
+				slog.WarnContext(ctx, "failed to confirm post block image",
+					slog.String("post_id", post.Id),
+					slog.String("image_id", imageID),
+				)
+			}
+		}
+	}
 }
 
 func (s *Service) DeletePost(ctx context.Context, userID, postID string) error {

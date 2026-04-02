@@ -91,7 +91,7 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 	likeService := likes.NewService(likeRepo)
 	recipeService := recipes.NewService(recipeRepo, uploader, likeService, likeService).WithPublisher(bus)
 	postRepo := posts.NewRepository(database, runner)
-	postService := posts.NewService(postRepo, likeService, likeService)
+	postService := posts.NewService(postRepo, uploader, likeService, likeService)
 	userRepo := users.NewUserRepository(database)
 	userService := users.NewUserService(userRepo, &firebaseIdentityCreator{firebaseAuth}, uploader)
 

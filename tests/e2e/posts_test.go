@@ -506,3 +506,46 @@ func TestListPosts(t *testing.T) {
 		assert.Equal(t, int32(3), resp.JSON200.Pagination.LastPage)
 	})
 }
+
+func TestPostWithImages(t *testing.T) {
+	srv := setupTestServer(t)
+
+	t.Run("images in block are confirmed after create", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		imageID := uploadImage(t, c, generateTestImage(t))
+
+		images := []string{imageID}
+		payload := models.CreatePostRequest{
+			Title: "Post with images",
+			Blocks: []models.PostBlockPayload{
+				{Type: models.PostBlockTypeImages, Images: &images},
+			},
+		}
+		createPost(t, c, payload)
+
+		resp, err := c.GetImageWithResponse(t.Context(), imageID)
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode())
+	})
+
+	t.Run("images in block are confirmed after update", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		post := createPost(t, c, defaultPostPayload)
+
+		imageID := uploadImage(t, c, generateTestImage(t))
+		images := []string{imageID}
+		updatePayload := models.UpdatePostRequest{
+			Title: post.Title,
+			Blocks: []models.PostBlockPayload{
+				{Type: models.PostBlockTypeImages, Images: &images},
+			},
+		}
+		resp, err := c.UpdatePostWithResponse(t.Context(), post.Id, updatePayload)
+		require.NoError(t, err)
+		require.Equal(t, 200, resp.StatusCode())
+
+		imgResp, err := c.GetImageWithResponse(t.Context(), imageID)
+		require.NoError(t, err)
+		assert.Equal(t, 200, imgResp.StatusCode())
+	})
+}
