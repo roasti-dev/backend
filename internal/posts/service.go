@@ -260,7 +260,7 @@ func (s *Service) confirmPostImages(ctx context.Context, post models.Post) {
 		}
 		for _, imageID := range *block.Images {
 			if err := s.uploader.Confirm(ctx, imageID); err != nil {
-				slog.WarnContext(ctx, "failed to confirm post block image",
+				s.logger.WarnContext(ctx, "failed to confirm post block image",
 					slog.String("post_id", post.Id),
 					slog.String("image_id", imageID),
 				)

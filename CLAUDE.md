@@ -101,6 +101,10 @@ Domain errors live in `internal/<package>/errors.go` and use `apierr.NewApiError
 - **Layer boundary**: repositories return `sql.ErrNoRows` (infrastructure errors); services map them to domain errors (`ErrNotFound`). Never return domain errors from the repository layer.
 - **DELETE idempotency**: delete endpoints return 204 for non-existent resources. For unauthorized requests (not the owner): return 403 if the resource is public, 404 if the resource is private (to avoid leaking existence).
 
+## Logging
+
+Use `s.logger` (injected via constructor) for all logging inside services — never call `slog.WarnContext` or other `slog` package-level functions directly. This ensures log output respects the configured logger instance.
+
 ## SQLite / Squirrel Notes
 
 - Use `sq.Expr("datetime('now')")` for current timestamp — SQLite does not support `NOW()`
