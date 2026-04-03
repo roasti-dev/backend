@@ -47,7 +47,7 @@ jobs:
       - name: Bundle OpenAPI spec
         run: |
           REDOCLY_TELEMETRY=off REDOCLY_SUPPRESS_UPDATE_NOTICE=true \
-            pnpm --package=@redocly/cli@2.22.1 dlx openapi bundle -o openapi.yaml ./api/spec.yaml
+            npx -y @redocly/cli@2.22.1 bundle -o openapi.yaml ./api/spec.yaml
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
