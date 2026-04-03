@@ -1,0 +1,21 @@
+apis:
+  main:
+    root: api/spec.yaml
+
+rules:
+  rule/operationId-casing:
+    subject:
+      type: Operation
+      property: operationId
+    assertions:
+      casing: camelCase
+  rule/parameter-casing:
+    subject:
+      type: Parameter
+    assertions:
+      casing: snake_case
+  rule/schema-properties-casing:
+    subject:
+      type: SchemaProperties
+    assertions:
+      casing: snake_case
