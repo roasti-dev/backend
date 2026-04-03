@@ -44,12 +44,19 @@ jobs:
           cat tmp_changelog.md >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
+      - name: Bundle OpenAPI spec
+        run: |
+          REDOCLY_TELEMETRY=off REDOCLY_SUPPRESS_UPDATE_NOTICE=true \
+            pnpm --package=@redocly/cli@2.22.1 dlx openapi bundle -o openapi.yaml ./api/spec.yaml
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           body: ${{ steps.changelog.outputs.clean_changelog }}
           name: Release ${{ steps.changelog.outputs.tag }}
-          files: app-linux-amd64
+          files: |
+            app-linux-amd64
+            openapi.yaml
 
       - name: Send release notes to Telegram
         if: steps.changelog.outputs.clean_changelog != ''
