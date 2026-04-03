@@ -469,7 +469,6 @@ components:
           properties:
             email:
               type: string
-    
               description: User email address
 
     UpdateProfileRequest:
@@ -483,7 +482,7 @@ components:
           type: string
           nullable: true
           description: Short user biography
-        avatarId:
+        avatar_id:
           type: string
           nullable: true
           description: ID of the uploaded avatar image. Can be resolved via the image upload endpoint.
@@ -569,14 +568,14 @@ components:
     ListRecipesParams:
       type: object
       properties:
-        authorId:
+        author_id:
           type: string
           description: Filter by author
-        brewMethod:
+        brew_method:
           $ref: "#/components/schemas/BrewMethod"
         difficulty:
           $ref: "#/components/schemas/Difficulty"
-        roastLevel:
+        roast_level:
           $ref: "#/components/schemas/RoastLevel"
         query:
           type: string
