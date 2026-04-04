@@ -698,22 +698,31 @@ components:
       description: A comment on a post
       required:
         - id
-        - author
+        - is_deleted
         - text
         - created_at
+        - updated_at
       properties:
         id:
           type: string
           description: Unique comment identifier
+        is_deleted:
+          type: boolean
+          description: Whether the comment has been deleted. When true, author and text are omitted.
         author:
           $ref: "#/components/schemas/UserPreview"
+          description: Comment author. Omitted when is_deleted is true.
         text:
           type: string
-          description: Comment text
+          description: Comment text. Empty string when is_deleted is true.
         created_at:
           type: string
           format: date-time
           description: Timestamp when the comment was published
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp of the last edit
 
     Post:
       type: object

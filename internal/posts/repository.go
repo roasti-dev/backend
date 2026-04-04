@@ -43,9 +43,11 @@ var blockSelectColumns = []string{
 var commentColumns = []string{
 	"comments.id",
 	"comments.target_id",
-	"comments.author_id",
 	"comments.text",
 	"comments.created_at",
+	"comments.updated_at",
+	"comments.deleted_at",
+	"comments.author_id",
 	"users.username",
 	"users.avatar_id",
 }
@@ -178,8 +180,8 @@ func (r *Repository) ListPosts(ctx context.Context, pag models.PaginationParams)
 
 func (r *Repository) CreateComment(ctx context.Context, comment models.PostComment, postID string) (models.PostComment, error) {
 	_, err := r.psql.Insert(commentsTable).
-		Columns("id", "target_id", "target_type", "author_id", "text", "created_at").
-		Values(comment.Id, postID, commentTargetType, comment.Author.Id, comment.Text, comment.CreatedAt).
+		Columns("id", "target_id", "target_type", "author_id", "text", "created_at", "updated_at").
+		Values(comment.Id, postID, commentTargetType, comment.Author.Id, comment.Text, comment.CreatedAt, comment.CreatedAt).
 		RunWith(r.runner).
 		ExecContext(ctx)
 	if err != nil {
@@ -187,7 +189,7 @@ func (r *Repository) CreateComment(ctx context.Context, comment models.PostComme
 	}
 
 	row := r.psql.
-		Select("comments.id", "comments.text", "comments.created_at", "users.id", "users.username", "users.avatar_id").
+		Select("comments.id", "comments.text", "comments.created_at", "comments.updated_at", "users.id", "users.username", "users.avatar_id").
 		From(commentsTable).
 		Join("users ON users.id = comments.author_id").
 		Where(sq.Eq{"comments.id": comment.Id}).
@@ -197,7 +199,7 @@ func (r *Repository) CreateComment(ctx context.Context, comment models.PostComme
 
 	var avatarID sql.NullString
 	err = row.Scan(
-		&comment.Id, &comment.Text, &comment.CreatedAt,
+		&comment.Id, &comment.Text, &comment.CreatedAt, &comment.UpdatedAt,
 		&comment.Author.Id, &comment.Author.Username, &avatarID,
 	)
 	if err != nil {
@@ -269,8 +271,10 @@ func (r *Repository) DeletePost(ctx context.Context, postID string) error {
 }
 
 func (r *Repository) DeleteComment(ctx context.Context, commentID string) error {
-	result, err := r.psql.Delete(commentsTable).
+	result, err := r.psql.Update(commentsTable).
+		Set("deleted_at", sq.Expr("datetime('now')")).
 		Where(sq.Eq{"id": commentID, "target_type": commentTargetType}).
+		Where("deleted_at IS NULL").
 		RunWith(r.runner).
 		ExecContext(ctx)
 	if err != nil {
@@ -291,6 +295,7 @@ func (r *Repository) GetCommentAuthorID(ctx context.Context, commentID string) (
 	err := r.psql.Select("author_id").
 		From(commentsTable).
 		Where(sq.Eq{"id": commentID, "target_type": commentTargetType}).
+		Where("deleted_at IS NULL").
 		Limit(1).
 		RunWith(r.runner).
 		QueryRowContext(ctx).Scan(&authorID)
@@ -417,7 +422,7 @@ func (r *Repository) getCommentsByPostIDs(ctx context.Context, postIDs []string)
 	rows, err := r.psql.
 		Select(commentColumns...).
 		From(commentsTable).
-		Join("users ON users.id = comments.author_id").
+		LeftJoin("users ON users.id = comments.author_id").
 		Where(sq.Eq{"target_id": postIDs, "target_type": commentTargetType}).
 		OrderBy("comments.created_at ASC").
 		RunWith(r.runner).
@@ -430,19 +435,29 @@ func (r *Repository) getCommentsByPostIDs(ctx context.Context, postIDs []string)
 	commentsMap := make(map[string][]models.PostComment)
 	for rows.Next() {
 		var (
-			targetID string
-			comment  models.PostComment
-			avatarID sql.NullString
+			targetID  string
+			comment   models.PostComment
+			authorID  sql.NullString
+			username  sql.NullString
+			avatarID  sql.NullString
+			deletedAt sql.NullString
 		)
 		if err := rows.Scan(
-			&comment.Id, &targetID, &comment.Author.Id,
-			&comment.Text, &comment.CreatedAt,
-			&comment.Author.Username, &avatarID,
+			&comment.Id, &targetID, &comment.Text,
+			&comment.CreatedAt, &comment.UpdatedAt, &deletedAt,
+			&authorID, &username, &avatarID,
 		); err != nil {
 			return nil, err
 		}
-		if avatarID.Valid {
-			comment.Author.AvatarId = &avatarID.String
+		if deletedAt.Valid {
+			comment.IsDeleted = true
+			comment.Text = ""
+		} else {
+			author := models.UserPreview{Id: authorID.String, Username: username.String}
+			if avatarID.Valid {
+				author.AvatarId = &avatarID.String
+			}
+			comment.Author = &author
 		}
 		commentsMap[targetID] = append(commentsMap[targetID], comment)
 	}

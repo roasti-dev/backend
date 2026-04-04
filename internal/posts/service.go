@@ -93,9 +93,10 @@ func (s *Service) CreateComment(ctx context.Context, userID, postID, text string
 		}
 		return models.PostComment{}, err
 	}
+
 	comment := models.PostComment{
 		Id:        id.NewID(),
-		Author:    models.UserPreview{Id: userID},
+		Author:    new(models.UserPreview{Id: userID}),
 		Text:      text,
 		CreatedAt: time.Now().UTC(),
 	}

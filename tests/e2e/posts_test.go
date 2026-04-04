@@ -394,7 +394,7 @@ func TestDeletePostComment(t *testing.T) {
 		assert.Equal(t, 204, resp.StatusCode())
 	})
 
-	t.Run("deleted comment no longer appears in post", func(t *testing.T) {
+	t.Run("deleted comment appears as deleted placeholder", func(t *testing.T) {
 		c := newAuthenticatedTestClient(t, srv)
 		post := createPost(t, c, defaultPostPayload)
 
@@ -406,7 +406,10 @@ func TestDeletePostComment(t *testing.T) {
 
 		getResp, err := c.GetPostWithResponse(t.Context(), post.Id)
 		require.NoError(t, err)
-		assert.Empty(t, getResp.JSON200.Comments)
+		require.Len(t, getResp.JSON200.Comments, 1)
+		assert.True(t, getResp.JSON200.Comments[0].IsDeleted)
+		assert.Nil(t, getResp.JSON200.Comments[0].Author)
+		assert.Empty(t, getResp.JSON200.Comments[0].Text)
 	})
 
 	t.Run("non-author cannot delete comment", func(t *testing.T) {

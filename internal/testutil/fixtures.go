@@ -59,9 +59,10 @@ func CreateTestPost(t *testing.T, repo *posts.Repository, postID, authorID strin
 
 func CreateTestComment(t *testing.T, db *sql.DB, commentID, postID, authorID, text string) {
 	t.Helper()
+	now := time.Now().UTC()
 	_, err := db.ExecContext(t.Context(),
-		`INSERT INTO comments (id, target_id, target_type, author_id, text, created_at) VALUES (?, ?, 'post', ?, ?, ?)`,
-		commentID, postID, authorID, text, time.Now().UTC(),
+		`INSERT INTO comments (id, target_id, target_type, author_id, text, created_at, updated_at) VALUES (?, ?, 'post', ?, ?, ?, ?)`,
+		commentID, postID, authorID, text, now, now,
 	)
 	require.NoError(t, err)
 }

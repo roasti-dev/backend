@@ -311,9 +311,10 @@ func TestPostRepository_CreateComment(t *testing.T) {
 		repo, _ := setupPostRepo(t)
 		p := testutil.CreateTestPost(t, repo, "post-1", "user-1")
 
+		author := models.UserPreview{Id: "user-2"}
 		comment := models.PostComment{
 			Id:     "comment-1",
-			Author: models.UserPreview{Id: "user-2"},
+			Author: &author,
 			Text:   "Great post!",
 		}
 		got, err := repo.CreateComment(t.Context(), comment, p.Id)
@@ -328,9 +329,10 @@ func TestPostRepository_CreateComment(t *testing.T) {
 		repo, _ := setupPostRepo(t)
 		p := testutil.CreateTestPost(t, repo, "post-1", "user-1")
 
+		author := models.UserPreview{Id: "user-2"}
 		comment := models.PostComment{
 			Id:     "comment-1",
-			Author: models.UserPreview{Id: "user-2"},
+			Author: &author,
 			Text:   "Nice!",
 		}
 		_, err := repo.CreateComment(t.Context(), comment, p.Id)
@@ -345,7 +347,7 @@ func TestPostRepository_CreateComment(t *testing.T) {
 }
 
 func TestPostRepository_DeleteComment(t *testing.T) {
-	t.Run("deletes existing comment", func(t *testing.T) {
+	t.Run("soft deletes existing comment", func(t *testing.T) {
 		repo, db := setupPostRepo(t)
 		testutil.CreateTestPost(t, repo, "post-1", "user-1")
 		testutil.CreateTestComment(t, db, "comment-1", "post-1", "user-2", "hello")
@@ -354,7 +356,20 @@ func TestPostRepository_DeleteComment(t *testing.T) {
 
 		got, err := repo.GetPostByID(t.Context(), "post-1")
 		require.NoError(t, err)
-		assert.Empty(t, got.Comments)
+		require.Len(t, got.Comments, 1)
+		assert.True(t, got.Comments[0].IsDeleted)
+		assert.Nil(t, got.Comments[0].Author)
+		assert.Empty(t, got.Comments[0].Text)
+	})
+
+	t.Run("already deleted comment returns ErrCommentNotFound", func(t *testing.T) {
+		repo, db := setupPostRepo(t)
+		testutil.CreateTestPost(t, repo, "post-1", "user-1")
+		testutil.CreateTestComment(t, db, "comment-1", "post-1", "user-2", "hello")
+
+		require.NoError(t, repo.DeleteComment(t.Context(), "comment-1"))
+		err := repo.DeleteComment(t.Context(), "comment-1")
+		assert.ErrorIs(t, err, posts.ErrCommentNotFound)
 	})
 
 	t.Run("non-existent comment returns ErrCommentNotFound", func(t *testing.T) {
@@ -380,6 +395,16 @@ func TestPostRepository_GetCommentAuthorID(t *testing.T) {
 		repo, _ := setupPostRepo(t)
 
 		_, err := repo.GetCommentAuthorID(t.Context(), "non-existent")
+		assert.ErrorIs(t, err, sql.ErrNoRows)
+	})
+
+	t.Run("soft-deleted comment returns sql.ErrNoRows", func(t *testing.T) {
+		repo, db := setupPostRepo(t)
+		testutil.CreateTestPost(t, repo, "post-1", "user-1")
+		testutil.CreateTestComment(t, db, "comment-1", "post-1", "user-2", "hello")
+		require.NoError(t, repo.DeleteComment(t.Context(), "comment-1"))
+
+		_, err := repo.GetCommentAuthorID(t.Context(), "comment-1")
 		assert.ErrorIs(t, err, sql.ErrNoRows)
 	})
 }
