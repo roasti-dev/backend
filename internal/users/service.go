@@ -148,6 +148,17 @@ func (s *Service) GetPublicProfile(ctx context.Context, userID string) (models.U
 	return user.ToPublicProfile(), nil
 }
 
+func (s *Service) GetPublicProfileByUsername(ctx context.Context, username string) (models.UserProfile, error) {
+	user, err := s.repo.GetByUsername(ctx, username)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return models.UserProfile{}, ErrNotFound
+		}
+		return models.UserProfile{}, fmt.Errorf("get user by username: %w", err)
+	}
+	return user.ToPublicProfile(), nil
+}
+
 func (s *Service) ExistsByUsername(ctx context.Context, username string) (bool, error) {
 	return s.repo.ExistsByUsername(ctx, username)
 }

@@ -131,18 +131,17 @@ func TestGetCurrentUser(t *testing.T) {
 func TestGetUserProfile(t *testing.T) {
 	srv := setupTestServer(t)
 
-	t.Run("returns public profile by user id", func(t *testing.T) {
+	t.Run("returns public profile by username", func(t *testing.T) {
 		c := newAuthenticatedTestClient(t, srv)
 
 		meResp, err := c.GetCurrentUserWithResponse(t.Context())
 		require.NoError(t, err)
-		userID := meResp.JSON200.Id
 
 		anon := newTestClient(t, srv)
-		resp, err := anon.GetUserProfileWithResponse(t.Context(), userID)
+		resp, err := anon.GetUserProfileWithResponse(t.Context(), meResp.JSON200.Username)
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode())
-		assert.Equal(t, userID, resp.JSON200.Id)
+		assert.Equal(t, meResp.JSON200.Id, resp.JSON200.Id)
 		assert.Equal(t, meResp.JSON200.Username, resp.JSON200.Username)
 	})
 
@@ -153,7 +152,7 @@ func TestGetUserProfile(t *testing.T) {
 		require.NoError(t, err)
 
 		anon := newTestClient(t, srv)
-		resp, err := anon.GetUserProfileWithResponse(t.Context(), meResp.JSON200.Id)
+		resp, err := anon.GetUserProfileWithResponse(t.Context(), meResp.JSON200.Username)
 		require.NoError(t, err)
 		require.Equal(t, 200, resp.StatusCode())
 
@@ -174,15 +173,15 @@ func TestGetUserProfile(t *testing.T) {
 		require.NoError(t, err)
 
 		anon := newTestClient(t, srv)
-		resp, err := anon.GetUserProfileWithResponse(t.Context(), meResp.JSON200.Id)
+		resp, err := anon.GetUserProfileWithResponse(t.Context(), meResp.JSON200.Username)
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode())
 		assert.Equal(t, &bio, resp.JSON200.Bio)
 	})
 
-	t.Run("returns 404 for unknown user id", func(t *testing.T) {
+	t.Run("returns 404 for unknown username", func(t *testing.T) {
 		anon := newTestClient(t, srv)
-		resp, err := anon.GetUserProfileWithResponse(t.Context(), "nonexistent-user-id")
+		resp, err := anon.GetUserProfileWithResponse(t.Context(), "nonexistent-username")
 		require.NoError(t, err)
 		assert.Equal(t, 404, resp.StatusCode())
 	})

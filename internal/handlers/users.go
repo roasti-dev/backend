@@ -33,7 +33,7 @@ func (s *ServerHandler) UpdateCurrentUser(ctx context.Context, request UpdateCur
 }
 
 func (s *ServerHandler) GetUserProfile(ctx context.Context, request GetUserProfileRequestObject) (GetUserProfileResponseObject, error) {
-	profile, err := s.userService.GetPublicProfile(ctx, request.UserId)
+	profile, err := s.userService.GetPublicProfileByUsername(ctx, request.Username)
 	if err != nil {
 		return nil, err
 	}
@@ -50,6 +50,7 @@ func (s *ServerHandler) CheckUsernameAvailability(ctx context.Context, request C
 
 func (s *ServerHandler) ListUserLikes(ctx context.Context, request ListUserLikesRequestObject) (ListUserLikesResponseObject, error) {
 	currentUserID := requestctx.GetUserID(ctx)
+
 	params := models.ListUserLikesParams{
 		Type:          request.Params.Type,
 		Limit:         request.Params.Limit,

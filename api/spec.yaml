@@ -805,18 +805,18 @@ paths:
               schema:
                 $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
 
-  /api/v1/users/{user_id}:
+  /api/v1/users/{username}:
     get:
       summary: Get public user profile
       operationId: getUserProfile
-      description: Returns the public profile of a user by their ID.
+      description: Returns the public profile of a user by their username.
       tags: [users]
       security: []
       parameters:
-        - name: user_id
+        - name: username
           in: path
           required: true
-          description: Unique user identifier
+          description: Unique username of the user
           schema:
             type: string
       responses:
@@ -919,6 +919,7 @@ paths:
         - name: user_id
           in: path
           required: true
+          description: Unique user identifier
           schema:
             type: string
         - name: type
