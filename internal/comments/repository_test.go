@@ -185,6 +185,37 @@ func TestCommentRepository_ListForTarget(t *testing.T) {
 		assert.Nil(t, threads[0].Replies[0].Author)
 	})
 
+	t.Run("reply to reply appears under same root", func(t *testing.T) {
+		repo, db := setupCommentRepo(t)
+		testutil.CreateTestComment(t, db, "c1", "post-1", "user-1", "root")
+		testutil.CreateTestCommentReply(t, db, "c2", "post-1", "user-2", "reply", "c1")
+		testutil.CreateTestCommentReply(t, db, "c3", "post-1", "user-1", "reply to reply", "c2")
+
+		threads, total, err := repo.ListForTarget(t.Context(), "post-1", defaultPag())
+		require.NoError(t, err)
+		assert.Equal(t, 1, total)
+		require.Len(t, threads, 1)
+		require.Len(t, threads[0].Replies, 2)
+		assert.Equal(t, "c2", threads[0].Replies[0].Id)
+		assert.Equal(t, "c3", threads[0].Replies[1].Id)
+		assert.Equal(t, "c2", *threads[0].Replies[1].ParentId)
+	})
+
+	t.Run("reply to reply on deleted middle comment preserved", func(t *testing.T) {
+		repo, db := setupCommentRepo(t)
+		testutil.CreateTestComment(t, db, "c1", "post-1", "user-1", "root")
+		testutil.CreateTestCommentReply(t, db, "c2", "post-1", "user-2", "reply", "c1")
+		testutil.CreateTestCommentReply(t, db, "c3", "post-1", "user-1", "reply to reply", "c2")
+		require.NoError(t, repo.Delete(t.Context(), "c2"))
+
+		threads, _, err := repo.ListForTarget(t.Context(), "post-1", defaultPag())
+		require.NoError(t, err)
+		require.Len(t, threads[0].Replies, 2)
+		assert.True(t, threads[0].Replies[0].IsDeleted)
+		assert.False(t, threads[0].Replies[1].IsDeleted)
+		assert.Equal(t, "reply to reply", threads[0].Replies[1].Text)
+	})
+
 	t.Run("empty target returns empty list", func(t *testing.T) {
 		repo, _ := setupCommentRepo(t)
 

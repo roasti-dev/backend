@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	sq "github.com/Masterminds/squirrel"
 
@@ -187,23 +188,42 @@ func (r *Repo) ListForTarget(ctx context.Context, targetID string, pag models.Pa
 		return nil, 0, err
 	}
 
-	replyRows, err := r.psql.
-		Select("comments.id", "comments.text", "comments.parent_id", "comments.created_at", "comments.updated_at", "comments.deleted_at", "users.id", "users.username", "users.avatar_id").
-		From(commentsTable).
-		LeftJoin("users ON users.id = comments.author_id").
-		Where(sq.Eq{"comments.parent_id": rootIDs}).
-		OrderBy("comments.created_at ASC").
-		RunWith(r.runner).
-		QueryContext(ctx)
+	// rootIdxMap maps root comment ID → index in roots slice
+	rootIdxMap := make(map[string]int, len(roots))
+	for i, r := range roots {
+		rootIdxMap[r.Id] = i
+	}
+
+	placeholders := strings.Repeat("?,", len(rootIDs))
+	placeholders = placeholders[:len(placeholders)-1]
+	args := make([]any, len(rootIDs))
+	for i, id := range rootIDs {
+		args[i] = id
+	}
+	//nolint:gosec
+	replyQuery := fmt.Sprintf(`
+		WITH RECURSIVE descendants(id) AS (
+			SELECT id FROM comments WHERE parent_id IN (%s)
+			UNION ALL
+			SELECT c.id FROM comments c
+			JOIN descendants d ON c.parent_id = d.id
+		)
+		SELECT comments.id, comments.text, comments.parent_id, comments.created_at, comments.updated_at, comments.deleted_at,
+		       users.id, users.username, users.avatar_id
+		FROM comments
+		LEFT JOIN users ON users.id = comments.author_id
+		WHERE comments.id IN (SELECT id FROM descendants)
+		ORDER BY comments.created_at ASC
+	`, placeholders)
+
+	replyRows, err := r.runner.QueryContext(ctx, replyQuery, args...)
 	if err != nil {
 		return nil, 0, err
 	}
 	defer replyRows.Close()
 
-	rootIdx := make(map[string]int, len(roots))
-	for i, r := range roots {
-		rootIdx[r.Id] = i
-	}
+	// commentToRoot maps any descendant comment ID → index in roots slice
+	commentToRoot := make(map[string]int)
 
 	for replyRows.Next() {
 		var (
@@ -225,12 +245,21 @@ func (r *Repo) ListForTarget(ctx context.Context, targetID string, pag models.Pa
 			}
 			c.Author = &author
 		}
-		if parentID.Valid {
-			c.ParentId = &parentID.String
-			if idx, ok := rootIdx[parentID.String]; ok {
-				roots[idx].Replies = append(roots[idx].Replies, c)
-			}
+		if !parentID.Valid {
+			continue
 		}
+		c.ParentId = &parentID.String
+
+		// find the root: parent is either a root comment or a known descendant
+		rootIdx, ok := rootIdxMap[*c.ParentId]
+		if !ok {
+			rootIdx, ok = commentToRoot[*c.ParentId]
+		}
+		if !ok {
+			continue
+		}
+		commentToRoot[c.Id] = rootIdx
+		roots[rootIdx].Replies = append(roots[rootIdx].Replies, c)
 	}
 	if err := replyRows.Err(); err != nil {
 		return nil, 0, err
