@@ -116,6 +116,85 @@ func TestCommentRepository_GetAuthorID(t *testing.T) {
 	})
 }
 
+func defaultPag() models.PaginationParams {
+	return models.NewPaginationParams(1, 20)
+}
+
+func TestCommentRepository_ListForTarget(t *testing.T) {
+	t.Run("returns root comment with reply", func(t *testing.T) {
+		repo, db := setupCommentRepo(t)
+		testutil.CreateTestComment(t, db, "c1", "post-1", "user-1", "root text")
+		testutil.CreateTestCommentReply(t, db, "c2", "post-1", "user-2", "reply text", "c1")
+
+		threads, total, err := repo.ListForTarget(t.Context(), "post-1", defaultPag())
+		require.NoError(t, err)
+		assert.Equal(t, 1, total)
+		require.Len(t, threads, 1)
+		assert.Equal(t, "root text", threads[0].Text)
+		assert.False(t, threads[0].IsDeleted)
+		require.NotNil(t, threads[0].Author)
+		require.Len(t, threads[0].Replies, 1)
+		assert.Equal(t, "reply text", threads[0].Replies[0].Text)
+		assert.False(t, threads[0].Replies[0].IsDeleted)
+	})
+
+	t.Run("deleted root comment returned as tombstone", func(t *testing.T) {
+		repo, db := setupCommentRepo(t)
+		testutil.CreateTestComment(t, db, "c1", "post-1", "user-1", "root text")
+		require.NoError(t, repo.Delete(t.Context(), "c1"))
+
+		threads, total, err := repo.ListForTarget(t.Context(), "post-1", defaultPag())
+		require.NoError(t, err)
+		assert.Equal(t, 1, total)
+		require.Len(t, threads, 1)
+		assert.True(t, threads[0].IsDeleted)
+		assert.Empty(t, threads[0].Text)
+		assert.Nil(t, threads[0].Author)
+	})
+
+	t.Run("deleted root with replies: root is tombstone, replies preserved", func(t *testing.T) {
+		repo, db := setupCommentRepo(t)
+		testutil.CreateTestComment(t, db, "c1", "post-1", "user-1", "root text")
+		testutil.CreateTestCommentReply(t, db, "c2", "post-1", "user-2", "reply text", "c1")
+		require.NoError(t, repo.Delete(t.Context(), "c1"))
+
+		threads, total, err := repo.ListForTarget(t.Context(), "post-1", defaultPag())
+		require.NoError(t, err)
+		assert.Equal(t, 1, total)
+		require.Len(t, threads, 1)
+		assert.True(t, threads[0].IsDeleted)
+		assert.Empty(t, threads[0].Text)
+		assert.Nil(t, threads[0].Author)
+		require.Len(t, threads[0].Replies, 1)
+		assert.Equal(t, "reply text", threads[0].Replies[0].Text)
+		assert.False(t, threads[0].Replies[0].IsDeleted)
+	})
+
+	t.Run("deleted reply returned as tombstone", func(t *testing.T) {
+		repo, db := setupCommentRepo(t)
+		testutil.CreateTestComment(t, db, "c1", "post-1", "user-1", "root text")
+		testutil.CreateTestCommentReply(t, db, "c2", "post-1", "user-2", "reply text", "c1")
+		require.NoError(t, repo.Delete(t.Context(), "c2"))
+
+		threads, total, err := repo.ListForTarget(t.Context(), "post-1", defaultPag())
+		require.NoError(t, err)
+		assert.Equal(t, 1, total)
+		require.Len(t, threads[0].Replies, 1)
+		assert.True(t, threads[0].Replies[0].IsDeleted)
+		assert.Empty(t, threads[0].Replies[0].Text)
+		assert.Nil(t, threads[0].Replies[0].Author)
+	})
+
+	t.Run("empty target returns empty list", func(t *testing.T) {
+		repo, _ := setupCommentRepo(t)
+
+		threads, total, err := repo.ListForTarget(t.Context(), "post-1", defaultPag())
+		require.NoError(t, err)
+		assert.Equal(t, 0, total)
+		assert.Empty(t, threads)
+	})
+}
+
 func TestCommentRepository_ExistsInTarget(t *testing.T) {
 	t.Run("returns true for existing comment in target", func(t *testing.T) {
 		repo, db := setupCommentRepo(t)

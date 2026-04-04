@@ -67,6 +67,16 @@ func CreateTestComment(t *testing.T, db *sql.DB, commentID, postID, authorID, te
 	require.NoError(t, err)
 }
 
+func CreateTestCommentReply(t *testing.T, db *sql.DB, commentID, postID, authorID, text, parentID string) {
+	t.Helper()
+	now := time.Now().UTC()
+	_, err := db.ExecContext(t.Context(),
+		`INSERT INTO comments (id, target_id, target_type, author_id, text, parent_id, created_at, updated_at) VALUES (?, ?, 'post', ?, ?, ?, ?, ?)`,
+		commentID, postID, authorID, text, parentID, now, now,
+	)
+	require.NoError(t, err)
+}
+
 func CreateTestLike(t *testing.T, repo *likes.Repository, userID, targetID string, targetType models.LikeTargetType) likes.Like {
 	t.Helper()
 	l := likes.Like{

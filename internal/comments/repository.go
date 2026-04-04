@@ -132,7 +132,6 @@ func (r *Repo) ListForTarget(ctx context.Context, targetID string, pag models.Pa
 		From(commentsTable).
 		Where(sq.Eq{"target_id": targetID}).
 		Where("parent_id IS NULL").
-		Where("deleted_at IS NULL").
 		RunWith(r.runner).
 		QueryRowContext(ctx).Scan(&total)
 	if err != nil {
@@ -144,12 +143,11 @@ func (r *Repo) ListForTarget(ctx context.Context, targetID string, pag models.Pa
 	}
 
 	rootRows, err := r.psql.
-		Select("comments.id", "comments.text", "comments.created_at", "comments.updated_at", "users.id", "users.username", "users.avatar_id").
+		Select("comments.id", "comments.text", "comments.created_at", "comments.updated_at", "comments.deleted_at", "users.id", "users.username", "users.avatar_id").
 		From(commentsTable).
-		Join("users ON users.id = comments.author_id").
+		LeftJoin("users ON users.id = comments.author_id").
 		Where(sq.Eq{"target_id": targetID}).
 		Where("comments.parent_id IS NULL").
-		Where("comments.deleted_at IS NULL").
 		OrderBy("comments.created_at ASC").
 		Limit(uint64(pag.GetLimit())).
 		Offset(uint64(pag.Offset())).
@@ -164,16 +162,22 @@ func (r *Repo) ListForTarget(ctx context.Context, targetID string, pag models.Pa
 	var rootIDs []string
 	for rootRows.Next() {
 		var (
-			c        models.CommentThread
-			author   models.UserPreview
-			avatarID sql.NullString
+			c         models.CommentThread
+			author    models.UserPreview
+			avatarID  sql.NullString
+			deletedAt sql.NullString
 		)
-		c.Author = &author
-		if err := rootRows.Scan(&c.Id, &c.Text, &c.CreatedAt, &c.UpdatedAt, &author.Id, &author.Username, &avatarID); err != nil {
+		if err := rootRows.Scan(&c.Id, &c.Text, &c.CreatedAt, &c.UpdatedAt, &deletedAt, &author.Id, &author.Username, &avatarID); err != nil {
 			return nil, 0, err
 		}
-		if avatarID.Valid {
-			author.AvatarId = &avatarID.String
+		if deletedAt.Valid {
+			c.IsDeleted = true
+			c.Text = ""
+		} else {
+			if avatarID.Valid {
+				author.AvatarId = &avatarID.String
+			}
+			c.Author = &author
 		}
 		c.Replies = []models.PostComment{}
 		roots = append(roots, c)
