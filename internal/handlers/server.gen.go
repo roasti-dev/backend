@@ -79,6 +79,12 @@ type ListRecipesParams struct {
 // ListRecipesParamsSortField defines parameters for ListRecipes.
 type ListRecipesParamsSortField string
 
+// ListRecipeCommentsParams defines parameters for ListRecipeComments.
+type ListRecipeCommentsParams struct {
+	Page  *externalRef0.PageParam  `form:"page,omitempty" json:"page,omitempty"`
+	Limit *externalRef0.LimitParam `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // UploadImageMultipartBody defines parameters for UploadImage.
 type UploadImageMultipartBody struct {
 	File openapi_types.File `json:"file"`
@@ -129,6 +135,12 @@ type CreateRecipeJSONRequestBody = externalRef0.CreateRecipeRequest
 
 // UpdateRecipeJSONRequestBody defines body for UpdateRecipe for application/json ContentType.
 type UpdateRecipeJSONRequestBody = externalRef0.UpdateRecipeRequest
+
+// CreateRecipeCommentJSONRequestBody defines body for CreateRecipeComment for application/json ContentType.
+type CreateRecipeCommentJSONRequestBody = externalRef0.CreatePostCommentRequest
+
+// UpdateRecipeCommentJSONRequestBody defines body for UpdateRecipeComment for application/json ContentType.
+type UpdateRecipeCommentJSONRequestBody = externalRef0.UpdatePostCommentRequest
 
 // UploadImageMultipartRequestBody defines body for UploadImage for multipart/form-data ContentType.
 type UploadImageMultipartRequestBody UploadImageMultipartBody
@@ -201,6 +213,18 @@ type ServerInterface interface {
 	// Clone a recipe
 	// (POST /api/v1/recipes/{recipe_id}/clone)
 	CloneRecipe(w http.ResponseWriter, r *http.Request, recipeId string)
+	// List recipe comments
+	// (GET /api/v1/recipes/{recipe_id}/comments)
+	ListRecipeComments(w http.ResponseWriter, r *http.Request, recipeId string, params ListRecipeCommentsParams)
+	// Add comment to recipe
+	// (POST /api/v1/recipes/{recipe_id}/comments)
+	CreateRecipeComment(w http.ResponseWriter, r *http.Request, recipeId string)
+	// Delete recipe comment
+	// (DELETE /api/v1/recipes/{recipe_id}/comments/{comment_id})
+	DeleteRecipeComment(w http.ResponseWriter, r *http.Request, recipeId string, commentId string)
+	// Update recipe comment
+	// (PATCH /api/v1/recipes/{recipe_id}/comments/{comment_id})
+	UpdateRecipeComment(w http.ResponseWriter, r *http.Request, recipeId string, commentId string)
 	// Toggle like on a recipe
 	// (POST /api/v1/recipes/{recipe_id}/like)
 	ToggleRecipeLike(w http.ResponseWriter, r *http.Request, recipeId string)
@@ -950,6 +974,175 @@ func (siw *ServerInterfaceWrapper) CloneRecipe(w http.ResponseWriter, r *http.Re
 	handler.ServeHTTP(w, r)
 }
 
+// ListRecipeComments operation middleware
+func (siw *ServerInterfaceWrapper) ListRecipeComments(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "recipe_id" -------------
+	var recipeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "recipe_id", r.PathValue("recipe_id"), &recipeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "recipe_id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, AccessTokenCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListRecipeCommentsParams
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "page", r.URL.Query(), &params.Page, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "page", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListRecipeComments(w, r, recipeId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateRecipeComment operation middleware
+func (siw *ServerInterfaceWrapper) CreateRecipeComment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "recipe_id" -------------
+	var recipeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "recipe_id", r.PathValue("recipe_id"), &recipeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "recipe_id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, AccessTokenCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateRecipeComment(w, r, recipeId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteRecipeComment operation middleware
+func (siw *ServerInterfaceWrapper) DeleteRecipeComment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "recipe_id" -------------
+	var recipeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "recipe_id", r.PathValue("recipe_id"), &recipeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "recipe_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "comment_id" -------------
+	var commentId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "comment_id", r.PathValue("comment_id"), &commentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "comment_id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, AccessTokenCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteRecipeComment(w, r, recipeId, commentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateRecipeComment operation middleware
+func (siw *ServerInterfaceWrapper) UpdateRecipeComment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "recipe_id" -------------
+	var recipeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "recipe_id", r.PathValue("recipe_id"), &recipeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "recipe_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "comment_id" -------------
+	var commentId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "comment_id", r.PathValue("comment_id"), &commentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "comment_id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, AccessTokenCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateRecipeComment(w, r, recipeId, commentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ToggleRecipeLike operation middleware
 func (siw *ServerInterfaceWrapper) ToggleRecipeLike(w http.ResponseWriter, r *http.Request) {
 
@@ -1363,6 +1556,10 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/recipes/{recipe_id}", wrapper.GetRecipe)
 	m.HandleFunc("PUT "+options.BaseURL+"/api/v1/recipes/{recipe_id}", wrapper.UpdateRecipe)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/recipes/{recipe_id}/clone", wrapper.CloneRecipe)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/recipes/{recipe_id}/comments", wrapper.ListRecipeComments)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/recipes/{recipe_id}/comments", wrapper.CreateRecipeComment)
+	m.HandleFunc("DELETE "+options.BaseURL+"/api/v1/recipes/{recipe_id}/comments/{comment_id}", wrapper.DeleteRecipeComment)
+	m.HandleFunc("PATCH "+options.BaseURL+"/api/v1/recipes/{recipe_id}/comments/{comment_id}", wrapper.UpdateRecipeComment)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/recipes/{recipe_id}/like", wrapper.ToggleRecipeLike)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/uploads/images", wrapper.UploadImage)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/uploads/images/{image_id}", wrapper.GetImage)
@@ -2081,6 +2278,141 @@ func (response CloneRecipe500Response) VisitCloneRecipeResponse(w http.ResponseW
 	return nil
 }
 
+type ListRecipeCommentsRequestObject struct {
+	RecipeId string `json:"recipe_id"`
+	Params   ListRecipeCommentsParams
+}
+
+type ListRecipeCommentsResponseObject interface {
+	VisitListRecipeCommentsResponse(w http.ResponseWriter) error
+}
+
+type ListRecipeComments200JSONResponse externalRef0.CommentPage
+
+func (response ListRecipeComments200JSONResponse) VisitListRecipeCommentsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListRecipeComments404JSONResponse externalRef0.ApiErrorResponse
+
+func (response ListRecipeComments404JSONResponse) VisitListRecipeCommentsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CreateRecipeCommentRequestObject struct {
+	RecipeId string `json:"recipe_id"`
+	Body     *CreateRecipeCommentJSONRequestBody
+}
+
+type CreateRecipeCommentResponseObject interface {
+	VisitCreateRecipeCommentResponse(w http.ResponseWriter) error
+}
+
+type CreateRecipeComment201JSONResponse externalRef0.PostComment
+
+func (response CreateRecipeComment201JSONResponse) VisitCreateRecipeCommentResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CreateRecipeComment401JSONResponse externalRef0.ApiErrorResponse
+
+func (response CreateRecipeComment401JSONResponse) VisitCreateRecipeCommentResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CreateRecipeComment404JSONResponse externalRef0.ApiErrorResponse
+
+func (response CreateRecipeComment404JSONResponse) VisitCreateRecipeCommentResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteRecipeCommentRequestObject struct {
+	RecipeId  string `json:"recipe_id"`
+	CommentId string `json:"comment_id"`
+}
+
+type DeleteRecipeCommentResponseObject interface {
+	VisitDeleteRecipeCommentResponse(w http.ResponseWriter) error
+}
+
+type DeleteRecipeComment204Response struct {
+}
+
+func (response DeleteRecipeComment204Response) VisitDeleteRecipeCommentResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteRecipeComment403JSONResponse externalRef0.ApiErrorResponse
+
+func (response DeleteRecipeComment403JSONResponse) VisitDeleteRecipeCommentResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteRecipeComment404JSONResponse externalRef0.ApiErrorResponse
+
+func (response DeleteRecipeComment404JSONResponse) VisitDeleteRecipeCommentResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpdateRecipeCommentRequestObject struct {
+	RecipeId  string `json:"recipe_id"`
+	CommentId string `json:"comment_id"`
+	Body      *UpdateRecipeCommentJSONRequestBody
+}
+
+type UpdateRecipeCommentResponseObject interface {
+	VisitUpdateRecipeCommentResponse(w http.ResponseWriter) error
+}
+
+type UpdateRecipeComment200JSONResponse externalRef0.PostComment
+
+func (response UpdateRecipeComment200JSONResponse) VisitUpdateRecipeCommentResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpdateRecipeComment403JSONResponse externalRef0.ApiErrorResponse
+
+func (response UpdateRecipeComment403JSONResponse) VisitUpdateRecipeCommentResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpdateRecipeComment404JSONResponse externalRef0.ApiErrorResponse
+
+func (response UpdateRecipeComment404JSONResponse) VisitUpdateRecipeCommentResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type ToggleRecipeLikeRequestObject struct {
 	RecipeId string `json:"recipe_id"`
 }
@@ -2465,6 +2797,18 @@ type StrictServerInterface interface {
 	// Clone a recipe
 	// (POST /api/v1/recipes/{recipe_id}/clone)
 	CloneRecipe(ctx context.Context, request CloneRecipeRequestObject) (CloneRecipeResponseObject, error)
+	// List recipe comments
+	// (GET /api/v1/recipes/{recipe_id}/comments)
+	ListRecipeComments(ctx context.Context, request ListRecipeCommentsRequestObject) (ListRecipeCommentsResponseObject, error)
+	// Add comment to recipe
+	// (POST /api/v1/recipes/{recipe_id}/comments)
+	CreateRecipeComment(ctx context.Context, request CreateRecipeCommentRequestObject) (CreateRecipeCommentResponseObject, error)
+	// Delete recipe comment
+	// (DELETE /api/v1/recipes/{recipe_id}/comments/{comment_id})
+	DeleteRecipeComment(ctx context.Context, request DeleteRecipeCommentRequestObject) (DeleteRecipeCommentResponseObject, error)
+	// Update recipe comment
+	// (PATCH /api/v1/recipes/{recipe_id}/comments/{comment_id})
+	UpdateRecipeComment(ctx context.Context, request UpdateRecipeCommentRequestObject) (UpdateRecipeCommentResponseObject, error)
 	// Toggle like on a recipe
 	// (POST /api/v1/recipes/{recipe_id}/like)
 	ToggleRecipeLike(ctx context.Context, request ToggleRecipeLikeRequestObject) (ToggleRecipeLikeResponseObject, error)
@@ -3141,6 +3485,127 @@ func (sh *strictHandler) CloneRecipe(w http.ResponseWriter, r *http.Request, rec
 	}
 }
 
+// ListRecipeComments operation middleware
+func (sh *strictHandler) ListRecipeComments(w http.ResponseWriter, r *http.Request, recipeId string, params ListRecipeCommentsParams) {
+	var request ListRecipeCommentsRequestObject
+
+	request.RecipeId = recipeId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListRecipeComments(ctx, request.(ListRecipeCommentsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListRecipeComments")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListRecipeCommentsResponseObject); ok {
+		if err := validResponse.VisitListRecipeCommentsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateRecipeComment operation middleware
+func (sh *strictHandler) CreateRecipeComment(w http.ResponseWriter, r *http.Request, recipeId string) {
+	var request CreateRecipeCommentRequestObject
+
+	request.RecipeId = recipeId
+
+	var body CreateRecipeCommentJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateRecipeComment(ctx, request.(CreateRecipeCommentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateRecipeComment")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateRecipeCommentResponseObject); ok {
+		if err := validResponse.VisitCreateRecipeCommentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteRecipeComment operation middleware
+func (sh *strictHandler) DeleteRecipeComment(w http.ResponseWriter, r *http.Request, recipeId string, commentId string) {
+	var request DeleteRecipeCommentRequestObject
+
+	request.RecipeId = recipeId
+	request.CommentId = commentId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteRecipeComment(ctx, request.(DeleteRecipeCommentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteRecipeComment")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteRecipeCommentResponseObject); ok {
+		if err := validResponse.VisitDeleteRecipeCommentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateRecipeComment operation middleware
+func (sh *strictHandler) UpdateRecipeComment(w http.ResponseWriter, r *http.Request, recipeId string, commentId string) {
+	var request UpdateRecipeCommentRequestObject
+
+	request.RecipeId = recipeId
+	request.CommentId = commentId
+
+	var body UpdateRecipeCommentJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateRecipeComment(ctx, request.(UpdateRecipeCommentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateRecipeComment")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateRecipeCommentResponseObject); ok {
+		if err := validResponse.VisitUpdateRecipeCommentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ToggleRecipeLike operation middleware
 func (sh *strictHandler) ToggleRecipeLike(w http.ResponseWriter, r *http.Request, recipeId string) {
 	var request ToggleRecipeLikeRequestObject
@@ -3385,98 +3850,100 @@ func (sh *strictHandler) HealthCheck(w http.ResponseWriter, r *http.Request) {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"URitPmsg0oPNMNT91f3/BwAA//8QJ093SKMAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

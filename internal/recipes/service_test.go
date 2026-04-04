@@ -77,7 +77,7 @@ func setupRecipeService(t *testing.T) (*recipes.Service, *recipes.Repository) {
 	testutil.CreateTestUser(t, database, "user-1")
 	testutil.CreateTestUser(t, database, "user-2")
 	repo := recipes.NewRepository(database, database)
-	svc := recipes.NewService(repo, nil, &mockLikeChecker{likedIDs: make(map[string]bool)}, &mockLikeToggler{}, nil)
+	svc := recipes.NewService(repo, nil, &mockLikeChecker{likedIDs: make(map[string]bool)}, &mockLikeToggler{}, nil, nil)
 	return svc, repo
 }
 

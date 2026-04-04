@@ -5,6 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
+	"github.com/nikpivkin/roasti-app-backend/internal/x/ptr"
 	"github.com/nikpivkin/roasti-app-backend/internal/x/requestctx"
 )
 
@@ -97,4 +98,40 @@ func (s *ServerHandler) CloneRecipe(ctx context.Context, request CloneRecipeRequ
 		return nil, err
 	}
 	return CloneRecipe201JSONResponse(cloned), nil
+}
+
+func (s *ServerHandler) ListRecipeComments(ctx context.Context, request ListRecipeCommentsRequestObject) (ListRecipeCommentsResponseObject, error) {
+	userID := requestctx.GetUserID(ctx)
+	pag := models.NewPaginationParams(ptr.FromPtr(request.Params.Page), ptr.FromPtr(request.Params.Limit))
+	page, err := s.recipeService.ListComments(ctx, userID, request.RecipeId, pag)
+	if err != nil {
+		return nil, err
+	}
+	return ListRecipeComments200JSONResponse(models.CommentPage(page)), nil
+}
+
+func (s *ServerHandler) CreateRecipeComment(ctx context.Context, request CreateRecipeCommentRequestObject) (CreateRecipeCommentResponseObject, error) {
+	userID := requestctx.GetUserID(ctx)
+	comment, err := s.recipeService.CreateComment(ctx, userID, request.RecipeId, request.Body.Text, request.Body.ParentId)
+	if err != nil {
+		return nil, err
+	}
+	return CreateRecipeComment201JSONResponse(comment), nil
+}
+
+func (s *ServerHandler) UpdateRecipeComment(ctx context.Context, request UpdateRecipeCommentRequestObject) (UpdateRecipeCommentResponseObject, error) {
+	userID := requestctx.GetUserID(ctx)
+	comment, err := s.recipeService.UpdateComment(ctx, userID, request.CommentId, request.Body.Text)
+	if err != nil {
+		return nil, err
+	}
+	return UpdateRecipeComment200JSONResponse(comment), nil
+}
+
+func (s *ServerHandler) DeleteRecipeComment(ctx context.Context, request DeleteRecipeCommentRequestObject) (DeleteRecipeCommentResponseObject, error) {
+	userID := requestctx.GetUserID(ctx)
+	if err := s.recipeService.DeleteComment(ctx, userID, request.CommentId); err != nil {
+		return nil, err
+	}
+	return DeleteRecipeComment204Response{}, nil
 }

@@ -559,6 +559,156 @@ paths:
               schema:
                 $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
 
+  /api/v1/recipes/{recipe_id}/comments:
+    get:
+      summary: List recipe comments
+      operationId: listRecipeComments
+      description: Returns a paginated list of root comments with their replies.
+      tags: [recipes]
+      parameters:
+        - name: recipe_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique recipe identifier
+        - name: page
+          in: query
+          schema:
+            $ref: "./models.yaml#/components/schemas/PageParam"
+        - name: limit
+          in: query
+          schema:
+            $ref: "./models.yaml#/components/schemas/LimitParam"
+      responses:
+        "200":
+          description: Paginated list of comments
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/CommentPage"
+        "404":
+          description: Recipe not found
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
+    post:
+      summary: Add comment to recipe
+      operationId: createRecipeComment
+      description: Adds a comment to a recipe on behalf of the authenticated user.
+      tags: [recipes]
+      parameters:
+        - name: recipe_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique recipe identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./models.yaml#/components/schemas/CreatePostCommentRequest"
+      responses:
+        "201":
+          description: Comment created
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/PostComment"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
+        "404":
+          description: Recipe not found
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
+
+  /api/v1/recipes/{recipe_id}/comments/{comment_id}:
+    patch:
+      summary: Update recipe comment
+      operationId: updateRecipeComment
+      description: Updates the text of a comment. Only the comment author can edit it.
+      tags: [recipes]
+      parameters:
+        - name: recipe_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique recipe identifier
+        - name: comment_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique comment identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./models.yaml#/components/schemas/UpdatePostCommentRequest"
+      responses:
+        "200":
+          description: Comment updated
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/PostComment"
+        "403":
+          description: Not the comment author
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
+        "404":
+          description: Comment not found
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
+    delete:
+      summary: Delete recipe comment
+      operationId: deleteRecipeComment
+      description: Deletes a comment. Only the comment author can delete it.
+      tags: [recipes]
+      parameters:
+        - name: recipe_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique recipe identifier
+        - name: comment_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique comment identifier
+      responses:
+        "204":
+          description: Comment deleted
+        "403":
+          description: Not the comment author
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
+        "404":
+          description: Comment not found
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
+
   /api/v1/recipes/{recipe_id}/clone:
     post:
       summary: Clone a recipe

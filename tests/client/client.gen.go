@@ -70,6 +70,12 @@ type ListRecipesParams struct {
 // ListRecipesParamsSortField defines parameters for ListRecipes.
 type ListRecipesParamsSortField string
 
+// ListRecipeCommentsParams defines parameters for ListRecipeComments.
+type ListRecipeCommentsParams struct {
+	Page  *externalRef0.PageParam  `form:"page,omitempty" json:"page,omitempty"`
+	Limit *externalRef0.LimitParam `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // UploadImageMultipartBody defines parameters for UploadImage.
 type UploadImageMultipartBody struct {
 	File openapi_types.File `json:"file"`
@@ -120,6 +126,12 @@ type CreateRecipeJSONRequestBody = externalRef0.CreateRecipeRequest
 
 // UpdateRecipeJSONRequestBody defines body for UpdateRecipe for application/json ContentType.
 type UpdateRecipeJSONRequestBody = externalRef0.UpdateRecipeRequest
+
+// CreateRecipeCommentJSONRequestBody defines body for CreateRecipeComment for application/json ContentType.
+type CreateRecipeCommentJSONRequestBody = externalRef0.CreatePostCommentRequest
+
+// UpdateRecipeCommentJSONRequestBody defines body for UpdateRecipeComment for application/json ContentType.
+type UpdateRecipeCommentJSONRequestBody = externalRef0.UpdatePostCommentRequest
 
 // UploadImageMultipartRequestBody defines body for UploadImage for multipart/form-data ContentType.
 type UploadImageMultipartRequestBody UploadImageMultipartBody
@@ -284,6 +296,22 @@ type ClientInterface interface {
 
 	// CloneRecipe request
 	CloneRecipe(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListRecipeComments request
+	ListRecipeComments(ctx context.Context, recipeId string, params *ListRecipeCommentsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateRecipeCommentWithBody request with any body
+	CreateRecipeCommentWithBody(ctx context.Context, recipeId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateRecipeComment(ctx context.Context, recipeId string, body CreateRecipeCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteRecipeComment request
+	DeleteRecipeComment(ctx context.Context, recipeId string, commentId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateRecipeCommentWithBody request with any body
+	UpdateRecipeCommentWithBody(ctx context.Context, recipeId string, commentId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateRecipeComment(ctx context.Context, recipeId string, commentId string, body UpdateRecipeCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ToggleRecipeLike request
 	ToggleRecipeLike(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -689,6 +717,78 @@ func (c *Client) UpdateRecipe(ctx context.Context, recipeId string, body UpdateR
 
 func (c *Client) CloneRecipe(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewCloneRecipeRequest(c.Server, recipeId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListRecipeComments(ctx context.Context, recipeId string, params *ListRecipeCommentsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListRecipeCommentsRequest(c.Server, recipeId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateRecipeCommentWithBody(ctx context.Context, recipeId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateRecipeCommentRequestWithBody(c.Server, recipeId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateRecipeComment(ctx context.Context, recipeId string, body CreateRecipeCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateRecipeCommentRequest(c.Server, recipeId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteRecipeComment(ctx context.Context, recipeId string, commentId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteRecipeCommentRequest(c.Server, recipeId, commentId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateRecipeCommentWithBody(ctx context.Context, recipeId string, commentId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateRecipeCommentRequestWithBody(c.Server, recipeId, commentId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateRecipeComment(ctx context.Context, recipeId string, commentId string, body UpdateRecipeCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateRecipeCommentRequest(c.Server, recipeId, commentId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1853,6 +1953,220 @@ func NewCloneRecipeRequest(server string, recipeId string) (*http.Request, error
 	return req, nil
 }
 
+// NewListRecipeCommentsRequest generates requests for ListRecipeComments
+func NewListRecipeCommentsRequest(server string, recipeId string, params *ListRecipeCommentsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "recipe_id", recipeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/recipes/%s/comments", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Page != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "page", *params.Page, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateRecipeCommentRequest calls the generic CreateRecipeComment builder with application/json body
+func NewCreateRecipeCommentRequest(server string, recipeId string, body CreateRecipeCommentJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateRecipeCommentRequestWithBody(server, recipeId, "application/json", bodyReader)
+}
+
+// NewCreateRecipeCommentRequestWithBody generates requests for CreateRecipeComment with any type of body
+func NewCreateRecipeCommentRequestWithBody(server string, recipeId string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "recipe_id", recipeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/recipes/%s/comments", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteRecipeCommentRequest generates requests for DeleteRecipeComment
+func NewDeleteRecipeCommentRequest(server string, recipeId string, commentId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "recipe_id", recipeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "comment_id", commentId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/recipes/%s/comments/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateRecipeCommentRequest calls the generic UpdateRecipeComment builder with application/json body
+func NewUpdateRecipeCommentRequest(server string, recipeId string, commentId string, body UpdateRecipeCommentJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateRecipeCommentRequestWithBody(server, recipeId, commentId, "application/json", bodyReader)
+}
+
+// NewUpdateRecipeCommentRequestWithBody generates requests for UpdateRecipeComment with any type of body
+func NewUpdateRecipeCommentRequestWithBody(server string, recipeId string, commentId string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "recipe_id", recipeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "comment_id", commentId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/recipes/%s/comments/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewToggleRecipeLikeRequest generates requests for ToggleRecipeLike
 func NewToggleRecipeLikeRequest(server string, recipeId string) (*http.Request, error) {
 	var err error
@@ -2350,6 +2664,22 @@ type ClientWithResponsesInterface interface {
 
 	// CloneRecipeWithResponse request
 	CloneRecipeWithResponse(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*CloneRecipeResponse, error)
+
+	// ListRecipeCommentsWithResponse request
+	ListRecipeCommentsWithResponse(ctx context.Context, recipeId string, params *ListRecipeCommentsParams, reqEditors ...RequestEditorFn) (*ListRecipeCommentsResponse, error)
+
+	// CreateRecipeCommentWithBodyWithResponse request with any body
+	CreateRecipeCommentWithBodyWithResponse(ctx context.Context, recipeId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateRecipeCommentResponse, error)
+
+	CreateRecipeCommentWithResponse(ctx context.Context, recipeId string, body CreateRecipeCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateRecipeCommentResponse, error)
+
+	// DeleteRecipeCommentWithResponse request
+	DeleteRecipeCommentWithResponse(ctx context.Context, recipeId string, commentId string, reqEditors ...RequestEditorFn) (*DeleteRecipeCommentResponse, error)
+
+	// UpdateRecipeCommentWithBodyWithResponse request with any body
+	UpdateRecipeCommentWithBodyWithResponse(ctx context.Context, recipeId string, commentId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRecipeCommentResponse, error)
+
+	UpdateRecipeCommentWithResponse(ctx context.Context, recipeId string, commentId string, body UpdateRecipeCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRecipeCommentResponse, error)
 
 	// ToggleRecipeLikeWithResponse request
 	ToggleRecipeLikeWithResponse(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*ToggleRecipeLikeResponse, error)
@@ -2864,6 +3194,100 @@ func (r CloneRecipeResponse) StatusCode() int {
 	return 0
 }
 
+type ListRecipeCommentsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *externalRef0.CommentPage
+	JSON404      *externalRef0.ApiErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r ListRecipeCommentsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListRecipeCommentsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateRecipeCommentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *externalRef0.PostComment
+	JSON401      *externalRef0.ApiErrorResponse
+	JSON404      *externalRef0.ApiErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateRecipeCommentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateRecipeCommentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteRecipeCommentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON403      *externalRef0.ApiErrorResponse
+	JSON404      *externalRef0.ApiErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteRecipeCommentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteRecipeCommentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateRecipeCommentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *externalRef0.PostComment
+	JSON403      *externalRef0.ApiErrorResponse
+	JSON404      *externalRef0.ApiErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateRecipeCommentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateRecipeCommentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type ToggleRecipeLikeResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -3346,6 +3770,58 @@ func (c *ClientWithResponses) CloneRecipeWithResponse(ctx context.Context, recip
 		return nil, err
 	}
 	return ParseCloneRecipeResponse(rsp)
+}
+
+// ListRecipeCommentsWithResponse request returning *ListRecipeCommentsResponse
+func (c *ClientWithResponses) ListRecipeCommentsWithResponse(ctx context.Context, recipeId string, params *ListRecipeCommentsParams, reqEditors ...RequestEditorFn) (*ListRecipeCommentsResponse, error) {
+	rsp, err := c.ListRecipeComments(ctx, recipeId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListRecipeCommentsResponse(rsp)
+}
+
+// CreateRecipeCommentWithBodyWithResponse request with arbitrary body returning *CreateRecipeCommentResponse
+func (c *ClientWithResponses) CreateRecipeCommentWithBodyWithResponse(ctx context.Context, recipeId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateRecipeCommentResponse, error) {
+	rsp, err := c.CreateRecipeCommentWithBody(ctx, recipeId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateRecipeCommentResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateRecipeCommentWithResponse(ctx context.Context, recipeId string, body CreateRecipeCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateRecipeCommentResponse, error) {
+	rsp, err := c.CreateRecipeComment(ctx, recipeId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateRecipeCommentResponse(rsp)
+}
+
+// DeleteRecipeCommentWithResponse request returning *DeleteRecipeCommentResponse
+func (c *ClientWithResponses) DeleteRecipeCommentWithResponse(ctx context.Context, recipeId string, commentId string, reqEditors ...RequestEditorFn) (*DeleteRecipeCommentResponse, error) {
+	rsp, err := c.DeleteRecipeComment(ctx, recipeId, commentId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteRecipeCommentResponse(rsp)
+}
+
+// UpdateRecipeCommentWithBodyWithResponse request with arbitrary body returning *UpdateRecipeCommentResponse
+func (c *ClientWithResponses) UpdateRecipeCommentWithBodyWithResponse(ctx context.Context, recipeId string, commentId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRecipeCommentResponse, error) {
+	rsp, err := c.UpdateRecipeCommentWithBody(ctx, recipeId, commentId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateRecipeCommentResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateRecipeCommentWithResponse(ctx context.Context, recipeId string, commentId string, body UpdateRecipeCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRecipeCommentResponse, error) {
+	rsp, err := c.UpdateRecipeComment(ctx, recipeId, commentId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateRecipeCommentResponse(rsp)
 }
 
 // ToggleRecipeLikeWithResponse request returning *ToggleRecipeLikeResponse
@@ -4115,6 +4591,152 @@ func ParseCloneRecipeResponse(rsp *http.Response) (*CloneRecipeResponse, error) 
 			return nil, err
 		}
 		response.JSON201 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListRecipeCommentsResponse parses an HTTP response from a ListRecipeCommentsWithResponse call
+func ParseListRecipeCommentsResponse(rsp *http.Response) (*ListRecipeCommentsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListRecipeCommentsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest externalRef0.CommentPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateRecipeCommentResponse parses an HTTP response from a CreateRecipeCommentWithResponse call
+func ParseCreateRecipeCommentResponse(rsp *http.Response) (*CreateRecipeCommentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateRecipeCommentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest externalRef0.PostComment
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteRecipeCommentResponse parses an HTTP response from a DeleteRecipeCommentWithResponse call
+func ParseDeleteRecipeCommentResponse(rsp *http.Response) (*DeleteRecipeCommentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteRecipeCommentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateRecipeCommentResponse parses an HTTP response from a UpdateRecipeCommentWithResponse call
+func ParseUpdateRecipeCommentResponse(rsp *http.Response) (*UpdateRecipeCommentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateRecipeCommentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest externalRef0.PostComment
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
 
 	}
 
