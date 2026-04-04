@@ -25,4 +25,3 @@ func validatePostPayload(req models.PostPayload) error {
 	}
 	return nil
 }
-

@@ -727,6 +727,30 @@ components:
           type: string
           description: ID of the parent comment. Null for top-level comments.
 
+    CommentThread:
+      description: A root comment with its direct replies
+      allOf:
+        - $ref: "#/components/schemas/PostComment"
+        - type: object
+          required:
+            - replies
+          properties:
+            replies:
+              type: array
+              description: Direct replies to this comment
+              items:
+                $ref: "#/components/schemas/PostComment"
+
+    CommentPage:
+      allOf:
+        - $ref: "#/components/schemas/Page"
+        - type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/CommentThread"
+
     Post:
       type: object
       description: A user post in the feed

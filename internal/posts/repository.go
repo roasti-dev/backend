@@ -13,11 +13,11 @@ import (
 )
 
 const (
-	postsTable        = "posts"
-	blocksTable       = "post_blocks"
+	postsTable  = "posts"
+	blocksTable = "post_blocks"
+	// commentsTable and commentTargetType are used by getCommentsByPostIDs.
 	commentsTable     = "comments"
 	commentTargetType = "post"
-	// commentsTable and commentTargetType are used by getCommentsByPostIDs
 )
 
 var postSelectColumns = []string{

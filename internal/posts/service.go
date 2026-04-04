@@ -28,6 +28,7 @@ type CommentService interface {
 	Create(ctx context.Context, userID, targetID, targetType, text string, parentID *string) (models.PostComment, error)
 	Update(ctx context.Context, userID, commentID, text string) (models.PostComment, error)
 	Delete(ctx context.Context, userID, commentID string) error
+	List(ctx context.Context, targetID string, pag models.PaginationParams) (models.GenericPage[models.CommentThread], error)
 }
 
 type LikeChecker interface {
@@ -264,6 +265,17 @@ func (s *Service) DeletePost(ctx context.Context, userID, postID string) error {
 
 func (s *Service) UpdateComment(ctx context.Context, userID, commentID, text string) (models.PostComment, error) {
 	return s.commentService.Update(ctx, userID, commentID, text)
+}
+
+func (s *Service) ListComments(ctx context.Context, postID string, pag models.PaginationParams) (models.GenericPage[models.CommentThread], error) {
+	_, err := s.repo.GetPostByID(ctx, postID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return models.GenericPage[models.CommentThread]{}, ErrNotFound
+		}
+		return models.GenericPage[models.CommentThread]{}, err
+	}
+	return s.commentService.List(ctx, postID, pag)
 }
 
 func (s *Service) DeleteComment(ctx context.Context, userID, commentID string) error {

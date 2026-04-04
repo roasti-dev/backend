@@ -48,6 +48,12 @@ type ListPostsParams struct {
 	Limit *externalRef0.LimitParam `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListPostCommentsParams defines parameters for ListPostComments.
+type ListPostCommentsParams struct {
+	Page  *externalRef0.PageParam  `form:"page,omitempty" json:"page,omitempty"`
+	Limit *externalRef0.LimitParam `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // ListRecipesParams defines parameters for ListRecipes.
 type ListRecipesParams struct {
 	AuthorId      *string                     `form:"author_id,omitempty" json:"author_id,omitempty"`
@@ -237,6 +243,9 @@ type ClientInterface interface {
 	UpdatePostWithBody(ctx context.Context, postId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	UpdatePost(ctx context.Context, postId string, body UpdatePostJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListPostComments request
+	ListPostComments(ctx context.Context, postId string, params *ListPostCommentsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// CreatePostCommentWithBody request with any body
 	CreatePostCommentWithBody(ctx context.Context, postId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -500,6 +509,18 @@ func (c *Client) UpdatePostWithBody(ctx context.Context, postId string, contentT
 
 func (c *Client) UpdatePost(ctx context.Context, postId string, body UpdatePostJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdatePostRequest(c.Server, postId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListPostComments(ctx context.Context, postId string, params *ListPostCommentsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListPostCommentsRequest(c.Server, postId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -1214,6 +1235,78 @@ func NewUpdatePostRequestWithBody(server string, postId string, contentType stri
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewListPostCommentsRequest generates requests for ListPostComments
+func NewListPostCommentsRequest(server string, postId string, params *ListPostCommentsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "post_id", postId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/posts/%s/comments", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Page != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "page", *params.Page, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -2217,6 +2310,9 @@ type ClientWithResponsesInterface interface {
 
 	UpdatePostWithResponse(ctx context.Context, postId string, body UpdatePostJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdatePostResponse, error)
 
+	// ListPostCommentsWithResponse request
+	ListPostCommentsWithResponse(ctx context.Context, postId string, params *ListPostCommentsParams, reqEditors ...RequestEditorFn) (*ListPostCommentsResponse, error)
+
 	// CreatePostCommentWithBodyWithResponse request with any body
 	CreatePostCommentWithBodyWithResponse(ctx context.Context, postId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreatePostCommentResponse, error)
 
@@ -2510,6 +2606,29 @@ func (r UpdatePostResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r UpdatePostResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ListPostCommentsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *externalRef0.CommentPage
+	JSON404      *externalRef0.ApiErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r ListPostCommentsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListPostCommentsResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -3098,6 +3217,15 @@ func (c *ClientWithResponses) UpdatePostWithResponse(ctx context.Context, postId
 	return ParseUpdatePostResponse(rsp)
 }
 
+// ListPostCommentsWithResponse request returning *ListPostCommentsResponse
+func (c *ClientWithResponses) ListPostCommentsWithResponse(ctx context.Context, postId string, params *ListPostCommentsParams, reqEditors ...RequestEditorFn) (*ListPostCommentsResponse, error) {
+	rsp, err := c.ListPostComments(ctx, postId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListPostCommentsResponse(rsp)
+}
+
 // CreatePostCommentWithBodyWithResponse request with arbitrary body returning *CreatePostCommentResponse
 func (c *ClientWithResponses) CreatePostCommentWithBodyWithResponse(ctx context.Context, postId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreatePostCommentResponse, error) {
 	rsp, err := c.CreatePostCommentWithBody(ctx, postId, contentType, body, reqEditors...)
@@ -3627,6 +3755,39 @@ func ParseUpdatePostResponse(rsp *http.Response) (*UpdatePostResponse, error) {
 			return nil, err
 		}
 		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListPostCommentsResponse parses an HTTP response from a ListPostCommentsWithResponse call
+func ParseListPostCommentsResponse(rsp *http.Response) (*ListPostCommentsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListPostCommentsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest externalRef0.CommentPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
 		var dest externalRef0.ApiErrorResponse

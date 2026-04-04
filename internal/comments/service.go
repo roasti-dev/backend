@@ -20,6 +20,7 @@ type Repository interface {
 	GetAuthorID(ctx context.Context, commentID string) (string, error)
 	Delete(ctx context.Context, commentID string) error
 	ExistsInTarget(ctx context.Context, commentID, targetID string) (bool, error)
+	ListForTarget(ctx context.Context, targetID string, pag models.PaginationParams) ([]models.CommentThread, int, error)
 }
 
 type Service struct {
@@ -84,6 +85,14 @@ func (s *Service) Update(ctx context.Context, userID, commentID, text string) (m
 		return models.PostComment{}, err
 	}
 	return s.repo.GetByID(ctx, commentID)
+}
+
+func (s *Service) List(ctx context.Context, targetID string, pag models.PaginationParams) (models.GenericPage[models.CommentThread], error) {
+	items, total, err := s.repo.ListForTarget(ctx, targetID, pag)
+	if err != nil {
+		return models.GenericPage[models.CommentThread]{}, err
+	}
+	return models.NewPage(items, pag, total), nil
 }
 
 func (s *Service) Delete(ctx context.Context, userID, commentID string) error {

@@ -1,6 +1,7 @@
 package e2e
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -477,6 +478,89 @@ func TestDeletePostComment(t *testing.T) {
 		resp, err := unauth.DeletePostCommentWithResponse(t.Context(), post.Id, commentResp.JSON201.Id)
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode())
+	})
+}
+
+func TestListPostComments(t *testing.T) {
+	srv := setupTestServer(t)
+
+	t.Run("returns empty page when no comments", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		post := createPost(t, c, defaultPostPayload)
+
+		resp, err := c.ListPostCommentsWithResponse(t.Context(), post.Id, &client.ListPostCommentsParams{})
+		require.NoError(t, err)
+		require.Equal(t, 200, resp.StatusCode())
+		assert.Empty(t, resp.JSON200.Items)
+		assert.Equal(t, int32(0), resp.JSON200.Pagination.ItemsCount)
+	})
+
+	t.Run("returns root comments with replies", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		post := createPost(t, c, defaultPostPayload)
+
+		rootResp, err := c.CreatePostCommentWithResponse(t.Context(), post.Id, models.CreatePostCommentRequest{Text: "root"})
+		require.NoError(t, err)
+		require.Equal(t, 201, rootResp.StatusCode())
+
+		_, err = c.CreatePostCommentWithResponse(t.Context(), post.Id, models.CreatePostCommentRequest{
+			Text:     "reply",
+			ParentId: &rootResp.JSON201.Id,
+		})
+		require.NoError(t, err)
+
+		resp, err := c.ListPostCommentsWithResponse(t.Context(), post.Id, &client.ListPostCommentsParams{})
+		require.NoError(t, err)
+		require.Equal(t, 200, resp.StatusCode())
+		require.Len(t, resp.JSON200.Items, 1)
+		assert.Equal(t, "root", resp.JSON200.Items[0].Text)
+		require.Len(t, resp.JSON200.Items[0].Replies, 1)
+		assert.Equal(t, "reply", resp.JSON200.Items[0].Replies[0].Text)
+	})
+
+	t.Run("replies are not returned as root comments", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		post := createPost(t, c, defaultPostPayload)
+
+		rootResp, err := c.CreatePostCommentWithResponse(t.Context(), post.Id, models.CreatePostCommentRequest{Text: "root"})
+		require.NoError(t, err)
+
+		_, err = c.CreatePostCommentWithResponse(t.Context(), post.Id, models.CreatePostCommentRequest{
+			Text:     "reply",
+			ParentId: &rootResp.JSON201.Id,
+		})
+		require.NoError(t, err)
+
+		resp, err := c.ListPostCommentsWithResponse(t.Context(), post.Id, &client.ListPostCommentsParams{})
+		require.NoError(t, err)
+		assert.Equal(t, int32(1), resp.JSON200.Pagination.ItemsCount)
+	})
+
+	t.Run("respects pagination", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		post := createPost(t, c, defaultPostPayload)
+
+		for i := range 3 {
+			_, err := c.CreatePostCommentWithResponse(t.Context(), post.Id, models.CreatePostCommentRequest{
+				Text: fmt.Sprintf("comment %d", i),
+			})
+			require.NoError(t, err)
+		}
+
+		limit := int32(2)
+		resp, err := c.ListPostCommentsWithResponse(t.Context(), post.Id, &client.ListPostCommentsParams{Limit: &limit})
+		require.NoError(t, err)
+		assert.Len(t, resp.JSON200.Items, 2)
+		assert.Equal(t, int32(2), resp.JSON200.Pagination.ItemsCount)
+		assert.Equal(t, int32(2), resp.JSON200.Pagination.LastPage)
+	})
+
+	t.Run("post not found returns 404", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+
+		resp, err := c.ListPostCommentsWithResponse(t.Context(), "non-existent", &client.ListPostCommentsParams{})
+		require.NoError(t, err)
+		assert.Equal(t, 404, resp.StatusCode())
 	})
 }
 

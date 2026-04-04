@@ -5,8 +5,18 @@ import (
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
 	"github.com/nikpivkin/roasti-app-backend/internal/posts"
+	"github.com/nikpivkin/roasti-app-backend/internal/x/ptr"
 	"github.com/nikpivkin/roasti-app-backend/internal/x/requestctx"
 )
+
+func (s *ServerHandler) ListPostComments(ctx context.Context, request ListPostCommentsRequestObject) (ListPostCommentsResponseObject, error) {
+	pag := models.NewPaginationParams(ptr.FromPtr(request.Params.Page), ptr.FromPtr(request.Params.Limit))
+	page, err := s.postService.ListComments(ctx, request.PostId, pag)
+	if err != nil {
+		return nil, err
+	}
+	return ListPostComments200JSONResponse(models.CommentPage(page)), nil
+}
 
 func (s *ServerHandler) ListPosts(ctx context.Context, request ListPostsRequestObject) (ListPostsResponseObject, error) {
 	userID := requestctx.GetUserID(ctx)

@@ -204,6 +204,78 @@ paths:
               schema:
                 $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
 
+  /api/v1/posts/{post_id}/comments:
+    get:
+      summary: List post comments
+      operationId: listPostComments
+      description: Returns a paginated list of root comments with their replies.
+      tags: [posts]
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique post identifier
+        - name: page
+          in: query
+          schema:
+            $ref: "./models.yaml#/components/schemas/PageParam"
+        - name: limit
+          in: query
+          schema:
+            $ref: "./models.yaml#/components/schemas/LimitParam"
+      responses:
+        "200":
+          description: Paginated list of comments
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/CommentPage"
+        "404":
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
+    post:
+      summary: Add comment to post
+      operationId: createPostComment
+      description: Adds a comment to a post on behalf of the authenticated user.
+      tags: [posts]
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique post identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./models.yaml#/components/schemas/CreatePostCommentRequest"
+      responses:
+        "201":
+          description: Comment created
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/PostComment"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
+        "404":
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
+
   /api/v1/posts/{post_id}/comments/{comment_id}:
     patch:
       summary: Update comment
@@ -277,45 +349,6 @@ paths:
                 $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
         "404":
           description: Comment not found
-          content:
-            application/json:
-              schema:
-                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
-
-  /api/v1/posts/{post_id}/comments:
-    post:
-      summary: Add comment to post
-      operationId: createPostComment
-      description: Adds a comment to a post on behalf of the authenticated user.
-      tags: [posts]
-      parameters:
-        - name: post_id
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Unique post identifier
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "./models.yaml#/components/schemas/CreatePostCommentRequest"
-      responses:
-        "201":
-          description: Comment created
-          content:
-            application/json:
-              schema:
-                $ref: "./models.yaml#/components/schemas/PostComment"
-        "400":
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
-        "404":
-          description: Post not found
           content:
             application/json:
               schema:
