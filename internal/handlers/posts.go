@@ -77,7 +77,7 @@ func (s *ServerHandler) DeletePostComment(ctx context.Context, request DeletePos
 
 func (s *ServerHandler) CreatePostComment(ctx context.Context, request CreatePostCommentRequestObject) (CreatePostCommentResponseObject, error) {
 	userID := requestctx.GetUserID(ctx)
-	comment, err := s.postService.CreateComment(ctx, userID, request.PostId, request.Body.Text)
+	comment, err := s.postService.CreateComment(ctx, userID, request.PostId, request.Body.Text, request.Body.ParentId)
 	if err != nil {
 		return nil, err
 	}

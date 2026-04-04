@@ -723,6 +723,9 @@ components:
           type: string
           format: date-time
           description: Timestamp of the last edit
+        parent_id:
+          type: string
+          description: ID of the parent comment. Null for top-level comments.
 
     Post:
       type: object
@@ -803,6 +806,9 @@ components:
         text:
           type: string
           description: Comment text
+        parent_id:
+          type: string
+          description: ID of the parent comment. Omit for top-level comments.
 
     PostPage:
       allOf:

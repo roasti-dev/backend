@@ -344,6 +344,39 @@ func TestPostRepository_CreateComment(t *testing.T) {
 		assert.Equal(t, "comment-1", got.Comments[0].Id)
 		assert.Equal(t, "Nice!", got.Comments[0].Text)
 	})
+
+	t.Run("reply has parent_id set", func(t *testing.T) {
+		repo, db := setupPostRepo(t)
+		p := testutil.CreateTestPost(t, repo, "post-1", "user-1")
+		testutil.CreateTestComment(t, db, "comment-1", "post-1", "user-1", "root")
+
+		parentID := "comment-1"
+		author := models.UserPreview{Id: "user-2"}
+		reply := models.PostComment{
+			Id:       "comment-2",
+			Author:   &author,
+			Text:     "reply!",
+			ParentId: &parentID,
+		}
+		got, err := repo.CreateComment(t.Context(), reply, p.Id)
+		require.NoError(t, err)
+		require.NotNil(t, got.ParentId)
+		assert.Equal(t, "comment-1", *got.ParentId)
+
+		post, err := repo.GetPostByID(t.Context(), p.Id)
+		require.NoError(t, err)
+		require.Len(t, post.Comments, 2)
+		var replyComment *models.PostComment
+		for i := range post.Comments {
+			if post.Comments[i].Id == "comment-2" {
+				replyComment = &post.Comments[i]
+				break
+			}
+		}
+		require.NotNil(t, replyComment, "reply comment not found")
+		require.NotNil(t, replyComment.ParentId)
+		assert.Equal(t, "comment-1", *replyComment.ParentId)
+	})
 }
 
 func TestPostRepository_DeleteComment(t *testing.T) {

@@ -43,6 +43,7 @@ var blockSelectColumns = []string{
 var commentColumns = []string{
 	"comments.id",
 	"comments.target_id",
+	"comments.parent_id",
 	"comments.text",
 	"comments.created_at",
 	"comments.updated_at",
@@ -179,9 +180,13 @@ func (r *Repository) ListPosts(ctx context.Context, pag models.PaginationParams)
 }
 
 func (r *Repository) CreateComment(ctx context.Context, comment models.PostComment, postID string) (models.PostComment, error) {
+	var parentID interface{}
+	if comment.ParentId != nil {
+		parentID = *comment.ParentId
+	}
 	_, err := r.psql.Insert(commentsTable).
-		Columns("id", "target_id", "target_type", "author_id", "text", "created_at", "updated_at").
-		Values(comment.Id, postID, commentTargetType, comment.Author.Id, comment.Text, comment.CreatedAt, comment.CreatedAt).
+		Columns("id", "target_id", "target_type", "author_id", "text", "parent_id", "created_at", "updated_at").
+		Values(comment.Id, postID, commentTargetType, comment.Author.Id, comment.Text, parentID, comment.CreatedAt, comment.CreatedAt).
 		RunWith(r.runner).
 		ExecContext(ctx)
 	if err != nil {
@@ -189,7 +194,7 @@ func (r *Repository) CreateComment(ctx context.Context, comment models.PostComme
 	}
 
 	row := r.psql.
-		Select("comments.id", "comments.text", "comments.created_at", "comments.updated_at", "users.id", "users.username", "users.avatar_id").
+		Select("comments.id", "comments.text", "comments.parent_id", "comments.created_at", "comments.updated_at", "users.id", "users.username", "users.avatar_id").
 		From(commentsTable).
 		Join("users ON users.id = comments.author_id").
 		Where(sq.Eq{"comments.id": comment.Id}).
@@ -197,9 +202,12 @@ func (r *Repository) CreateComment(ctx context.Context, comment models.PostComme
 		RunWith(r.runner).
 		QueryRowContext(ctx)
 
-	var avatarID sql.NullString
+	var (
+		avatarID        sql.NullString
+		scannedParentID sql.NullString
+	)
 	err = row.Scan(
-		&comment.Id, &comment.Text, &comment.CreatedAt, &comment.UpdatedAt,
+		&comment.Id, &comment.Text, &scannedParentID, &comment.CreatedAt, &comment.UpdatedAt,
 		&comment.Author.Id, &comment.Author.Username, &avatarID,
 	)
 	if err != nil {
@@ -207,6 +215,9 @@ func (r *Repository) CreateComment(ctx context.Context, comment models.PostComme
 	}
 	if avatarID.Valid {
 		comment.Author.AvatarId = &avatarID.String
+	}
+	if scannedParentID.Valid {
+		comment.ParentId = &scannedParentID.String
 	}
 	return comment, nil
 }
@@ -288,6 +299,17 @@ func (r *Repository) DeleteComment(ctx context.Context, commentID string) error 
 		return ErrCommentNotFound
 	}
 	return nil
+}
+
+func (r *Repository) CommentExistsInPost(ctx context.Context, commentID, postID string) (bool, error) {
+	var exists bool
+	err := r.psql.Select("COUNT(*) > 0").
+		From(commentsTable).
+		Where(sq.Eq{"id": commentID, "target_id": postID, "target_type": commentTargetType}).
+		Where("deleted_at IS NULL").
+		RunWith(r.runner).
+		QueryRowContext(ctx).Scan(&exists)
+	return exists, err
 }
 
 func (r *Repository) GetCommentAuthorID(ctx context.Context, commentID string) (string, error) {
@@ -437,17 +459,21 @@ func (r *Repository) getCommentsByPostIDs(ctx context.Context, postIDs []string)
 		var (
 			targetID  string
 			comment   models.PostComment
+			parentID  sql.NullString
 			authorID  sql.NullString
 			username  sql.NullString
 			avatarID  sql.NullString
 			deletedAt sql.NullString
 		)
 		if err := rows.Scan(
-			&comment.Id, &targetID, &comment.Text,
+			&comment.Id, &targetID, &parentID, &comment.Text,
 			&comment.CreatedAt, &comment.UpdatedAt, &deletedAt,
 			&authorID, &username, &avatarID,
 		); err != nil {
 			return nil, err
+		}
+		if parentID.Valid {
+			comment.ParentId = &parentID.String
 		}
 		if deletedAt.Valid {
 			comment.IsDeleted = true

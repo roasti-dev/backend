@@ -22,6 +22,7 @@ type PostRepository interface {
 	UpdatePost(ctx context.Context, postID, title string, blocks []models.PostBlock) error
 	DeletePost(ctx context.Context, postID string) error
 	CreateComment(ctx context.Context, comment models.PostComment, postID string) (models.PostComment, error)
+	CommentExistsInPost(ctx context.Context, commentID, postID string) (bool, error)
 	GetCommentAuthorID(ctx context.Context, commentID string) (string, error)
 	DeleteComment(ctx context.Context, commentID string) error
 	ListPosts(ctx context.Context, pag models.PaginationParams) ([]models.Post, int, error)
@@ -81,7 +82,7 @@ func NewService(repo PostRepository, uploader Uploader, likeChecker LikeChecker,
 	}
 }
 
-func (s *Service) CreateComment(ctx context.Context, userID, postID, text string) (models.PostComment, error) {
+func (s *Service) CreateComment(ctx context.Context, userID, postID, text string, parentID *string) (models.PostComment, error) {
 	text = normalizeCommentText(text)
 	if err := validateCommentText(text); err != nil {
 		return models.PostComment{}, err
@@ -93,11 +94,22 @@ func (s *Service) CreateComment(ctx context.Context, userID, postID, text string
 		}
 		return models.PostComment{}, err
 	}
+	if parentID != nil {
+		exists, err := s.repo.CommentExistsInPost(ctx, *parentID, postID)
+		if err != nil {
+			return models.PostComment{}, err
+		}
+		if !exists {
+			return models.PostComment{}, ErrCommentNotFound
+		}
+	}
 
+	author := models.UserPreview{Id: userID}
 	comment := models.PostComment{
 		Id:        id.NewID(),
-		Author:    new(models.UserPreview{Id: userID}),
+		Author:    &author,
 		Text:      text,
+		ParentId:  parentID,
 		CreatedAt: time.Now().UTC(),
 	}
 	created, err := s.repo.CreateComment(ctx, comment, postID)

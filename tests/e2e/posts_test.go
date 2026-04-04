@@ -359,6 +359,38 @@ func TestCreatePostComment(t *testing.T) {
 		assert.Equal(t, "hello", resp.JSON200.Comments[0].Text)
 	})
 
+	t.Run("reply has parent_id set", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		post := createPost(t, c, defaultPostPayload)
+
+		parentResp, err := c.CreatePostCommentWithResponse(t.Context(), post.Id, models.CreatePostCommentRequest{Text: "root comment"})
+		require.NoError(t, err)
+		require.Equal(t, 201, parentResp.StatusCode())
+
+		parentID := parentResp.JSON201.Id
+		replyResp, err := c.CreatePostCommentWithResponse(t.Context(), post.Id, models.CreatePostCommentRequest{
+			Text:     "reply",
+			ParentId: &parentID,
+		})
+		require.NoError(t, err)
+		require.Equal(t, 201, replyResp.StatusCode())
+		require.NotNil(t, replyResp.JSON201.ParentId)
+		assert.Equal(t, parentID, *replyResp.JSON201.ParentId)
+	})
+
+	t.Run("reply to non-existent comment returns 404", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		post := createPost(t, c, defaultPostPayload)
+
+		nonExistent := "non-existent-comment"
+		resp, err := c.CreatePostCommentWithResponse(t.Context(), post.Id, models.CreatePostCommentRequest{
+			Text:     "reply",
+			ParentId: &nonExistent,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 404, resp.StatusCode())
+	})
+
 	t.Run("non-existent post returns 404", func(t *testing.T) {
 		c := newAuthenticatedTestClient(t, srv)
 
