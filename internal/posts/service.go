@@ -26,6 +26,7 @@ type PostRepository interface {
 
 type CommentService interface {
 	Create(ctx context.Context, userID, targetID, targetType, text string, parentID *string) (models.PostComment, error)
+	Update(ctx context.Context, userID, commentID, text string) (models.PostComment, error)
 	Delete(ctx context.Context, userID, commentID string) error
 }
 
@@ -259,6 +260,10 @@ func (s *Service) DeletePost(ctx context.Context, userID, postID string) error {
 		return ErrForbidden
 	}
 	return s.repo.DeletePost(ctx, postID)
+}
+
+func (s *Service) UpdateComment(ctx context.Context, userID, commentID, text string) (models.PostComment, error) {
+	return s.commentService.Update(ctx, userID, commentID, text)
 }
 
 func (s *Service) DeleteComment(ctx context.Context, userID, commentID string) error {

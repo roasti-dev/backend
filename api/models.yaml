@@ -810,6 +810,16 @@ components:
           type: string
           description: ID of the parent comment. Omit for top-level comments.
 
+    UpdatePostCommentRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - text
+      properties:
+        text:
+          type: string
+          description: New comment text
+
     PostPage:
       allOf:
         - $ref: "#/components/schemas/Page"

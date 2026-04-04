@@ -30,7 +30,9 @@ func TestCommentRepository_Create(t *testing.T) {
 			Author: &author,
 			Text:   "Great post!",
 		}
-		got, err := repo.Create(t.Context(), comment, "post-1", "post")
+		require.NoError(t, repo.Create(t.Context(), comment, "post-1", "post"))
+
+		got, err := repo.GetByID(t.Context(), "comment-1")
 		require.NoError(t, err)
 		assert.Equal(t, "comment-1", got.Id)
 		assert.Equal(t, "Great post!", got.Text)
@@ -50,7 +52,9 @@ func TestCommentRepository_Create(t *testing.T) {
 			Text:     "reply!",
 			ParentId: &parentID,
 		}
-		got, err := repo.Create(t.Context(), reply, "post-1", "post")
+		require.NoError(t, repo.Create(t.Context(), reply, "post-1", "post"))
+
+		got, err := repo.GetByID(t.Context(), "comment-2")
 		require.NoError(t, err)
 		require.NotNil(t, got.ParentId)
 		assert.Equal(t, "comment-1", *got.ParentId)

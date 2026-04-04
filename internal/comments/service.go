@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"log/slog"
-	"strings"
 	"time"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
@@ -15,7 +14,9 @@ import (
 const textMaxLen = 1000
 
 type Repository interface {
-	Create(ctx context.Context, comment models.PostComment, targetID, targetType string) (models.PostComment, error)
+	Create(ctx context.Context, comment models.PostComment, targetID, targetType string) error
+	GetByID(ctx context.Context, commentID string) (models.PostComment, error)
+	Update(ctx context.Context, commentID, text string) error
 	GetAuthorID(ctx context.Context, commentID string) (string, error)
 	Delete(ctx context.Context, commentID string) error
 	ExistsInTarget(ctx context.Context, commentID, targetID string) (bool, error)
@@ -34,12 +35,9 @@ func NewService(repo Repository) *Service {
 }
 
 func (s *Service) Create(ctx context.Context, userID, targetID, targetType, text string, parentID *string) (models.PostComment, error) {
-	text = strings.TrimSpace(text)
-	if text == "" {
-		return models.PostComment{}, ErrInvalidText
-	}
-	if len(text) > textMaxLen {
-		return models.PostComment{}, ErrTextTooLong
+	text = normalizeComment(text)
+	if err := validateComment(text); err != nil {
+		return models.PostComment{}, err
 	}
 	if parentID != nil {
 		exists, err := s.repo.ExistsInTarget(ctx, *parentID, targetID)
@@ -52,14 +50,40 @@ func (s *Service) Create(ctx context.Context, userID, targetID, targetType, text
 	}
 
 	author := models.UserPreview{Id: userID}
+	now := time.Now().UTC()
 	comment := models.PostComment{
 		Id:        id.NewID(),
 		Author:    &author,
 		Text:      text,
 		ParentId:  parentID,
-		CreatedAt: time.Now().UTC(),
+		CreatedAt: now,
+		UpdatedAt: now,
 	}
-	return s.repo.Create(ctx, comment, targetID, targetType)
+	if err := s.repo.Create(ctx, comment, targetID, targetType); err != nil {
+		return models.PostComment{}, err
+	}
+	return s.repo.GetByID(ctx, comment.Id)
+}
+
+func (s *Service) Update(ctx context.Context, userID, commentID, text string) (models.PostComment, error) {
+	authorID, err := s.repo.GetAuthorID(ctx, commentID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return models.PostComment{}, ErrNotFound
+		}
+		return models.PostComment{}, err
+	}
+	if authorID != userID {
+		return models.PostComment{}, ErrForbidden
+	}
+	text = normalizeComment(text)
+	if err := validateComment(text); err != nil {
+		return models.PostComment{}, err
+	}
+	if err := s.repo.Update(ctx, commentID, text); err != nil {
+		return models.PostComment{}, err
+	}
+	return s.repo.GetByID(ctx, commentID)
 }
 
 func (s *Service) Delete(ctx context.Context, userID, commentID string) error {

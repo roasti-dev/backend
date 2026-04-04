@@ -35,6 +35,7 @@ type PostService interface {
 	ToggleLike(ctx context.Context, userID, postID string) (likes.ToggleResult, error)
 	ListPosts(ctx context.Context, userID string, params posts.ListPostsParams) (models.GenericPage[models.Post], error)
 	CreateComment(ctx context.Context, userID, postID, text string, parentID *string) (models.PostComment, error)
+	UpdateComment(ctx context.Context, userID, commentID, text string) (models.PostComment, error)
 	DeleteComment(ctx context.Context, userID, commentID string) error
 }
 

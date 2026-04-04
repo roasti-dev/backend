@@ -205,6 +205,49 @@ paths:
                 $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
 
   /api/v1/posts/{post_id}/comments/{comment_id}:
+    patch:
+      summary: Update comment
+      operationId: updatePostComment
+      description: Updates the text of a comment. Only the comment author can edit it.
+      tags: [posts]
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique post identifier
+        - name: comment_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique comment identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./models.yaml#/components/schemas/UpdatePostCommentRequest"
+      responses:
+        "200":
+          description: Comment updated
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/PostComment"
+        "403":
+          description: Not the comment author
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
+        "404":
+          description: Comment not found
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
     delete:
       summary: Delete comment
       operationId: deletePostComment

@@ -24,7 +24,7 @@ func NewRepository(runner sq.StdSqlCtx) *Repo {
 	}
 }
 
-func (r *Repo) Create(ctx context.Context, comment models.PostComment, targetID, targetType string) (models.PostComment, error) {
+func (r *Repo) Create(ctx context.Context, comment models.PostComment, targetID, targetType string) error {
 	var parentID interface{}
 	if comment.ParentId != nil {
 		parentID = *comment.ParentId
@@ -35,25 +35,31 @@ func (r *Repo) Create(ctx context.Context, comment models.PostComment, targetID,
 		RunWith(r.runner).
 		ExecContext(ctx)
 	if err != nil {
-		return models.PostComment{}, fmt.Errorf("insert comment: %w", err)
+		return fmt.Errorf("insert comment: %w", err)
 	}
+	return nil
+}
 
+func (r *Repo) GetByID(ctx context.Context, commentID string) (models.PostComment, error) {
+	var (
+		avatarID        sql.NullString
+		scannedParentID sql.NullString
+		comment         models.PostComment
+		author          models.UserPreview
+	)
+	comment.Author = &author
 	row := r.psql.
 		Select("comments.id", "comments.text", "comments.parent_id", "comments.created_at", "comments.updated_at", "users.id", "users.username", "users.avatar_id").
 		From(commentsTable).
 		Join("users ON users.id = comments.author_id").
-		Where(sq.Eq{"comments.id": comment.Id}).
+		Where(sq.Eq{"comments.id": commentID}).
+		Where("comments.deleted_at IS NULL").
 		Limit(1).
 		RunWith(r.runner).
 		QueryRowContext(ctx)
-
-	var (
-		avatarID        sql.NullString
-		scannedParentID sql.NullString
-	)
-	err = row.Scan(
+	err := row.Scan(
 		&comment.Id, &comment.Text, &scannedParentID, &comment.CreatedAt, &comment.UpdatedAt,
-		&comment.Author.Id, &comment.Author.Username, &avatarID,
+		&author.Id, &author.Username, &avatarID,
 	)
 	if err != nil {
 		return models.PostComment{}, fmt.Errorf("fetch comment: %w", err)
@@ -77,6 +83,27 @@ func (r *Repo) GetAuthorID(ctx context.Context, commentID string) (string, error
 		RunWith(r.runner).
 		QueryRowContext(ctx).Scan(&authorID)
 	return authorID, err
+}
+
+func (r *Repo) Update(ctx context.Context, commentID, text string) error {
+	result, err := r.psql.Update(commentsTable).
+		Set("text", text).
+		Set("updated_at", sq.Expr("datetime('now')")).
+		Where(sq.Eq{"id": commentID}).
+		Where("deleted_at IS NULL").
+		RunWith(r.runner).
+		ExecContext(ctx)
+	if err != nil {
+		return err
+	}
+	n, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return ErrNotFound
+	}
+	return nil
 }
 
 func (r *Repo) Delete(ctx context.Context, commentID string) error {
