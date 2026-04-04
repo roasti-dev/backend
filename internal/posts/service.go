@@ -21,11 +21,12 @@ type PostRepository interface {
 	GetPostsByIDs(ctx context.Context, ids []string) ([]models.Post, error)
 	UpdatePost(ctx context.Context, postID, title string, blocks []models.PostBlock) error
 	DeletePost(ctx context.Context, postID string) error
-	CreateComment(ctx context.Context, comment models.PostComment, postID string) (models.PostComment, error)
-	CommentExistsInPost(ctx context.Context, commentID, postID string) (bool, error)
-	GetCommentAuthorID(ctx context.Context, commentID string) (string, error)
-	DeleteComment(ctx context.Context, commentID string) error
 	ListPosts(ctx context.Context, pag models.PaginationParams) ([]models.Post, int, error)
+}
+
+type CommentService interface {
+	Create(ctx context.Context, userID, targetID, targetType, text string, parentID *string) (models.PostComment, error)
+	Delete(ctx context.Context, userID, commentID string) error
 }
 
 type LikeChecker interface {
@@ -63,30 +64,28 @@ func (p ListPostsParams) Pagination() models.PaginationParams {
 }
 
 type Service struct {
-	logger      *slog.Logger
-	repo        PostRepository
-	uploader    Uploader
-	likeChecker LikeChecker
-	likeToggler LikeToggler
-	publisher   EventPublisher
+	logger         *slog.Logger
+	repo           PostRepository
+	uploader       Uploader
+	likeChecker    LikeChecker
+	likeToggler    LikeToggler
+	publisher      EventPublisher
+	commentService CommentService
 }
 
-func NewService(repo PostRepository, uploader Uploader, likeChecker LikeChecker, likeToggler LikeToggler, publisher EventPublisher) *Service {
+func NewService(repo PostRepository, uploader Uploader, likeChecker LikeChecker, likeToggler LikeToggler, publisher EventPublisher, commentService CommentService) *Service {
 	return &Service{
-		logger:      slog.Default(),
-		repo:        repo,
-		uploader:    uploader,
-		likeChecker: likeChecker,
-		likeToggler: likeToggler,
-		publisher:   publisher,
+		logger:         slog.Default(),
+		repo:           repo,
+		uploader:       uploader,
+		likeChecker:    likeChecker,
+		likeToggler:    likeToggler,
+		publisher:      publisher,
+		commentService: commentService,
 	}
 }
 
 func (s *Service) CreateComment(ctx context.Context, userID, postID, text string, parentID *string) (models.PostComment, error) {
-	text = normalizeCommentText(text)
-	if err := validateCommentText(text); err != nil {
-		return models.PostComment{}, err
-	}
 	post, err := s.repo.GetPostByID(ctx, postID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -94,25 +93,7 @@ func (s *Service) CreateComment(ctx context.Context, userID, postID, text string
 		}
 		return models.PostComment{}, err
 	}
-	if parentID != nil {
-		exists, err := s.repo.CommentExistsInPost(ctx, *parentID, postID)
-		if err != nil {
-			return models.PostComment{}, err
-		}
-		if !exists {
-			return models.PostComment{}, ErrCommentNotFound
-		}
-	}
-
-	author := models.UserPreview{Id: userID}
-	comment := models.PostComment{
-		Id:        id.NewID(),
-		Author:    &author,
-		Text:      text,
-		ParentId:  parentID,
-		CreatedAt: time.Now().UTC(),
-	}
-	created, err := s.repo.CreateComment(ctx, comment, postID)
+	created, err := s.commentService.Create(ctx, userID, postID, "post", text, parentID)
 	if err != nil {
 		return models.PostComment{}, err
 	}
@@ -152,10 +133,6 @@ func (s *Service) ToggleLike(ctx context.Context, userID, postID string) (likes.
 
 func normalizePostPayload(req *models.PostPayload) {
 	req.Title = strings.TrimSpace(req.Title)
-}
-
-func normalizeCommentText(text string) string {
-	return strings.TrimSpace(text)
 }
 
 func (s *Service) CreatePost(ctx context.Context, userID string, req models.CreatePostRequest) (models.Post, error) {
@@ -285,17 +262,7 @@ func (s *Service) DeletePost(ctx context.Context, userID, postID string) error {
 }
 
 func (s *Service) DeleteComment(ctx context.Context, userID, commentID string) error {
-	authorID, err := s.repo.GetCommentAuthorID(ctx, commentID)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return ErrCommentNotFound
-		}
-		return err
-	}
-	if authorID != userID {
-		return ErrForbidden
-	}
-	return s.repo.DeleteComment(ctx, commentID)
+	return s.commentService.Delete(ctx, userID, commentID)
 }
 
 func (s *Service) GetPostsByIDs(ctx context.Context, currentUserID string, ids []string) ([]models.Post, error) {
