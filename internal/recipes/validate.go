@@ -8,6 +8,8 @@ const (
 	stepTitleMaxLen       = 100
 	stepDescriptionMaxLen = 1000
 	stepsMaxCount         = 30
+	ingredientsMaxCount   = 50
+	ingredientNameMaxLen  = 100
 )
 
 func validateRecipePayload(req models.RecipePayload) error {
@@ -53,6 +55,22 @@ func validateRecipePayload(req models.RecipePayload) error {
 		}
 		if step.Description != nil && len(*step.Description) > stepDescriptionMaxLen {
 			return ErrStepDescriptionTooLong
+		}
+	}
+
+	ingredients := derefSlice(req.Ingredients)
+	if len(ingredients) > ingredientsMaxCount {
+		return ErrTooManyIngredients
+	}
+	for _, ing := range ingredients {
+		if ing.Name == "" {
+			return ErrInvalidIngredientName
+		}
+		if len(ing.Name) > ingredientNameMaxLen {
+			return ErrIngredientNameTooLong
+		}
+		if ing.Amount != nil && *ing.Amount <= 0 {
+			return ErrInvalidIngredientAmount
 		}
 	}
 

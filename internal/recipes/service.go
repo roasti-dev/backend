@@ -444,7 +444,16 @@ func recipePayloadToModel(payload models.RecipePayload) models.Recipe {
 		Beans:       payload.Beans,
 		Note:        payload.Note,
 		Public:      payload.Public != nil && *payload.Public,
+		Ingredients: mapSlice(derefSlice(payload.Ingredients), ingredientPayloadToModel),
 		Steps:       mapSlice(payload.Steps, brewStepPayloadToModel),
+	}
+}
+
+func ingredientPayloadToModel(payload models.RecipeIngredientPayload) models.RecipeIngredient {
+	return models.RecipeIngredient{
+		Name:   payload.Name,
+		Amount: payload.Amount,
+		Unit:   payload.Unit,
 	}
 }
 
@@ -464,4 +473,11 @@ func mapSlice[T, U any](slice []T, f func(T) U) []U {
 		result[i] = f(v)
 	}
 	return result
+}
+
+func derefSlice[T any](p *[]T) []T {
+	if p == nil {
+		return nil
+	}
+	return *p
 }

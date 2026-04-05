@@ -19,8 +19,9 @@ type scanner interface {
 }
 
 const (
-	recipesTable   = "recipes"
-	brewStepsTable = "brew_steps"
+	recipesTable     = "recipes"
+	brewStepsTable   = "brew_steps"
+	ingredientsTable = "recipe_ingredients"
 )
 
 var (
@@ -93,6 +94,15 @@ var (
 		"description",
 		"duration_seconds",
 		"image_id",
+	}
+
+	ingredientColumns = []string{
+		"id",
+		"recipe_id",
+		"position",
+		"name",
+		"amount",
+		"unit",
 	}
 )
 
@@ -185,6 +195,24 @@ func (r *Repository) UpsertRecipe(ctx context.Context, recipe models.Recipe) err
 		}
 	}
 
+	// ingredients
+	_, err = r.psql.Delete(ingredientsTable).
+		Where("recipe_id = ?", recipe.Id).
+		RunWith(tx).ExecContext(ctx)
+	if err != nil {
+		return fmt.Errorf("delete ingredients: %w", err)
+	}
+
+	if len(recipe.Ingredients) > 0 {
+		q := r.psql.Insert(ingredientsTable).Columns(ingredientColumns...)
+		for i, ing := range recipe.Ingredients {
+			q = q.Values(nil, recipe.Id, i, ing.Name, ing.Amount, ing.Unit)
+		}
+		if _, err = q.RunWith(tx).ExecContext(ctx); err != nil {
+			return fmt.Errorf("insert ingredients: %w", err)
+		}
+	}
+
 	return tx.Commit()
 }
 
@@ -209,11 +237,19 @@ func (r *Repository) GetRecipeByID(ctx context.Context, recipeID string) (models
 	if err != nil {
 		return models.Recipe{}, err
 	}
-
-	steps, ok := stepsMap[recipeID]
-	if ok {
+	if steps, ok := stepsMap[recipeID]; ok {
 		recipe.Steps = steps
 	}
+
+	ingredientsMap, err := r.getIngredientsByRecipeIDs(ctx, []string{recipeID})
+	if err != nil {
+		return models.Recipe{}, err
+	}
+	recipe.Ingredients = ingredientsMap[recipeID]
+	if recipe.Ingredients == nil {
+		recipe.Ingredients = []models.RecipeIngredient{}
+	}
+
 	return recipe, nil
 }
 
@@ -252,8 +288,17 @@ func (r *Repository) ListRecipes(
 		return models.GenericPage[models.Recipe]{}, err
 	}
 
+	ingredientsMap, err := r.getIngredientsByRecipeIDs(ctx, recipeIDs)
+	if err != nil {
+		return models.GenericPage[models.Recipe]{}, err
+	}
+
 	for i := range recipes {
 		recipes[i].Steps = stepsMap[recipes[i].Id]
+		recipes[i].Ingredients = ingredientsMap[recipes[i].Id]
+		if recipes[i].Ingredients == nil {
+			recipes[i].Ingredients = []models.RecipeIngredient{}
+		}
 	}
 
 	countBuilder := r.psql.
@@ -291,16 +336,32 @@ func (r *Repository) GetRecipesByIDs(ctx context.Context, currentUserID string, 
 	defer rows.Close()
 
 	var recipes []models.Recipe
+	var recipeIDs []string
 	for rows.Next() {
 		recipe, err := scanRecipe(rows)
 		if err != nil {
 			return nil, fmt.Errorf("scan recipe preview: %w", err)
 		}
 		recipes = append(recipes, recipe)
+		recipeIDs = append(recipeIDs, recipe.Id)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("rows error: %w", err)
 	}
+
+	if len(recipes) > 0 {
+		ingredientsMap, err := r.getIngredientsByRecipeIDs(ctx, recipeIDs)
+		if err != nil {
+			return nil, fmt.Errorf("get ingredients: %w", err)
+		}
+		for i := range recipes {
+			recipes[i].Ingredients = ingredientsMap[recipes[i].Id]
+			if recipes[i].Ingredients == nil {
+				recipes[i].Ingredients = []models.RecipeIngredient{}
+			}
+		}
+	}
+
 	return recipes, nil
 }
 
@@ -509,6 +570,35 @@ func (r *Repository) DeleteRecipe(ctx context.Context, userID, recipeID string) 
 	})
 	_, err := query.RunWith(r.runner).ExecContext(ctx)
 	return err
+}
+
+func (r *Repository) getIngredientsByRecipeIDs(
+	ctx context.Context,
+	recipeIDs []string,
+) (map[string][]models.RecipeIngredient, error) {
+	rows, err := r.psql.
+		Select(ingredientColumns...).
+		From(ingredientsTable).
+		Where(sq.Eq{"recipe_id": recipeIDs}).
+		OrderBy("position ASC").
+		RunWith(r.runner).
+		QueryContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := make(map[string][]models.RecipeIngredient)
+	for rows.Next() {
+		var ing models.RecipeIngredient
+		var recipeID string
+		var id int64
+		if err := rows.Scan(&id, &recipeID, new(int), &ing.Name, &ing.Amount, &ing.Unit); err != nil {
+			return nil, err
+		}
+		result[recipeID] = append(result[recipeID], ing)
+	}
+	return result, rows.Err()
 }
 
 func (r *Repository) getBrewStepsByRecipeIDs(

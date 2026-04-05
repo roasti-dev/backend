@@ -106,6 +106,39 @@ components:
         - medium_dark
         - dark
 
+    RecipeIngredient:
+      type: object
+      description: Single ingredient in a recipe
+      properties:
+        name:
+          type: string
+          description: Ingredient name
+        amount:
+          type: number
+          description: Quantity of the ingredient (optional, e.g. 200)
+        unit:
+          type: string
+          description: Unit of measurement, free text (e.g. ml, g, oz)
+      required:
+        - name
+
+    RecipeIngredientPayload:
+      type: object
+      additionalProperties: false
+      description: Single ingredient in a recipe
+      properties:
+        name:
+          type: string
+          description: Ingredient name
+        amount:
+          type: number
+          description: Quantity of the ingredient (optional)
+        unit:
+          type: string
+          description: Unit of measurement, free text (e.g. ml, g, oz)
+      required:
+        - name
+
     BrewStep:
       type: object
       description: Single step of the brewing process
@@ -206,6 +239,11 @@ components:
           type: string
           format: date-time
           description: "Timestamp when the recipe was last updated"
+        ingredients:
+          type: array
+          description: Ordered list of recipe ingredients
+          items:
+            $ref: "#/components/schemas/RecipeIngredient"
         steps:
           type: array
           description: Ordered list of brewing steps
@@ -226,6 +264,7 @@ components:
         - description
         - brew_method
         - difficulty
+        - ingredients
         - steps
         - public
         - created_at
@@ -316,6 +355,12 @@ components:
           type: boolean
           default: false
           description: Indicates whether the recipe is publicly visible
+        ingredients:
+          type: array
+          description: Ordered list of recipe ingredients (max 50)
+          items:
+            $ref: "#/components/schemas/RecipeIngredientPayload"
+          maxItems: 50
         steps:
           type: array
           description: Ordered list of brewing steps
