@@ -118,20 +118,3 @@ func (s *ServerHandler) CreateRecipeComment(ctx context.Context, request CreateR
 	}
 	return CreateRecipeComment201JSONResponse(comment), nil
 }
-
-func (s *ServerHandler) UpdateRecipeComment(ctx context.Context, request UpdateRecipeCommentRequestObject) (UpdateRecipeCommentResponseObject, error) {
-	userID := requestctx.GetUserID(ctx)
-	comment, err := s.recipeService.UpdateComment(ctx, userID, request.CommentId, request.Body.Text)
-	if err != nil {
-		return nil, err
-	}
-	return UpdateRecipeComment200JSONResponse(comment), nil
-}
-
-func (s *ServerHandler) DeleteRecipeComment(ctx context.Context, request DeleteRecipeCommentRequestObject) (DeleteRecipeCommentResponseObject, error) {
-	userID := requestctx.GetUserID(ctx)
-	if err := s.recipeService.DeleteComment(ctx, userID, request.CommentId); err != nil {
-		return nil, err
-	}
-	return DeleteRecipeComment204Response{}, nil
-}

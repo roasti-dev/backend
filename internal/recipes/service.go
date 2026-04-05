@@ -48,8 +48,6 @@ type EventPublisher interface {
 
 type CommentService interface {
 	Create(ctx context.Context, userID, targetID, targetType, text string, parentID *string) (models.PostComment, error)
-	Update(ctx context.Context, userID, commentID, text string) (models.PostComment, error)
-	Delete(ctx context.Context, userID, commentID string) error
 	List(ctx context.Context, targetID string, pag models.PaginationParams) (models.GenericPage[models.CommentThread], error)
 }
 
@@ -363,6 +361,34 @@ func (s *Service) DeleteRecipe(ctx context.Context, userID, recipeID string) err
 	return nil
 }
 
+func (s *Service) CreateComment(ctx context.Context, userID, recipeID, text string, parentID *string) (models.PostComment, error) {
+	recipe, err := s.repo.GetRecipeByID(ctx, recipeID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return models.PostComment{}, ErrNotFound
+		}
+		return models.PostComment{}, err
+	}
+	if !recipe.Public && recipe.AuthorId != userID {
+		return models.PostComment{}, ErrNotFound
+	}
+	return s.commentService.Create(ctx, userID, recipeID, "recipe", text, parentID)
+}
+
+func (s *Service) ListComments(ctx context.Context, userID, recipeID string, pag models.PaginationParams) (models.GenericPage[models.CommentThread], error) {
+	recipe, err := s.repo.GetRecipeByID(ctx, recipeID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return models.GenericPage[models.CommentThread]{}, ErrNotFound
+		}
+		return models.GenericPage[models.CommentThread]{}, err
+	}
+	if !recipe.Public && recipe.AuthorId != userID {
+		return models.GenericPage[models.CommentThread]{}, ErrNotFound
+	}
+	return s.commentService.List(ctx, recipeID, pag)
+}
+
 func (s *Service) deleteRecipeImages(ctx context.Context, recipe models.Recipe) {
 	if recipe.ImageId != nil {
 		if err := s.uploader.Delete(ctx, *recipe.ImageId); err != nil {
@@ -438,40 +464,4 @@ func mapSlice[T, U any](slice []T, f func(T) U) []U {
 		result[i] = f(v)
 	}
 	return result
-}
-
-func (s *Service) CreateComment(ctx context.Context, userID, recipeID, text string, parentID *string) (models.PostComment, error) {
-	recipe, err := s.repo.GetRecipeByID(ctx, recipeID)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return models.PostComment{}, ErrNotFound
-		}
-		return models.PostComment{}, err
-	}
-	if !recipe.Public && recipe.AuthorId != userID {
-		return models.PostComment{}, ErrNotFound
-	}
-	return s.commentService.Create(ctx, userID, recipeID, "recipe", text, parentID)
-}
-
-func (s *Service) ListComments(ctx context.Context, userID, recipeID string, pag models.PaginationParams) (models.GenericPage[models.CommentThread], error) {
-	recipe, err := s.repo.GetRecipeByID(ctx, recipeID)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return models.GenericPage[models.CommentThread]{}, ErrNotFound
-		}
-		return models.GenericPage[models.CommentThread]{}, err
-	}
-	if !recipe.Public && recipe.AuthorId != userID {
-		return models.GenericPage[models.CommentThread]{}, ErrNotFound
-	}
-	return s.commentService.List(ctx, recipeID, pag)
-}
-
-func (s *Service) UpdateComment(ctx context.Context, userID, commentID, text string) (models.PostComment, error) {
-	return s.commentService.Update(ctx, userID, commentID, text)
-}
-
-func (s *Service) DeleteComment(ctx context.Context, userID, commentID string) error {
-	return s.commentService.Delete(ctx, userID, commentID)
 }

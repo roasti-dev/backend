@@ -77,23 +77,6 @@ func (s *ServerHandler) CreatePost(ctx context.Context, request CreatePostReques
 	return CreatePost201JSONResponse(post), nil
 }
 
-func (s *ServerHandler) UpdatePostComment(ctx context.Context, request UpdatePostCommentRequestObject) (UpdatePostCommentResponseObject, error) {
-	userID := requestctx.GetUserID(ctx)
-	comment, err := s.postService.UpdateComment(ctx, userID, request.CommentId, request.Body.Text)
-	if err != nil {
-		return nil, err
-	}
-	return UpdatePostComment200JSONResponse(comment), nil
-}
-
-func (s *ServerHandler) DeletePostComment(ctx context.Context, request DeletePostCommentRequestObject) (DeletePostCommentResponseObject, error) {
-	userID := requestctx.GetUserID(ctx)
-	if err := s.postService.DeleteComment(ctx, userID, request.CommentId); err != nil {
-		return nil, err
-	}
-	return DeletePostComment204Response{}, nil
-}
-
 func (s *ServerHandler) CreatePostComment(ctx context.Context, request CreatePostCommentRequestObject) (CreatePostCommentResponseObject, error) {
 	userID := requestctx.GetUserID(ctx)
 	comment, err := s.postService.CreateComment(ctx, userID, request.PostId, request.Body.Text, request.Body.ParentId)

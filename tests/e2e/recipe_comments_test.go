@@ -101,76 +101,6 @@ func TestCreateRecipeComment(t *testing.T) {
 	})
 }
 
-func TestDeleteRecipeComment(t *testing.T) {
-	srv := setupTestServer(t)
-
-	t.Run("author can delete own comment", func(t *testing.T) {
-		c := newAuthenticatedTestClient(t, srv)
-		recipe := createRecipe(t, c, defaultPayload)
-
-		commentResp, err := c.CreateRecipeCommentWithResponse(t.Context(), recipe.Id, models.CreatePostCommentRequest{Text: "hello"})
-		require.NoError(t, err)
-		require.Equal(t, 201, commentResp.StatusCode())
-
-		resp, err := c.DeleteRecipeCommentWithResponse(t.Context(), recipe.Id, commentResp.JSON201.Id)
-		require.NoError(t, err)
-		assert.Equal(t, 204, resp.StatusCode())
-	})
-
-	t.Run("deleted comment appears as placeholder in list", func(t *testing.T) {
-		c := newAuthenticatedTestClient(t, srv)
-		recipe := createRecipe(t, c, defaultPayload)
-
-		commentResp, err := c.CreateRecipeCommentWithResponse(t.Context(), recipe.Id, models.CreatePostCommentRequest{Text: "hello"})
-		require.NoError(t, err)
-
-		_, err = c.DeleteRecipeCommentWithResponse(t.Context(), recipe.Id, commentResp.JSON201.Id)
-		require.NoError(t, err)
-
-		listResp, err := c.ListRecipeCommentsWithResponse(t.Context(), recipe.Id, &client.ListRecipeCommentsParams{})
-		require.NoError(t, err)
-		require.Len(t, listResp.JSON200.Items, 1)
-		assert.True(t, listResp.JSON200.Items[0].IsDeleted)
-		assert.Nil(t, listResp.JSON200.Items[0].Author)
-		assert.Empty(t, listResp.JSON200.Items[0].Text)
-	})
-
-	t.Run("non-author cannot delete comment", func(t *testing.T) {
-		c1 := newAuthenticatedTestClient(t, srv)
-		c2 := newAuthenticatedTestClient(t, srv)
-		recipe := createRecipe(t, c1, defaultPayload)
-
-		commentResp, err := c1.CreateRecipeCommentWithResponse(t.Context(), recipe.Id, models.CreatePostCommentRequest{Text: "hello"})
-		require.NoError(t, err)
-
-		resp, err := c2.DeleteRecipeCommentWithResponse(t.Context(), recipe.Id, commentResp.JSON201.Id)
-		require.NoError(t, err)
-		assert.Equal(t, 403, resp.StatusCode())
-	})
-
-	t.Run("non-existent comment returns 404", func(t *testing.T) {
-		c := newAuthenticatedTestClient(t, srv)
-		recipe := createRecipe(t, c, defaultPayload)
-
-		resp, err := c.DeleteRecipeCommentWithResponse(t.Context(), recipe.Id, "non-existent-id")
-		require.NoError(t, err)
-		assert.Equal(t, 404, resp.StatusCode())
-	})
-
-	t.Run("unauthenticated returns 401", func(t *testing.T) {
-		c := newAuthenticatedTestClient(t, srv)
-		recipe := createRecipe(t, c, defaultPayload)
-
-		commentResp, err := c.CreateRecipeCommentWithResponse(t.Context(), recipe.Id, models.CreatePostCommentRequest{Text: "hello"})
-		require.NoError(t, err)
-
-		unauth := newTestClient(t, srv)
-		resp, err := unauth.DeleteRecipeCommentWithResponse(t.Context(), recipe.Id, commentResp.JSON201.Id)
-		require.NoError(t, err)
-		assert.Equal(t, 401, resp.StatusCode())
-	})
-}
-
 func TestListRecipeComments(t *testing.T) {
 	srv := setupTestServer(t)
 
@@ -258,65 +188,29 @@ func TestListRecipeComments(t *testing.T) {
 		assert.Equal(t, 404, resp.StatusCode())
 	})
 
-	t.Run("recipe not found returns 404", func(t *testing.T) {
-		c := newAuthenticatedTestClient(t, srv)
-
-		resp, err := c.ListRecipeCommentsWithResponse(t.Context(), "non-existent", &client.ListRecipeCommentsParams{})
-		require.NoError(t, err)
-		assert.Equal(t, 404, resp.StatusCode())
-	})
-}
-
-func TestUpdateRecipeComment(t *testing.T) {
-	srv := setupTestServer(t)
-
-	t.Run("author can update own comment", func(t *testing.T) {
-		c := newAuthenticatedTestClient(t, srv)
-		recipe := createRecipe(t, c, defaultPayload)
-
-		commentResp, err := c.CreateRecipeCommentWithResponse(t.Context(), recipe.Id, models.CreatePostCommentRequest{Text: "original"})
-		require.NoError(t, err)
-		require.Equal(t, 201, commentResp.StatusCode())
-
-		resp, err := c.UpdateRecipeCommentWithResponse(t.Context(), recipe.Id, commentResp.JSON201.Id, models.UpdatePostCommentRequest{Text: "updated"})
-		require.NoError(t, err)
-		require.Equal(t, 200, resp.StatusCode())
-		assert.Equal(t, "updated", resp.JSON200.Text)
-		assert.Equal(t, commentResp.JSON201.Id, resp.JSON200.Id)
-	})
-
-	t.Run("non-author cannot update comment", func(t *testing.T) {
-		c1 := newAuthenticatedTestClient(t, srv)
-		c2 := newAuthenticatedTestClient(t, srv)
-		recipe := createRecipe(t, c1, defaultPayload)
-
-		commentResp, err := c1.CreateRecipeCommentWithResponse(t.Context(), recipe.Id, models.CreatePostCommentRequest{Text: "hello"})
-		require.NoError(t, err)
-
-		resp, err := c2.UpdateRecipeCommentWithResponse(t.Context(), recipe.Id, commentResp.JSON201.Id, models.UpdatePostCommentRequest{Text: "hijack"})
-		require.NoError(t, err)
-		assert.Equal(t, 403, resp.StatusCode())
-	})
-
-	t.Run("non-existent comment returns 404", func(t *testing.T) {
-		c := newAuthenticatedTestClient(t, srv)
-		recipe := createRecipe(t, c, defaultPayload)
-
-		resp, err := c.UpdateRecipeCommentWithResponse(t.Context(), recipe.Id, "non-existent-id", models.UpdatePostCommentRequest{Text: "hi"})
-		require.NoError(t, err)
-		assert.Equal(t, 404, resp.StatusCode())
-	})
-
-	t.Run("unauthenticated returns 401", func(t *testing.T) {
+	t.Run("deleted comment appears as placeholder", func(t *testing.T) {
 		c := newAuthenticatedTestClient(t, srv)
 		recipe := createRecipe(t, c, defaultPayload)
 
 		commentResp, err := c.CreateRecipeCommentWithResponse(t.Context(), recipe.Id, models.CreatePostCommentRequest{Text: "hello"})
 		require.NoError(t, err)
 
-		unauth := newTestClient(t, srv)
-		resp, err := unauth.UpdateRecipeCommentWithResponse(t.Context(), recipe.Id, commentResp.JSON201.Id, models.UpdatePostCommentRequest{Text: "hi"})
+		_, err = c.DeleteCommentWithResponse(t.Context(), commentResp.JSON201.Id)
 		require.NoError(t, err)
-		assert.Equal(t, 401, resp.StatusCode())
+
+		listResp, err := c.ListRecipeCommentsWithResponse(t.Context(), recipe.Id, &client.ListRecipeCommentsParams{})
+		require.NoError(t, err)
+		require.Len(t, listResp.JSON200.Items, 1)
+		assert.True(t, listResp.JSON200.Items[0].IsDeleted)
+		assert.Nil(t, listResp.JSON200.Items[0].Author)
+		assert.Empty(t, listResp.JSON200.Items[0].Text)
+	})
+
+	t.Run("recipe not found returns 404", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+
+		resp, err := c.ListRecipeCommentsWithResponse(t.Context(), "non-existent", &client.ListRecipeCommentsParams{})
+		require.NoError(t, err)
+		assert.Equal(t, 404, resp.StatusCode())
 	})
 }

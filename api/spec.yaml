@@ -276,19 +276,13 @@ paths:
               schema:
                 $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
 
-  /api/v1/posts/{post_id}/comments/{comment_id}:
+  /api/v1/comments/{comment_id}:
     patch:
       summary: Update comment
-      operationId: updatePostComment
+      operationId: updateComment
       description: Updates the text of a comment. Only the comment author can edit it.
-      tags: [posts]
+      tags: [comments]
       parameters:
-        - name: post_id
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Unique post identifier
         - name: comment_id
           in: path
           required: true
@@ -322,16 +316,10 @@ paths:
                 $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
     delete:
       summary: Delete comment
-      operationId: deletePostComment
+      operationId: deleteComment
       description: Deletes a comment. Only the comment author can delete it.
-      tags: [posts]
+      tags: [comments]
       parameters:
-        - name: post_id
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Unique post identifier
         - name: comment_id
           in: path
           required: true
@@ -626,84 +614,6 @@ paths:
                 $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
         "404":
           description: Recipe not found
-          content:
-            application/json:
-              schema:
-                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
-
-  /api/v1/recipes/{recipe_id}/comments/{comment_id}:
-    patch:
-      summary: Update recipe comment
-      operationId: updateRecipeComment
-      description: Updates the text of a comment. Only the comment author can edit it.
-      tags: [recipes]
-      parameters:
-        - name: recipe_id
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Unique recipe identifier
-        - name: comment_id
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Unique comment identifier
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "./models.yaml#/components/schemas/UpdatePostCommentRequest"
-      responses:
-        "200":
-          description: Comment updated
-          content:
-            application/json:
-              schema:
-                $ref: "./models.yaml#/components/schemas/PostComment"
-        "403":
-          description: Not the comment author
-          content:
-            application/json:
-              schema:
-                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
-        "404":
-          description: Comment not found
-          content:
-            application/json:
-              schema:
-                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
-    delete:
-      summary: Delete recipe comment
-      operationId: deleteRecipeComment
-      description: Deletes a comment. Only the comment author can delete it.
-      tags: [recipes]
-      parameters:
-        - name: recipe_id
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Unique recipe identifier
-        - name: comment_id
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Unique comment identifier
-      responses:
-        "204":
-          description: Comment deleted
-        "403":
-          description: Not the comment author
-          content:
-            application/json:
-              schema:
-                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
-        "404":
-          description: Comment not found
           content:
             application/json:
               schema:

@@ -116,6 +116,7 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 		userService, uploader,
 		postService,
 		&userLibrary{users: userRepo, likes: likeService, recipes: recipeService, posts: postService},
+		commentService,
 		handlers.Config{
 			SecureCookies: cfg.SecureCookies,
 		},

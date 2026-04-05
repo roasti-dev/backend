@@ -109,6 +109,9 @@ type RefreshTokenJSONRequestBody = externalRef0.RefreshRequest
 // RegisterUserJSONRequestBody defines body for RegisterUser for application/json ContentType.
 type RegisterUserJSONRequestBody = externalRef0.RegisterRequest
 
+// UpdateCommentJSONRequestBody defines body for UpdateComment for application/json ContentType.
+type UpdateCommentJSONRequestBody = externalRef0.UpdatePostCommentRequest
+
 // CreatePostJSONRequestBody defines body for CreatePost for application/json ContentType.
 type CreatePostJSONRequestBody = externalRef0.CreatePostRequest
 
@@ -118,9 +121,6 @@ type UpdatePostJSONRequestBody = externalRef0.UpdatePostRequest
 // CreatePostCommentJSONRequestBody defines body for CreatePostComment for application/json ContentType.
 type CreatePostCommentJSONRequestBody = externalRef0.CreatePostCommentRequest
 
-// UpdatePostCommentJSONRequestBody defines body for UpdatePostComment for application/json ContentType.
-type UpdatePostCommentJSONRequestBody = externalRef0.UpdatePostCommentRequest
-
 // CreateRecipeJSONRequestBody defines body for CreateRecipe for application/json ContentType.
 type CreateRecipeJSONRequestBody = externalRef0.CreateRecipeRequest
 
@@ -129,9 +129,6 @@ type UpdateRecipeJSONRequestBody = externalRef0.UpdateRecipeRequest
 
 // CreateRecipeCommentJSONRequestBody defines body for CreateRecipeComment for application/json ContentType.
 type CreateRecipeCommentJSONRequestBody = externalRef0.CreatePostCommentRequest
-
-// UpdateRecipeCommentJSONRequestBody defines body for UpdateRecipeComment for application/json ContentType.
-type UpdateRecipeCommentJSONRequestBody = externalRef0.UpdatePostCommentRequest
 
 // UploadImageMultipartRequestBody defines body for UploadImage for multipart/form-data ContentType.
 type UploadImageMultipartRequestBody UploadImageMultipartBody
@@ -237,6 +234,14 @@ type ClientInterface interface {
 
 	RegisterUser(ctx context.Context, body RegisterUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// DeleteComment request
+	DeleteComment(ctx context.Context, commentId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateCommentWithBody request with any body
+	UpdateCommentWithBody(ctx context.Context, commentId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateComment(ctx context.Context, commentId string, body UpdateCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListPosts request
 	ListPosts(ctx context.Context, params *ListPostsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -263,14 +268,6 @@ type ClientInterface interface {
 	CreatePostCommentWithBody(ctx context.Context, postId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	CreatePostComment(ctx context.Context, postId string, body CreatePostCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// DeletePostComment request
-	DeletePostComment(ctx context.Context, postId string, commentId string, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// UpdatePostCommentWithBody request with any body
-	UpdatePostCommentWithBody(ctx context.Context, postId string, commentId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	UpdatePostComment(ctx context.Context, postId string, commentId string, body UpdatePostCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// TogglePostLike request
 	TogglePostLike(ctx context.Context, postId string, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -304,14 +301,6 @@ type ClientInterface interface {
 	CreateRecipeCommentWithBody(ctx context.Context, recipeId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	CreateRecipeComment(ctx context.Context, recipeId string, body CreateRecipeCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// DeleteRecipeComment request
-	DeleteRecipeComment(ctx context.Context, recipeId string, commentId string, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// UpdateRecipeCommentWithBody request with any body
-	UpdateRecipeCommentWithBody(ctx context.Context, recipeId string, commentId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	UpdateRecipeComment(ctx context.Context, recipeId string, commentId string, body UpdateRecipeCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ToggleRecipeLike request
 	ToggleRecipeLike(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -463,6 +452,42 @@ func (c *Client) RegisterUser(ctx context.Context, body RegisterUserJSONRequestB
 	return c.Client.Do(req)
 }
 
+func (c *Client) DeleteComment(ctx context.Context, commentId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteCommentRequest(c.Server, commentId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateCommentWithBody(ctx context.Context, commentId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateCommentRequestWithBody(c.Server, commentId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateComment(ctx context.Context, commentId string, body UpdateCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateCommentRequest(c.Server, commentId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) ListPosts(ctx context.Context, params *ListPostsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListPostsRequest(c.Server, params)
 	if err != nil {
@@ -573,42 +598,6 @@ func (c *Client) CreatePostCommentWithBody(ctx context.Context, postId string, c
 
 func (c *Client) CreatePostComment(ctx context.Context, postId string, body CreatePostCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewCreatePostCommentRequest(c.Server, postId, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) DeletePostComment(ctx context.Context, postId string, commentId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeletePostCommentRequest(c.Server, postId, commentId)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) UpdatePostCommentWithBody(ctx context.Context, postId string, commentId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdatePostCommentRequestWithBody(c.Server, postId, commentId, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) UpdatePostComment(ctx context.Context, postId string, commentId string, body UpdatePostCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdatePostCommentRequest(c.Server, postId, commentId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -753,42 +742,6 @@ func (c *Client) CreateRecipeCommentWithBody(ctx context.Context, recipeId strin
 
 func (c *Client) CreateRecipeComment(ctx context.Context, recipeId string, body CreateRecipeCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewCreateRecipeCommentRequest(c.Server, recipeId, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) DeleteRecipeComment(ctx context.Context, recipeId string, commentId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteRecipeCommentRequest(c.Server, recipeId, commentId)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) UpdateRecipeCommentWithBody(ctx context.Context, recipeId string, commentId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateRecipeCommentRequestWithBody(c.Server, recipeId, commentId, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) UpdateRecipeComment(ctx context.Context, recipeId string, commentId string, body UpdateRecipeCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateRecipeCommentRequest(c.Server, recipeId, commentId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1110,6 +1063,87 @@ func NewRegisterUserRequestWithBody(server string, contentType string, body io.R
 	}
 
 	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteCommentRequest generates requests for DeleteComment
+func NewDeleteCommentRequest(server string, commentId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "comment_id", commentId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/comments/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateCommentRequest calls the generic UpdateComment builder with application/json body
+func NewUpdateCommentRequest(server string, commentId string, body UpdateCommentJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateCommentRequestWithBody(server, commentId, "application/json", bodyReader)
+}
+
+// NewUpdateCommentRequestWithBody generates requests for UpdateComment with any type of body
+func NewUpdateCommentRequestWithBody(server string, commentId string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "comment_id", commentId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/comments/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -1449,101 +1483,6 @@ func NewCreatePostCommentRequestWithBody(server string, postId string, contentTy
 	}
 
 	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewDeletePostCommentRequest generates requests for DeletePostComment
-func NewDeletePostCommentRequest(server string, postId string, commentId string) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "post_id", postId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
-
-	var pathParam1 string
-
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "comment_id", commentId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api/v1/posts/%s/comments/%s", pathParam0, pathParam1)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewUpdatePostCommentRequest calls the generic UpdatePostComment builder with application/json body
-func NewUpdatePostCommentRequest(server string, postId string, commentId string, body UpdatePostCommentJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewUpdatePostCommentRequestWithBody(server, postId, commentId, "application/json", bodyReader)
-}
-
-// NewUpdatePostCommentRequestWithBody generates requests for UpdatePostComment with any type of body
-func NewUpdatePostCommentRequestWithBody(server string, postId string, commentId string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "post_id", postId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
-
-	var pathParam1 string
-
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "comment_id", commentId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api/v1/posts/%s/comments/%s", pathParam0, pathParam1)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("PATCH", queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -2072,101 +2011,6 @@ func NewCreateRecipeCommentRequestWithBody(server string, recipeId string, conte
 	return req, nil
 }
 
-// NewDeleteRecipeCommentRequest generates requests for DeleteRecipeComment
-func NewDeleteRecipeCommentRequest(server string, recipeId string, commentId string) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "recipe_id", recipeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
-
-	var pathParam1 string
-
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "comment_id", commentId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api/v1/recipes/%s/comments/%s", pathParam0, pathParam1)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewUpdateRecipeCommentRequest calls the generic UpdateRecipeComment builder with application/json body
-func NewUpdateRecipeCommentRequest(server string, recipeId string, commentId string, body UpdateRecipeCommentJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewUpdateRecipeCommentRequestWithBody(server, recipeId, commentId, "application/json", bodyReader)
-}
-
-// NewUpdateRecipeCommentRequestWithBody generates requests for UpdateRecipeComment with any type of body
-func NewUpdateRecipeCommentRequestWithBody(server string, recipeId string, commentId string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "recipe_id", recipeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
-
-	var pathParam1 string
-
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "comment_id", commentId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api/v1/recipes/%s/comments/%s", pathParam0, pathParam1)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("PATCH", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
 // NewToggleRecipeLikeRequest generates requests for ToggleRecipeLike
 func NewToggleRecipeLikeRequest(server string, recipeId string) (*http.Request, error) {
 	var err error
@@ -2605,6 +2449,14 @@ type ClientWithResponsesInterface interface {
 
 	RegisterUserWithResponse(ctx context.Context, body RegisterUserJSONRequestBody, reqEditors ...RequestEditorFn) (*RegisterUserResponse, error)
 
+	// DeleteCommentWithResponse request
+	DeleteCommentWithResponse(ctx context.Context, commentId string, reqEditors ...RequestEditorFn) (*DeleteCommentResponse, error)
+
+	// UpdateCommentWithBodyWithResponse request with any body
+	UpdateCommentWithBodyWithResponse(ctx context.Context, commentId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateCommentResponse, error)
+
+	UpdateCommentWithResponse(ctx context.Context, commentId string, body UpdateCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateCommentResponse, error)
+
 	// ListPostsWithResponse request
 	ListPostsWithResponse(ctx context.Context, params *ListPostsParams, reqEditors ...RequestEditorFn) (*ListPostsResponse, error)
 
@@ -2631,14 +2483,6 @@ type ClientWithResponsesInterface interface {
 	CreatePostCommentWithBodyWithResponse(ctx context.Context, postId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreatePostCommentResponse, error)
 
 	CreatePostCommentWithResponse(ctx context.Context, postId string, body CreatePostCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*CreatePostCommentResponse, error)
-
-	// DeletePostCommentWithResponse request
-	DeletePostCommentWithResponse(ctx context.Context, postId string, commentId string, reqEditors ...RequestEditorFn) (*DeletePostCommentResponse, error)
-
-	// UpdatePostCommentWithBodyWithResponse request with any body
-	UpdatePostCommentWithBodyWithResponse(ctx context.Context, postId string, commentId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatePostCommentResponse, error)
-
-	UpdatePostCommentWithResponse(ctx context.Context, postId string, commentId string, body UpdatePostCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdatePostCommentResponse, error)
 
 	// TogglePostLikeWithResponse request
 	TogglePostLikeWithResponse(ctx context.Context, postId string, reqEditors ...RequestEditorFn) (*TogglePostLikeResponse, error)
@@ -2672,14 +2516,6 @@ type ClientWithResponsesInterface interface {
 	CreateRecipeCommentWithBodyWithResponse(ctx context.Context, recipeId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateRecipeCommentResponse, error)
 
 	CreateRecipeCommentWithResponse(ctx context.Context, recipeId string, body CreateRecipeCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateRecipeCommentResponse, error)
-
-	// DeleteRecipeCommentWithResponse request
-	DeleteRecipeCommentWithResponse(ctx context.Context, recipeId string, commentId string, reqEditors ...RequestEditorFn) (*DeleteRecipeCommentResponse, error)
-
-	// UpdateRecipeCommentWithBodyWithResponse request with any body
-	UpdateRecipeCommentWithBodyWithResponse(ctx context.Context, recipeId string, commentId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRecipeCommentResponse, error)
-
-	UpdateRecipeCommentWithResponse(ctx context.Context, recipeId string, commentId string, body UpdateRecipeCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRecipeCommentResponse, error)
 
 	// ToggleRecipeLikeWithResponse request
 	ToggleRecipeLikeWithResponse(ctx context.Context, recipeId string, reqEditors ...RequestEditorFn) (*ToggleRecipeLikeResponse, error)
@@ -2822,6 +2658,53 @@ func (r RegisterUserResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r RegisterUserResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteCommentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON403      *externalRef0.ApiErrorResponse
+	JSON404      *externalRef0.ApiErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteCommentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteCommentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateCommentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *externalRef0.PostComment
+	JSON403      *externalRef0.ApiErrorResponse
+	JSON404      *externalRef0.ApiErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateCommentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateCommentResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -2983,53 +2866,6 @@ func (r CreatePostCommentResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r CreatePostCommentResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type DeletePostCommentResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON403      *externalRef0.ApiErrorResponse
-	JSON404      *externalRef0.ApiErrorResponse
-}
-
-// Status returns HTTPResponse.Status
-func (r DeletePostCommentResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r DeletePostCommentResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type UpdatePostCommentResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *externalRef0.PostComment
-	JSON403      *externalRef0.ApiErrorResponse
-	JSON404      *externalRef0.ApiErrorResponse
-}
-
-// Status returns HTTPResponse.Status
-func (r UpdatePostCommentResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r UpdatePostCommentResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -3235,53 +3071,6 @@ func (r CreateRecipeCommentResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r CreateRecipeCommentResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type DeleteRecipeCommentResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON403      *externalRef0.ApiErrorResponse
-	JSON404      *externalRef0.ApiErrorResponse
-}
-
-// Status returns HTTPResponse.Status
-func (r DeleteRecipeCommentResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r DeleteRecipeCommentResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type UpdateRecipeCommentResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *externalRef0.PostComment
-	JSON403      *externalRef0.ApiErrorResponse
-	JSON404      *externalRef0.ApiErrorResponse
-}
-
-// Status returns HTTPResponse.Status
-func (r UpdateRecipeCommentResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r UpdateRecipeCommentResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -3580,6 +3369,32 @@ func (c *ClientWithResponses) RegisterUserWithResponse(ctx context.Context, body
 	return ParseRegisterUserResponse(rsp)
 }
 
+// DeleteCommentWithResponse request returning *DeleteCommentResponse
+func (c *ClientWithResponses) DeleteCommentWithResponse(ctx context.Context, commentId string, reqEditors ...RequestEditorFn) (*DeleteCommentResponse, error) {
+	rsp, err := c.DeleteComment(ctx, commentId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteCommentResponse(rsp)
+}
+
+// UpdateCommentWithBodyWithResponse request with arbitrary body returning *UpdateCommentResponse
+func (c *ClientWithResponses) UpdateCommentWithBodyWithResponse(ctx context.Context, commentId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateCommentResponse, error) {
+	rsp, err := c.UpdateCommentWithBody(ctx, commentId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateCommentResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateCommentWithResponse(ctx context.Context, commentId string, body UpdateCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateCommentResponse, error) {
+	rsp, err := c.UpdateComment(ctx, commentId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateCommentResponse(rsp)
+}
+
 // ListPostsWithResponse request returning *ListPostsResponse
 func (c *ClientWithResponses) ListPostsWithResponse(ctx context.Context, params *ListPostsParams, reqEditors ...RequestEditorFn) (*ListPostsResponse, error) {
 	rsp, err := c.ListPosts(ctx, params, reqEditors...)
@@ -3665,32 +3480,6 @@ func (c *ClientWithResponses) CreatePostCommentWithResponse(ctx context.Context,
 		return nil, err
 	}
 	return ParseCreatePostCommentResponse(rsp)
-}
-
-// DeletePostCommentWithResponse request returning *DeletePostCommentResponse
-func (c *ClientWithResponses) DeletePostCommentWithResponse(ctx context.Context, postId string, commentId string, reqEditors ...RequestEditorFn) (*DeletePostCommentResponse, error) {
-	rsp, err := c.DeletePostComment(ctx, postId, commentId, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseDeletePostCommentResponse(rsp)
-}
-
-// UpdatePostCommentWithBodyWithResponse request with arbitrary body returning *UpdatePostCommentResponse
-func (c *ClientWithResponses) UpdatePostCommentWithBodyWithResponse(ctx context.Context, postId string, commentId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatePostCommentResponse, error) {
-	rsp, err := c.UpdatePostCommentWithBody(ctx, postId, commentId, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseUpdatePostCommentResponse(rsp)
-}
-
-func (c *ClientWithResponses) UpdatePostCommentWithResponse(ctx context.Context, postId string, commentId string, body UpdatePostCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdatePostCommentResponse, error) {
-	rsp, err := c.UpdatePostComment(ctx, postId, commentId, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseUpdatePostCommentResponse(rsp)
 }
 
 // TogglePostLikeWithResponse request returning *TogglePostLikeResponse
@@ -3796,32 +3585,6 @@ func (c *ClientWithResponses) CreateRecipeCommentWithResponse(ctx context.Contex
 		return nil, err
 	}
 	return ParseCreateRecipeCommentResponse(rsp)
-}
-
-// DeleteRecipeCommentWithResponse request returning *DeleteRecipeCommentResponse
-func (c *ClientWithResponses) DeleteRecipeCommentWithResponse(ctx context.Context, recipeId string, commentId string, reqEditors ...RequestEditorFn) (*DeleteRecipeCommentResponse, error) {
-	rsp, err := c.DeleteRecipeComment(ctx, recipeId, commentId, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseDeleteRecipeCommentResponse(rsp)
-}
-
-// UpdateRecipeCommentWithBodyWithResponse request with arbitrary body returning *UpdateRecipeCommentResponse
-func (c *ClientWithResponses) UpdateRecipeCommentWithBodyWithResponse(ctx context.Context, recipeId string, commentId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRecipeCommentResponse, error) {
-	rsp, err := c.UpdateRecipeCommentWithBody(ctx, recipeId, commentId, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseUpdateRecipeCommentResponse(rsp)
-}
-
-func (c *ClientWithResponses) UpdateRecipeCommentWithResponse(ctx context.Context, recipeId string, commentId string, body UpdateRecipeCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRecipeCommentResponse, error) {
-	rsp, err := c.UpdateRecipeComment(ctx, recipeId, commentId, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseUpdateRecipeCommentResponse(rsp)
 }
 
 // ToggleRecipeLikeWithResponse request returning *ToggleRecipeLikeResponse
@@ -4089,6 +3852,79 @@ func ParseRegisterUserResponse(rsp *http.Response) (*RegisterUserResponse, error
 	return response, nil
 }
 
+// ParseDeleteCommentResponse parses an HTTP response from a DeleteCommentWithResponse call
+func ParseDeleteCommentResponse(rsp *http.Response) (*DeleteCommentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteCommentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateCommentResponse parses an HTTP response from a UpdateCommentWithResponse call
+func ParseUpdateCommentResponse(rsp *http.Response) (*UpdateCommentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateCommentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest externalRef0.PostComment
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListPostsResponse parses an HTTP response from a ListPostsWithResponse call
 func ParseListPostsResponse(rsp *http.Response) (*ListPostsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -4304,79 +4140,6 @@ func ParseCreatePostCommentResponse(rsp *http.Response) (*CreatePostCommentRespo
 			return nil, err
 		}
 		response.JSON400 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest externalRef0.ApiErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON404 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseDeletePostCommentResponse parses an HTTP response from a DeletePostCommentWithResponse call
-func ParseDeletePostCommentResponse(rsp *http.Response) (*DeletePostCommentResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &DeletePostCommentResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest externalRef0.ApiErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON403 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest externalRef0.ApiErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON404 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseUpdatePostCommentResponse parses an HTTP response from a UpdatePostCommentWithResponse call
-func ParseUpdatePostCommentResponse(rsp *http.Response) (*UpdatePostCommentResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &UpdatePostCommentResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest externalRef0.PostComment
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest externalRef0.ApiErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON403 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
 		var dest externalRef0.ApiErrorResponse
@@ -4657,79 +4420,6 @@ func ParseCreateRecipeCommentResponse(rsp *http.Response) (*CreateRecipeCommentR
 			return nil, err
 		}
 		response.JSON401 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest externalRef0.ApiErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON404 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseDeleteRecipeCommentResponse parses an HTTP response from a DeleteRecipeCommentWithResponse call
-func ParseDeleteRecipeCommentResponse(rsp *http.Response) (*DeleteRecipeCommentResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &DeleteRecipeCommentResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest externalRef0.ApiErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON403 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest externalRef0.ApiErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON404 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseUpdateRecipeCommentResponse parses an HTTP response from a UpdateRecipeCommentWithResponse call
-func ParseUpdateRecipeCommentResponse(rsp *http.Response) (*UpdateRecipeCommentResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &UpdateRecipeCommentResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest externalRef0.PostComment
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest externalRef0.ApiErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON403 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
 		var dest externalRef0.ApiErrorResponse

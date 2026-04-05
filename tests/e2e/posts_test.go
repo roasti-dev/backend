@@ -411,7 +411,7 @@ func TestCreatePostComment(t *testing.T) {
 	})
 }
 
-func TestDeletePostComment(t *testing.T) {
+func TestDeleteComment(t *testing.T) {
 	srv := setupTestServer(t)
 
 	t.Run("author can delete own comment", func(t *testing.T) {
@@ -422,7 +422,7 @@ func TestDeletePostComment(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 201, commentResp.StatusCode())
 
-		resp, err := c.DeletePostCommentWithResponse(t.Context(), post.Id, commentResp.JSON201.Id)
+		resp, err := c.DeleteCommentWithResponse(t.Context(), commentResp.JSON201.Id)
 		require.NoError(t, err)
 		assert.Equal(t, 204, resp.StatusCode())
 	})
@@ -434,7 +434,7 @@ func TestDeletePostComment(t *testing.T) {
 		commentResp, err := c.CreatePostCommentWithResponse(t.Context(), post.Id, models.CreatePostCommentRequest{Text: "hello"})
 		require.NoError(t, err)
 
-		_, err = c.DeletePostCommentWithResponse(t.Context(), post.Id, commentResp.JSON201.Id)
+		_, err = c.DeleteCommentWithResponse(t.Context(), commentResp.JSON201.Id)
 		require.NoError(t, err)
 
 		getResp, err := c.GetPostWithResponse(t.Context(), post.Id)
@@ -453,16 +453,15 @@ func TestDeletePostComment(t *testing.T) {
 		commentResp, err := c1.CreatePostCommentWithResponse(t.Context(), post.Id, models.CreatePostCommentRequest{Text: "hello"})
 		require.NoError(t, err)
 
-		resp, err := c2.DeletePostCommentWithResponse(t.Context(), post.Id, commentResp.JSON201.Id)
+		resp, err := c2.DeleteCommentWithResponse(t.Context(), commentResp.JSON201.Id)
 		require.NoError(t, err)
 		assert.Equal(t, 403, resp.StatusCode())
 	})
 
 	t.Run("non-existent comment returns 404", func(t *testing.T) {
 		c := newAuthenticatedTestClient(t, srv)
-		post := createPost(t, c, defaultPostPayload)
 
-		resp, err := c.DeletePostCommentWithResponse(t.Context(), post.Id, "non-existent-id")
+		resp, err := c.DeleteCommentWithResponse(t.Context(), "non-existent-id")
 		require.NoError(t, err)
 		assert.Equal(t, 404, resp.StatusCode())
 	})
@@ -475,7 +474,7 @@ func TestDeletePostComment(t *testing.T) {
 		require.NoError(t, err)
 
 		unauth := newTestClient(t, srv)
-		resp, err := unauth.DeletePostCommentWithResponse(t.Context(), post.Id, commentResp.JSON201.Id)
+		resp, err := unauth.DeleteCommentWithResponse(t.Context(), commentResp.JSON201.Id)
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode())
 	})
@@ -564,7 +563,7 @@ func TestListPostComments(t *testing.T) {
 	})
 }
 
-func TestUpdatePostComment(t *testing.T) {
+func TestUpdateComment(t *testing.T) {
 	srv := setupTestServer(t)
 
 	t.Run("author can update own comment", func(t *testing.T) {
@@ -575,27 +574,27 @@ func TestUpdatePostComment(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 201, commentResp.StatusCode())
 
-		resp, err := c.UpdatePostCommentWithResponse(t.Context(), post.Id, commentResp.JSON201.Id, models.UpdatePostCommentRequest{Text: "updated"})
+		resp, err := c.UpdateCommentWithResponse(t.Context(), commentResp.JSON201.Id, models.UpdatePostCommentRequest{Text: "updated"})
 		require.NoError(t, err)
 		require.Equal(t, 200, resp.StatusCode())
 		assert.Equal(t, "updated", resp.JSON200.Text)
 		assert.Equal(t, commentResp.JSON201.Id, resp.JSON200.Id)
 	})
 
-	t.Run("updated text appears in get post", func(t *testing.T) {
+	t.Run("updated text appears in list", func(t *testing.T) {
 		c := newAuthenticatedTestClient(t, srv)
 		post := createPost(t, c, defaultPostPayload)
 
 		commentResp, err := c.CreatePostCommentWithResponse(t.Context(), post.Id, models.CreatePostCommentRequest{Text: "original"})
 		require.NoError(t, err)
 
-		_, err = c.UpdatePostCommentWithResponse(t.Context(), post.Id, commentResp.JSON201.Id, models.UpdatePostCommentRequest{Text: "updated"})
+		_, err = c.UpdateCommentWithResponse(t.Context(), commentResp.JSON201.Id, models.UpdatePostCommentRequest{Text: "updated"})
 		require.NoError(t, err)
 
-		getResp, err := c.GetPostWithResponse(t.Context(), post.Id)
+		listResp, err := c.ListPostCommentsWithResponse(t.Context(), post.Id, &client.ListPostCommentsParams{})
 		require.NoError(t, err)
-		require.Len(t, getResp.JSON200.Comments, 1)
-		assert.Equal(t, "updated", getResp.JSON200.Comments[0].Text)
+		require.Len(t, listResp.JSON200.Items, 1)
+		assert.Equal(t, "updated", listResp.JSON200.Items[0].Text)
 	})
 
 	t.Run("non-author cannot update comment", func(t *testing.T) {
@@ -606,16 +605,15 @@ func TestUpdatePostComment(t *testing.T) {
 		commentResp, err := c1.CreatePostCommentWithResponse(t.Context(), post.Id, models.CreatePostCommentRequest{Text: "hello"})
 		require.NoError(t, err)
 
-		resp, err := c2.UpdatePostCommentWithResponse(t.Context(), post.Id, commentResp.JSON201.Id, models.UpdatePostCommentRequest{Text: "hijack"})
+		resp, err := c2.UpdateCommentWithResponse(t.Context(), commentResp.JSON201.Id, models.UpdatePostCommentRequest{Text: "hijack"})
 		require.NoError(t, err)
 		assert.Equal(t, 403, resp.StatusCode())
 	})
 
 	t.Run("non-existent comment returns 404", func(t *testing.T) {
 		c := newAuthenticatedTestClient(t, srv)
-		post := createPost(t, c, defaultPostPayload)
 
-		resp, err := c.UpdatePostCommentWithResponse(t.Context(), post.Id, "non-existent-id", models.UpdatePostCommentRequest{Text: "hi"})
+		resp, err := c.UpdateCommentWithResponse(t.Context(), "non-existent-id", models.UpdatePostCommentRequest{Text: "hi"})
 		require.NoError(t, err)
 		assert.Equal(t, 404, resp.StatusCode())
 	})
@@ -628,7 +626,7 @@ func TestUpdatePostComment(t *testing.T) {
 		require.NoError(t, err)
 
 		unauth := newTestClient(t, srv)
-		resp, err := unauth.UpdatePostCommentWithResponse(t.Context(), post.Id, commentResp.JSON201.Id, models.UpdatePostCommentRequest{Text: "hi"})
+		resp, err := unauth.UpdateCommentWithResponse(t.Context(), commentResp.JSON201.Id, models.UpdatePostCommentRequest{Text: "hi"})
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode())
 	})

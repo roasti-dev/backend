@@ -26,6 +26,12 @@ type UserLibrary interface {
 	ListLikedPosts(ctx context.Context, currentUserID, targetUserID string, params models.ListUserLikesParams) (models.GenericPage[models.LikedPost], error)
 }
 
+// CommentService handles comment mutations shared across resource types.
+type CommentService interface {
+	Update(ctx context.Context, userID, commentID, text string) (models.PostComment, error)
+	Delete(ctx context.Context, userID, commentID string) error
+}
+
 // PostService handles post creation and feed listing.
 type PostService interface {
 	CreatePost(ctx context.Context, userID string, req models.CreatePostRequest) (models.Post, error)
@@ -36,19 +42,18 @@ type PostService interface {
 	ListPosts(ctx context.Context, userID string, params posts.ListPostsParams) (models.GenericPage[models.Post], error)
 	ListComments(ctx context.Context, postID string, pag models.PaginationParams) (models.GenericPage[models.CommentThread], error)
 	CreateComment(ctx context.Context, userID, postID, text string, parentID *string) (models.PostComment, error)
-	UpdateComment(ctx context.Context, userID, commentID, text string) (models.PostComment, error)
-	DeleteComment(ctx context.Context, userID, commentID string) error
 }
 
 type ServerHandler struct {
-	logger        *slog.Logger
-	cfg           Config
-	authService   *auth.Service
-	uploadService *uploads.Service
-	userService   *users.Service
-	recipeService *recipes.Service
-	postService   PostService
-	userLibrary   UserLibrary
+	logger         *slog.Logger
+	cfg            Config
+	authService    *auth.Service
+	uploadService  *uploads.Service
+	userService    *users.Service
+	recipeService  *recipes.Service
+	postService    PostService
+	userLibrary    UserLibrary
+	commentService CommentService
 }
 
 func NewServerHandler(
@@ -58,16 +63,18 @@ func NewServerHandler(
 	uploader *uploads.Service,
 	postService PostService,
 	userLibrary UserLibrary,
+	commentService CommentService,
 	cfg Config,
 ) *ServerHandler {
 	return &ServerHandler{
-		logger:        slog.Default(),
-		cfg:           cfg,
-		recipeService: recipeService,
-		authService:   authService,
-		userService:   userService,
-		uploadService: uploader,
-		postService:   postService,
-		userLibrary:   userLibrary,
+		logger:         slog.Default(),
+		cfg:            cfg,
+		recipeService:  recipeService,
+		authService:    authService,
+		userService:    userService,
+		uploadService:  uploader,
+		postService:    postService,
+		userLibrary:    userLibrary,
+		commentService: commentService,
 	}
 }
