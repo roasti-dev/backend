@@ -105,6 +105,10 @@ Domain errors live in `internal/<package>/errors.go` and use `apierr.NewApiError
 
 Use `s.logger` (injected via constructor) for all logging inside services — never call `slog.WarnContext` or other `slog` package-level functions directly. This ensures log output respects the configured logger instance.
 
+## Go Notes
+
+- Use `new(expr)` to create a pointer to a value — Go 1.26+ allows expressions as operands: `new("foo")` returns `*string`, `new(float32(15))` returns `*float32`. No need for helper functions or intermediate variables.
+
 ## SQLite / Squirrel Notes
 
 - Use `sq.Expr("datetime('now')")` for current timestamp — SQLite does not support `NOW()`
