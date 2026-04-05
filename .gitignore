@@ -21,5 +21,8 @@ coverage.out
 # Editor / tools
 /.ogrep/
 
+# Firebase emulator data
+/.firebase-data/
+
 # Generated API docs
 /docs/

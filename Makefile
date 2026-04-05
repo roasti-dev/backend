@@ -6,6 +6,8 @@ FIREBASE_TOOLS_VERSION := 15.10.0@sha256:740d133bffbcda740b49f7e5ce883ecf7412752
 FIREBASE_PROJECT := roasti-dev-project
 FIREBASE_AUTH_PORT := 9099
 FIREBASE_CONTAINER_NAME := firebase-emulator-dev
+FIREBASE_TEST_CONTAINER_NAME := firebase-emulator-test
+FIREBASE_DATA_DIR := $(PWD)/.firebase-data
 
 OAPI_SPEC            := api/spec.yaml
 OAPI_CONFIG          := api/spec-config.yaml
@@ -60,7 +62,7 @@ openapi-lint:
 test-unit:
 	$(GO) test ./internal/...
 
-test-e2e: firebase-emulator wait-firebase
+test-e2e: firebase-emulator-test wait-firebase
 	APP_ENV=development \
 	FIREBASE_PROJECT_ID=$(FIREBASE_PROJECT) \
 	FIREBASE_API_KEY=test \
@@ -68,7 +70,7 @@ test-e2e: firebase-emulator wait-firebase
 	FIREBASE_IDENTITY_BASE_URL=http://localhost:$(FIREBASE_AUTH_PORT)/identitytoolkit.googleapis.com/v1/accounts \
 	FIREBASE_TOKEN_BASE_URL=http://localhost:$(FIREBASE_AUTH_PORT)/securetoken.googleapis.com/v1/token \
 	$(GO) test -v -coverprofile=coverage.out -coverpkg=./internal/... ./tests/e2e/... ; \
-	$(MAKE) firebase-emulator-stop
+	$(MAKE) firebase-emulator-test-stop
 
 cover:
 	$(GO) tool cover -html=coverage.out
@@ -77,7 +79,17 @@ firebase-pull:
 	docker pull andreysenov/firebase-tools:$(FIREBASE_TOOLS_VERSION)
 
 firebase-emulator: firebase-pull
+	mkdir -p $(FIREBASE_DATA_DIR)
 	docker run -d --rm --name $(FIREBASE_CONTAINER_NAME) \
+		-p $(FIREBASE_AUTH_PORT):9099 -p 4000:4000 -p 4400:4400 -p 4500:4500 \
+		-v $(PWD)/firebase.json:/home/node/firebase.json \
+		-v $(FIREBASE_DATA_DIR):/data \
+		andreysenov/firebase-tools:$(FIREBASE_TOOLS_VERSION) \
+		firebase emulators:start --only auth --project $(FIREBASE_PROJECT) \
+		--import /data --export-on-exit /data
+
+firebase-emulator-test: firebase-pull
+	docker run -d --rm --name $(FIREBASE_TEST_CONTAINER_NAME) \
 		-p $(FIREBASE_AUTH_PORT):9099 -p 4000:4000 -p 4400:4400 -p 4500:4500 \
 		-v $(PWD)/firebase.json:/home/node/firebase.json \
 		andreysenov/firebase-tools:$(FIREBASE_TOOLS_VERSION) \
@@ -85,6 +97,9 @@ firebase-emulator: firebase-pull
 
 firebase-emulator-stop:
 	docker stop $(FIREBASE_CONTAINER_NAME)
+
+firebase-emulator-test-stop:
+	docker stop $(FIREBASE_TEST_CONTAINER_NAME)
 
 wait-firebase:
 	@echo "Waiting for Firebase emulator..."
@@ -94,5 +109,7 @@ wait-firebase:
 	@echo "Firebase emulator is ready"
 
 .PHONY: build build-debian start setup-server deploy lint \
-	test-e2e test-unit firebase-pull firebase-emulator firebase-emulator-stop \
+	test-e2e test-unit firebase-pull \
+	firebase-emulator firebase-emulator-stop \
+	firebase-emulator-test firebase-emulator-test-stop \
 	wait-firebase
