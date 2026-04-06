@@ -372,7 +372,19 @@ func (s *Service) CreateComment(ctx context.Context, userID, recipeID, text stri
 	if !recipe.Public && recipe.AuthorId != userID {
 		return models.PostComment{}, ErrNotFound
 	}
-	return s.commentService.Create(ctx, userID, recipeID, "recipe", text, parentID)
+	created, err := s.commentService.Create(ctx, userID, recipeID, "recipe", text, parentID)
+	if err != nil {
+		return models.PostComment{}, err
+	}
+	if s.publisher != nil {
+		s.publisher.Publish(events.RecipeCommentCreated{
+			RecipeID:  recipeID,
+			OwnerID:   recipe.AuthorId,
+			ByUserID:  userID,
+			CommentID: created.Id,
+		})
+	}
+	return created, nil
 }
 
 func (s *Service) ListComments(ctx context.Context, userID, recipeID string, pag models.PaginationParams) (models.GenericPage[models.CommentThread], error) {

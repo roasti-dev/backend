@@ -23,6 +23,8 @@ tags:
     description: Like and unlike actions on recipes and posts
   - name: public
     description: Endpoints that do not require authentication
+  - name: notifications
+    description: In-app notification management
 paths:
   /health:
     get:
@@ -1018,6 +1020,61 @@ paths:
           description: Unauthorized
         "404":
           description: User not found
+        "500":
+          description: Internal server error
+
+  /api/v1/notifications:
+    get:
+      summary: List notifications
+      operationId: listNotifications
+      description: Returns a paginated list of notifications for the current user, sorted by date (newest first).
+      tags: [notifications]
+      parameters:
+        - name: page
+          in: query
+          description: Page number
+          schema:
+            $ref: "./models.yaml#/components/schemas/PageParam"
+        - name: limit
+          in: query
+          description: Number of items per page
+          schema:
+            $ref: "./models.yaml#/components/schemas/LimitParam"
+      responses:
+        "200":
+          description: Paginated list of notifications
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/NotificationPage"
+        "500":
+          description: Internal server error
+
+  /api/v1/notifications/unread_count:
+    get:
+      summary: Get unread notification count
+      operationId: getNotificationUnreadCount
+      description: Returns the count of unread notifications for the current user.
+      tags: [notifications]
+      responses:
+        "200":
+          description: Unread notification count
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/NotificationUnreadCount"
+        "500":
+          description: Internal server error
+
+  /api/v1/notifications/read_all:
+    post:
+      summary: Mark all notifications as read
+      operationId: markAllNotificationsRead
+      description: Marks all unread notifications for the current user as read.
+      tags: [notifications]
+      responses:
+        "204":
+          description: All notifications marked as read
         "500":
           description: Internal server error
 

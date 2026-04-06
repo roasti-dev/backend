@@ -26,3 +26,11 @@ type PostCommentCreated struct {
 	ByUserID  string
 	CommentID string
 }
+
+// RecipeCommentCreated is published when a user comments on a recipe.
+type RecipeCommentCreated struct {
+	RecipeID  string
+	OwnerID   string
+	ByUserID  string
+	CommentID string
+}

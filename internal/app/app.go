@@ -27,6 +27,7 @@ import (
 	"github.com/nikpivkin/roasti-app-backend/internal/handlers"
 	"github.com/nikpivkin/roasti-app-backend/internal/likes"
 	"github.com/nikpivkin/roasti-app-backend/internal/log"
+	"github.com/nikpivkin/roasti-app-backend/internal/notifications"
 	"github.com/nikpivkin/roasti-app-backend/internal/posts"
 	"github.com/nikpivkin/roasti-app-backend/internal/recipes"
 	"github.com/nikpivkin/roasti-app-backend/internal/uploads"
@@ -98,6 +99,10 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 	userRepo := users.NewUserRepository(database)
 	userService := users.NewUserService(userRepo, &firebaseIdentityCreator{firebaseAuth}, uploader)
 
+	notificationRepo := notifications.NewRepository(runner)
+	notificationService := notifications.NewService(notificationRepo)
+	bus.Subscribe(notificationService.HandleEvent)
+
 	revokedTokenRepo := auth.NewRevokedTokenRepository(database)
 	startRevokedTokenCleanup(ctx, revokedTokenRepo)
 
@@ -117,6 +122,7 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 		postService,
 		&userLibrary{users: userRepo, likes: likeService, recipes: recipeService, posts: postService},
 		commentService,
+		notificationService,
 		handlers.Config{
 			SecureCookies: cfg.SecureCookies,
 		},

@@ -13,6 +13,13 @@ import (
 	"github.com/nikpivkin/roasti-app-backend/internal/users"
 )
 
+// NotificationService handles notification listing and state management.
+type NotificationService interface {
+	ListNotifications(ctx context.Context, userID string, pag models.PaginationParams) (models.GenericPage[models.Notification], error)
+	UnreadCount(ctx context.Context, userID string) (int, error)
+	MarkAllRead(ctx context.Context, userID string) error
+}
+
 var _ StrictServerInterface = (*ServerHandler)(nil)
 
 // Config holds handler-level configuration.
@@ -45,15 +52,16 @@ type PostService interface {
 }
 
 type ServerHandler struct {
-	logger         *slog.Logger
-	cfg            Config
-	authService    *auth.Service
-	uploadService  *uploads.Service
-	userService    *users.Service
-	recipeService  *recipes.Service
-	postService    PostService
-	userLibrary    UserLibrary
-	commentService CommentService
+	logger              *slog.Logger
+	cfg                 Config
+	authService         *auth.Service
+	uploadService       *uploads.Service
+	userService         *users.Service
+	recipeService       *recipes.Service
+	postService         PostService
+	userLibrary         UserLibrary
+	commentService      CommentService
+	notificationService NotificationService
 }
 
 func NewServerHandler(
@@ -64,17 +72,19 @@ func NewServerHandler(
 	postService PostService,
 	userLibrary UserLibrary,
 	commentService CommentService,
+	notificationService NotificationService,
 	cfg Config,
 ) *ServerHandler {
 	return &ServerHandler{
-		logger:         slog.Default(),
-		cfg:            cfg,
-		recipeService:  recipeService,
-		authService:    authService,
-		userService:    userService,
-		uploadService:  uploader,
-		postService:    postService,
-		userLibrary:    userLibrary,
-		commentService: commentService,
+		logger:              slog.Default(),
+		cfg:                 cfg,
+		recipeService:       recipeService,
+		authService:         authService,
+		userService:         userService,
+		uploadService:       uploader,
+		postService:         postService,
+		userLibrary:         userLibrary,
+		commentService:      commentService,
+		notificationService: notificationService,
 	}
 }
