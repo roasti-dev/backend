@@ -144,7 +144,9 @@ func (r *Repo) ListForTarget(ctx context.Context, targetID string, pag models.Pa
 	}
 
 	rootRows, err := r.psql.
-		Select("comments.id", "comments.text", "comments.created_at", "comments.updated_at", "comments.deleted_at", "users.id", "users.username", "users.avatar_id").
+		Select(
+			"comments.id", "comments.text", "comments.created_at", "comments.updated_at", "comments.deleted_at",
+			"users.id", "users.username", "users.name", "users.avatar_id").
 		From(commentsTable).
 		LeftJoin("users ON users.id = comments.author_id").
 		Where(sq.Eq{"target_id": targetID}).
@@ -168,13 +170,17 @@ func (r *Repo) ListForTarget(ctx context.Context, targetID string, pag models.Pa
 			avatarID  sql.NullString
 			deletedAt sql.NullString
 		)
-		if err := rootRows.Scan(&c.Id, &c.Text, &c.CreatedAt, &c.UpdatedAt, &deletedAt, &author.Id, &author.Username, &avatarID); err != nil {
+		var authorName sql.NullString
+		if err := rootRows.Scan(&c.Id, &c.Text, &c.CreatedAt, &c.UpdatedAt, &deletedAt, &author.Id, &author.Username, &authorName, &avatarID); err != nil {
 			return nil, 0, err
 		}
 		if deletedAt.Valid {
 			c.IsDeleted = true
 			c.Text = ""
 		} else {
+			if authorName.Valid {
+				author.Name = &authorName.String
+			}
 			if avatarID.Valid {
 				author.AvatarId = &avatarID.String
 			}
@@ -209,7 +215,7 @@ func (r *Repo) ListForTarget(ctx context.Context, targetID string, pag models.Pa
 			JOIN descendants d ON c.parent_id = d.id
 		)
 		SELECT comments.id, comments.text, comments.parent_id, comments.created_at, comments.updated_at, comments.deleted_at,
-		       users.id, users.username, users.avatar_id
+		       users.id, users.username, users.name, users.avatar_id
 		FROM comments
 		LEFT JOIN users ON users.id = comments.author_id
 		WHERE comments.id IN (SELECT id FROM descendants)
@@ -233,13 +239,17 @@ func (r *Repo) ListForTarget(ctx context.Context, targetID string, pag models.Pa
 			parentID  sql.NullString
 			deletedAt sql.NullString
 		)
-		if err := replyRows.Scan(&c.Id, &c.Text, &parentID, &c.CreatedAt, &c.UpdatedAt, &deletedAt, &author.Id, &author.Username, &avatarID); err != nil {
+		var authorName sql.NullString
+		if err := replyRows.Scan(&c.Id, &c.Text, &parentID, &c.CreatedAt, &c.UpdatedAt, &deletedAt, &author.Id, &author.Username, &authorName, &avatarID); err != nil {
 			return nil, 0, err
 		}
 		if deletedAt.Valid {
 			c.IsDeleted = true
 			c.Text = ""
 		} else {
+			if authorName.Valid {
+				author.Name = &authorName.String
+			}
 			if avatarID.Valid {
 				author.AvatarId = &avatarID.String
 			}

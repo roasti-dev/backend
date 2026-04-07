@@ -52,7 +52,7 @@ func (r *Repository) List(ctx context.Context, userID string, pag models.Paginat
 	rows, err := r.psql.
 		Select(
 			"n.id", "n.type", "n.entity_id", "n.read_at", "n.created_at",
-			"u.id", "u.username", "u.avatar_id",
+			"u.id", "u.username", "u.name", "u.avatar_id",
 		).
 		From(notificationsTable + " n").
 		Join("users u ON u.id = n.actor_id").
@@ -75,9 +75,10 @@ func (r *Repository) List(ctx context.Context, userID string, pag models.Paginat
 		var avatarID sql.NullString
 		var notifType string
 
+		var actorName sql.NullString
 		if err := rows.Scan(
 			&n.Id, &notifType, &n.EntityId, &readAt, &n.CreatedAt,
-			&actor.Id, &actor.Username, &avatarID,
+			&actor.Id, &actor.Username, &actorName, &avatarID,
 		); err != nil {
 			return nil, 0, fmt.Errorf("scan notification: %w", err)
 		}
@@ -85,6 +86,9 @@ func (r *Repository) List(ctx context.Context, userID string, pag models.Paginat
 		n.Type = models.NotificationType(notifType)
 		if readAt.Valid {
 			n.ReadAt = &readAt.Time
+		}
+		if actorName.Valid {
+			actor.Name = &actorName.String
 		}
 		if avatarID.Valid {
 			actor.AvatarId = &avatarID.String

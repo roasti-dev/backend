@@ -57,6 +57,35 @@ func TestUpdateCurrentUser(t *testing.T) {
 		assert.Equal(t, &bio, resp.JSON200.Bio)
 	})
 
+	t.Run("updates name", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		name := "Display Name"
+
+		resp, err := c.UpdateCurrentUserWithResponse(t.Context(), client.UpdateCurrentUserJSONRequestBody{
+			Name: nullable.NewNullableWithValue(name),
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode())
+		assert.Equal(t, &name, resp.JSON200.Name)
+	})
+
+	t.Run("clears name when name is null", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		name := "Display Name"
+
+		_, err := c.UpdateCurrentUserWithResponse(t.Context(), client.UpdateCurrentUserJSONRequestBody{
+			Name: nullable.NewNullableWithValue(name),
+		})
+		require.NoError(t, err)
+
+		resp, err := c.UpdateCurrentUserWithResponse(t.Context(), client.UpdateCurrentUserJSONRequestBody{
+			Name: nullable.NewNullNullable[string](),
+		})
+		require.NoError(t, err)
+		require.Equal(t, 200, resp.StatusCode())
+		assert.Nil(t, resp.JSON200.Name)
+	})
+
 	t.Run("clears avatar when avatarId is null", func(t *testing.T) {
 		c := newAuthenticatedTestClient(t, srv)
 
@@ -158,6 +187,25 @@ func TestGetUserProfile(t *testing.T) {
 
 		// UserProfile must not have an email field — verify raw JSON
 		assert.NotContains(t, string(resp.Body), "email")
+	})
+
+	t.Run("returns name when set", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		name := "Public Name"
+
+		_, err := c.UpdateCurrentUserWithResponse(t.Context(), client.UpdateCurrentUserJSONRequestBody{
+			Name: nullable.NewNullableWithValue(name),
+		})
+		require.NoError(t, err)
+
+		meResp, err := c.GetCurrentUserWithResponse(t.Context())
+		require.NoError(t, err)
+
+		anon := newTestClient(t, srv)
+		resp, err := anon.GetUserProfileWithResponse(t.Context(), meResp.JSON200.Username)
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode())
+		assert.Equal(t, &name, resp.JSON200.Name)
 	})
 
 	t.Run("returns bio when set", func(t *testing.T) {

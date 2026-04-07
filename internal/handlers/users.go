@@ -23,6 +23,7 @@ func (s *ServerHandler) UpdateCurrentUser(ctx context.Context, request UpdateCur
 	userID := requestctx.GetUserID(ctx)
 	updated, err := s.userService.UpdateProfile(ctx, userID, users.UpdateUserFields{
 		Username: request.Body.Username,
+		Name:     request.Body.Name,
 		Bio:      request.Body.Bio,
 		AvatarID: request.Body.AvatarId,
 	})

@@ -20,7 +20,7 @@ var beanSelectColumns = []string{
 	"b.country", "b.region", "b.farm", "b.process",
 	"b.descriptors", "b.q_score", "b.url", "b.image_id",
 	"b.created_at",
-	"b.author_id", "u.username", "u.avatar_id",
+	"b.author_id", "u.username", "u.name", "u.avatar_id",
 }
 
 type scanner interface {
@@ -194,12 +194,13 @@ func scanBean(s scanner) (models.Bean, error) {
 	var authorAvatarID sql.NullString
 	var roastType string
 
+	var authorName sql.NullString
 	err := s.Scan(
 		&bean.Id, &bean.Name, &roastType, &bean.Roaster,
 		&country, &region, &farm, &processJSON,
 		&descriptorsJSON, &qScore, &url, &imageID,
 		&bean.CreatedAt,
-		&bean.Author.Id, &bean.Author.Username, &authorAvatarID,
+		&bean.Author.Id, &bean.Author.Username, &authorName, &authorAvatarID,
 	)
 	if err != nil {
 		return models.Bean{}, err
@@ -226,14 +227,17 @@ func scanBean(s scanner) (models.Bean, error) {
 		v := float32(qScore.Float64)
 		bean.QScore = &v
 	}
+	if authorName.Valid {
+		bean.Author.Name = &authorName.String
+	}
 	if authorAvatarID.Valid {
 		bean.Author.AvatarId = &authorAvatarID.String
 	}
 	if processJSON.Valid && processJSON.String != "" {
-		_ = json.Unmarshal([]byte(processJSON.String), &bean.Process)
+		_ = json.Unmarshal([]byte(processJSON.String), &bean.Process) // nolint:errcheck
 	}
 	if descriptorsJSON.Valid && descriptorsJSON.String != "" {
-		_ = json.Unmarshal([]byte(descriptorsJSON.String), &bean.Descriptors)
+		_ = json.Unmarshal([]byte(descriptorsJSON.String), &bean.Descriptors) // nolint:errcheck
 	}
 
 	return bean, nil

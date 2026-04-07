@@ -94,6 +94,22 @@ func TestRegister(t *testing.T) {
 		assert.Equal(t, 422, resp.StatusCode())
 	})
 
+	t.Run("registers with optional name", func(t *testing.T) {
+		c := newTestClient(t, srv)
+		username, email, password := randomCredentials()
+		name := "John Doe"
+
+		resp, err := c.RegisterUserWithResponse(t.Context(), models.RegisterRequest{
+			Email:    email,
+			Username: username,
+			Password: password,
+			Name:     &name,
+		})
+		require.NoError(t, err)
+		require.Equal(t, 201, resp.StatusCode())
+		assert.Equal(t, &name, resp.JSON201.User.Name)
+	})
+
 	t.Run("invalid username format", func(t *testing.T) {
 		c := newTestClient(t, srv)
 		_, email, password := randomCredentials()

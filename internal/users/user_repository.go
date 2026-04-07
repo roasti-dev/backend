@@ -11,7 +11,7 @@ import (
 
 const usersTable = "users"
 
-var userColumns = []string{"id", "email", "username", "avatar_id", "bio", "created_at"}
+var userColumns = []string{"id", "email", "username", "name", "avatar_id", "bio", "created_at"}
 
 type UserRepository struct {
 	db   *sql.DB
@@ -27,13 +27,17 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 
 func (r *UserRepository) GetByID(ctx context.Context, userID string) (User, error) {
 	var user User
+	var name sql.NullString
 	err := r.psql.Select(userColumns...).
 		From(usersTable).
 		Where(sq.Eq{"id": userID}).
 		QueryRowContext(ctx).
-		Scan(&user.ID, &user.Email, &user.Username, &user.AvatarID, &user.Bio, &user.CreatedAt)
+		Scan(&user.ID, &user.Email, &user.Username, &name, &user.AvatarID, &user.Bio, &user.CreatedAt)
 	if err != nil {
 		return User{}, fmt.Errorf("get user by id: %w", err)
+	}
+	if name.Valid {
+		user.Name = &name.String
 	}
 	return user, nil
 }
@@ -45,6 +49,7 @@ func (r *UserRepository) Create(ctx context.Context, user User) error {
 			user.ID,
 			user.Email,
 			user.Username,
+			user.Name,
 			user.AvatarID,
 			user.Bio,
 			time.Now().UTC(),
@@ -58,13 +63,17 @@ func (r *UserRepository) Create(ctx context.Context, user User) error {
 
 func (r *UserRepository) GetByUsername(ctx context.Context, username string) (User, error) {
 	var user User
+	var name sql.NullString
 	err := r.psql.Select(userColumns...).
 		From(usersTable).
 		Where(sq.Eq{"username": username}).
 		QueryRowContext(ctx).
-		Scan(&user.ID, &user.Email, &user.Username, &user.AvatarID, &user.Bio, &user.CreatedAt)
+		Scan(&user.ID, &user.Email, &user.Username, &name, &user.AvatarID, &user.Bio, &user.CreatedAt)
 	if err != nil {
 		return User{}, fmt.Errorf("select user: %w", err)
+	}
+	if name.Valid {
+		user.Name = &name.String
 	}
 	return user, nil
 }
@@ -76,6 +85,13 @@ func (r *UserRepository) Update(ctx context.Context, userID string, req UpdateUs
 	q := r.psql.Update(usersTable).Where(sq.Eq{"id": userID})
 	if req.Username != nil {
 		q = q.Set("username", *req.Username)
+	}
+	if req.Name.IsSpecified() {
+		if req.Name.IsNull() {
+			q = q.Set("name", nil)
+		} else {
+			q = q.Set("name", req.Name.MustGet())
+		}
 	}
 	if req.Bio.IsSpecified() {
 		if req.Bio.IsNull() {

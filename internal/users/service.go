@@ -36,6 +36,7 @@ type RegisterInput struct {
 	Email    string
 	Username string
 	Password string
+	Name     *string
 	AvatarID *string
 	Bio      *string
 }
@@ -94,6 +95,7 @@ func (s *Service) Register(ctx context.Context, input RegisterInput) (User, erro
 		ID:       uid,
 		Email:    email.Value(),
 		Username: username.Value(),
+		Name:     input.Name,
 		AvatarID: input.AvatarID,
 		Bio:      input.Bio,
 	}

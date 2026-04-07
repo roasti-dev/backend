@@ -71,6 +71,7 @@ func (s *Service) Register(ctx context.Context, req models.RegisterRequest) (mod
 		Email:    req.Email,
 		Username: req.Username,
 		Password: password.Value(),
+		Name:     req.Name,
 		AvatarID: req.AvatarId,
 		Bio:      req.Bio,
 	})

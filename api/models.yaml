@@ -411,6 +411,9 @@ components:
           type: string
           format: password
           description: User password. Must be 8-32 characters.
+        name:
+          type: string
+          description: Display name
         bio:
           type: string
           description: Short user biography
@@ -497,6 +500,9 @@ components:
         username:
           type: string
           description: Unique username
+        name:
+          type: string
+          description: Display name
         bio:
           type: string
           description: Short user biography
@@ -523,6 +529,10 @@ components:
         username:
           type: string
           description: New username. Must be 6-16 characters, letters, numbers and underscores only.
+        name:
+          type: string
+          nullable: true
+          description: Display name
         bio:
           type: string
           nullable: true
@@ -592,6 +602,9 @@ components:
         username:
           type: string
           description: Author's username
+        name:
+          type: string
+          description: Author's display name
         avatar_id:
           type: string
           description: ID of the author's avatar image

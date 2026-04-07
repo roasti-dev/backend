@@ -40,9 +40,11 @@ var (
 		"recipes.updated_at",
 		"recipes.origin_recipe_id",
 		"users.username",
+		"users.name",
 		"users.avatar_id",
 		"origin_recipes.author_id",
 		"origin_authors.username",
+		"origin_authors.name",
 		"origin_authors.avatar_id",
 		"b.id",
 		"b.name",
@@ -84,9 +86,11 @@ var (
 		"recipes.created_at",
 		"recipes.origin_recipe_id",
 		"users.username",
+		"users.name",
 		"users.avatar_id",
 		"origin_recipes.author_id",
 		"origin_authors.username",
+		"origin_authors.name",
 		"origin_authors.avatar_id",
 	}
 
@@ -500,9 +504,11 @@ func scanRecipes(rows *sql.Rows) ([]models.Recipe, []string, error) {
 
 func scanRecipe(s scanner) (models.Recipe, error) {
 	var recipe models.Recipe
+	var authorName sql.NullString
 	var originRecipeID sql.NullString
 	var originAuthorID sql.NullString
 	var originUsername sql.NullString
+	var originName sql.NullString
 	var originAvatarID sql.NullString
 	var beanID, beanName, beanRoastType, beanRoaster sql.NullString
 	var beanDeletedAt sql.NullString
@@ -522,9 +528,11 @@ func scanRecipe(s scanner) (models.Recipe, error) {
 		&recipe.UpdatedAt,
 		&originRecipeID,
 		&recipe.Author.Username,
+		&authorName,
 		&recipe.Author.AvatarId,
 		&originAuthorID,
 		&originUsername,
+		&originName,
 		&originAvatarID,
 		&beanID,
 		&beanName,
@@ -533,9 +541,12 @@ func scanRecipe(s scanner) (models.Recipe, error) {
 		&beanDeletedAt,
 	)
 	recipe.Author.Id = recipe.AuthorId
+	if authorName.Valid {
+		recipe.Author.Name = &authorName.String
+	}
 
 	if originRecipeID.Valid {
-		recipe.Origin = &models.RecipeOrigin{
+		origin := &models.RecipeOrigin{
 			RecipeId: originRecipeID.String,
 			Author: models.UserPreview{
 				Id:       originAuthorID.String,
@@ -543,6 +554,10 @@ func scanRecipe(s scanner) (models.Recipe, error) {
 				AvatarId: &originAvatarID.String,
 			},
 		}
+		if originName.Valid {
+			origin.Author.Name = &originName.String
+		}
+		recipe.Origin = origin
 	}
 
 	if beanID.Valid {
@@ -564,9 +579,11 @@ func scanRecipe(s scanner) (models.Recipe, error) {
 
 func scanRecipePreview(s scanner) (models.RecipePreview, error) {
 	var p models.RecipePreview
+	var authorName sql.NullString
 	var originRecipeID sql.NullString
 	var originAuthorID sql.NullString
 	var originUsername sql.NullString
+	var originName sql.NullString
 	var originAvatarID sql.NullString
 
 	err := s.Scan(
@@ -574,15 +591,19 @@ func scanRecipePreview(s scanner) (models.RecipePreview, error) {
 		&p.BrewMethod, &p.Difficulty, &p.RoastLevel,
 		&p.CreatedAt,
 		&originRecipeID,
-		&p.Author.Username, &p.Author.AvatarId,
+		&p.Author.Username, &authorName, &p.Author.AvatarId,
 		&originAuthorID,
 		&originUsername,
+		&originName,
 		&originAvatarID,
 	)
 	p.Author.Id = p.AuthorId
+	if authorName.Valid {
+		p.Author.Name = &authorName.String
+	}
 
 	if originRecipeID.Valid {
-		p.Origin = &models.RecipeOrigin{
+		origin := &models.RecipeOrigin{
 			RecipeId: originRecipeID.String,
 			Author: models.UserPreview{
 				Id:       originAuthorID.String,
@@ -590,6 +611,10 @@ func scanRecipePreview(s scanner) (models.RecipePreview, error) {
 				AvatarId: &originAvatarID.String,
 			},
 		}
+		if originName.Valid {
+			origin.Author.Name = &originName.String
+		}
+		p.Origin = origin
 	}
 
 	return p, err

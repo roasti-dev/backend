@@ -27,6 +27,7 @@ var postSelectColumns = []string{
 	"posts.created_at",
 	"posts.updated_at",
 	"users.username",
+	"users.name",
 	"users.avatar_id",
 }
 
@@ -51,6 +52,7 @@ var commentColumns = []string{
 	"comments.deleted_at",
 	"comments.author_id",
 	"users.username",
+	"users.name",
 	"users.avatar_id",
 }
 
@@ -377,13 +379,14 @@ func (r *Repository) getCommentsByPostIDs(ctx context.Context, postIDs []string)
 			parentID  sql.NullString
 			authorID  sql.NullString
 			username  sql.NullString
+			name      sql.NullString
 			avatarID  sql.NullString
 			deletedAt sql.NullString
 		)
 		if err := rows.Scan(
 			&comment.Id, &targetID, &parentID, &comment.Text,
 			&comment.CreatedAt, &comment.UpdatedAt, &deletedAt,
-			&authorID, &username, &avatarID,
+			&authorID, &username, &name, &avatarID,
 		); err != nil {
 			return nil, err
 		}
@@ -395,6 +398,9 @@ func (r *Repository) getCommentsByPostIDs(ctx context.Context, postIDs []string)
 			comment.Text = ""
 		} else {
 			author := models.UserPreview{Id: authorID.String, Username: username.String}
+			if name.Valid {
+				author.Name = &name.String
+			}
 			if avatarID.Valid {
 				author.AvatarId = &avatarID.String
 			}
@@ -412,13 +418,17 @@ type scanner interface {
 func scanPost(s scanner) (models.Post, error) {
 	var (
 		post     models.Post
+		name     sql.NullString
 		avatarID sql.NullString
 	)
 	err := s.Scan(
 		&post.Id, &post.Author.Id, &post.Title,
 		&post.CreatedAt, &post.UpdatedAt,
-		&post.Author.Username, &avatarID,
+		&post.Author.Username, &name, &avatarID,
 	)
+	if name.Valid {
+		post.Author.Name = &name.String
+	}
 	if avatarID.Valid {
 		post.Author.AvatarId = &avatarID.String
 	}
