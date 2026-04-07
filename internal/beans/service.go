@@ -25,13 +25,12 @@ type uploader interface {
 
 type Service struct {
 	logger   *slog.Logger
-	db       *sql.DB
 	repo     repository
 	uploader uploader
 }
 
-func NewService(logger *slog.Logger, db *sql.DB, repo repository, uploader uploader) *Service {
-	return &Service{logger: logger, db: db, repo: repo, uploader: uploader}
+func NewService(logger *slog.Logger, repo repository, uploader uploader) *Service {
+	return &Service{logger: logger, repo: repo, uploader: uploader}
 }
 
 func (s *Service) CreateBean(ctx context.Context, userID string, req models.CreateBeanRequest) (models.Bean, error) {
