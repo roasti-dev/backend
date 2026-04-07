@@ -10,6 +10,7 @@ import (
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
 	"github.com/nikpivkin/roasti-app-backend/internal/x/id"
+	"github.com/nikpivkin/roasti-app-backend/internal/x/sqlutil"
 )
 
 const (
@@ -374,14 +375,10 @@ func (r *Repository) getCommentsByPostIDs(ctx context.Context, postIDs []string)
 	commentsMap := make(map[string][]models.PostComment)
 	for rows.Next() {
 		var (
-			targetID  string
-			comment   models.PostComment
-			parentID  sql.NullString
-			authorID  sql.NullString
-			username  sql.NullString
-			name      sql.NullString
-			avatarID  sql.NullString
-			deletedAt sql.NullString
+			targetID                           string
+			comment                            models.PostComment
+			parentID, deletedAt                sql.NullString
+			authorID, username, name, avatarID sql.NullString
 		)
 		if err := rows.Scan(
 			&comment.Id, &targetID, &parentID, &comment.Text,
@@ -397,13 +394,7 @@ func (r *Repository) getCommentsByPostIDs(ctx context.Context, postIDs []string)
 			comment.IsDeleted = true
 			comment.Text = ""
 		} else {
-			author := models.UserPreview{Id: authorID.String, Username: username.String}
-			if name.Valid {
-				author.Name = &name.String
-			}
-			if avatarID.Valid {
-				author.AvatarId = &avatarID.String
-			}
+			author := sqlutil.BuildUserPreview(authorID.String, username.String, name, avatarID)
 			comment.Author = &author
 		}
 		commentsMap[targetID] = append(commentsMap[targetID], comment)
@@ -417,20 +408,15 @@ type scanner interface {
 
 func scanPost(s scanner) (models.Post, error) {
 	var (
-		post     models.Post
-		name     sql.NullString
-		avatarID sql.NullString
+		post           models.Post
+		authorUsername string
+		name, avatarID sql.NullString
 	)
 	err := s.Scan(
 		&post.Id, &post.Author.Id, &post.Title,
 		&post.CreatedAt, &post.UpdatedAt,
-		&post.Author.Username, &name, &avatarID,
+		&authorUsername, &name, &avatarID,
 	)
-	if name.Valid {
-		post.Author.Name = &name.String
-	}
-	if avatarID.Valid {
-		post.Author.AvatarId = &avatarID.String
-	}
+	post.Author = sqlutil.BuildUserPreview(post.Author.Id, authorUsername, name, avatarID)
 	return post, err
 }

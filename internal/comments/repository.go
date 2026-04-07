@@ -9,6 +9,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
+	"github.com/nikpivkin/roasti-app-backend/internal/x/sqlutil"
 )
 
 const commentsTable = "comments"
@@ -165,25 +166,18 @@ func (r *Repo) ListForTarget(ctx context.Context, targetID string, pag models.Pa
 	var rootIDs []string
 	for rootRows.Next() {
 		var (
-			c         models.CommentThread
-			author    models.UserPreview
-			avatarID  sql.NullString
-			deletedAt sql.NullString
+			c                                                    models.CommentThread
+			deletedAt                                            sql.NullString
+			authorID, authorUsername, authorName, authorAvatarID sql.NullString
 		)
-		var authorName sql.NullString
-		if err := rootRows.Scan(&c.Id, &c.Text, &c.CreatedAt, &c.UpdatedAt, &deletedAt, &author.Id, &author.Username, &authorName, &avatarID); err != nil {
+		if err := rootRows.Scan(&c.Id, &c.Text, &c.CreatedAt, &c.UpdatedAt, &deletedAt, &authorID, &authorUsername, &authorName, &authorAvatarID); err != nil {
 			return nil, 0, err
 		}
 		if deletedAt.Valid {
 			c.IsDeleted = true
 			c.Text = ""
 		} else {
-			if authorName.Valid {
-				author.Name = &authorName.String
-			}
-			if avatarID.Valid {
-				author.AvatarId = &avatarID.String
-			}
+			author := sqlutil.BuildUserPreview(authorID.String, authorUsername.String, authorName, authorAvatarID)
 			c.Author = &author
 		}
 		c.Replies = []models.PostComment{}
@@ -233,26 +227,18 @@ func (r *Repo) ListForTarget(ctx context.Context, targetID string, pag models.Pa
 
 	for replyRows.Next() {
 		var (
-			c         models.PostComment
-			author    models.UserPreview
-			avatarID  sql.NullString
-			parentID  sql.NullString
-			deletedAt sql.NullString
+			c                                                    models.PostComment
+			parentID, deletedAt                                  sql.NullString
+			authorID, authorUsername, authorName, authorAvatarID sql.NullString
 		)
-		var authorName sql.NullString
-		if err := replyRows.Scan(&c.Id, &c.Text, &parentID, &c.CreatedAt, &c.UpdatedAt, &deletedAt, &author.Id, &author.Username, &authorName, &avatarID); err != nil {
+		if err := replyRows.Scan(&c.Id, &c.Text, &parentID, &c.CreatedAt, &c.UpdatedAt, &deletedAt, &authorID, &authorUsername, &authorName, &authorAvatarID); err != nil {
 			return nil, 0, err
 		}
 		if deletedAt.Valid {
 			c.IsDeleted = true
 			c.Text = ""
 		} else {
-			if authorName.Valid {
-				author.Name = &authorName.String
-			}
-			if avatarID.Valid {
-				author.AvatarId = &avatarID.String
-			}
+			author := sqlutil.BuildUserPreview(authorID.String, authorUsername.String, authorName, authorAvatarID)
 			c.Author = &author
 		}
 		if !parentID.Valid {

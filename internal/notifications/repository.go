@@ -9,6 +9,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
+	"github.com/nikpivkin/roasti-app-backend/internal/x/sqlutil"
 )
 
 const notificationsTable = "notifications"
@@ -70,15 +71,12 @@ func (r *Repository) List(ctx context.Context, userID string, pag models.Paginat
 	var result []models.Notification
 	for rows.Next() {
 		var n models.Notification
-		var actor models.UserPreview
+		var notifType, actorID, actorUsername string
 		var readAt sql.NullTime
-		var avatarID sql.NullString
-		var notifType string
-
-		var actorName sql.NullString
+		var actorName, avatarID sql.NullString
 		if err := rows.Scan(
 			&n.Id, &notifType, &n.EntityId, &readAt, &n.CreatedAt,
-			&actor.Id, &actor.Username, &actorName, &avatarID,
+			&actorID, &actorUsername, &actorName, &avatarID,
 		); err != nil {
 			return nil, 0, fmt.Errorf("scan notification: %w", err)
 		}
@@ -87,13 +85,7 @@ func (r *Repository) List(ctx context.Context, userID string, pag models.Paginat
 		if readAt.Valid {
 			n.ReadAt = &readAt.Time
 		}
-		if actorName.Valid {
-			actor.Name = &actorName.String
-		}
-		if avatarID.Valid {
-			actor.AvatarId = &avatarID.String
-		}
-		n.Actor = actor
+		n.Actor = sqlutil.BuildUserPreview(actorID, actorUsername, actorName, avatarID)
 		result = append(result, n)
 	}
 	if err := rows.Err(); err != nil {

@@ -12,6 +12,7 @@ import (
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
 	"github.com/nikpivkin/roasti-app-backend/internal/x/ptr"
+	"github.com/nikpivkin/roasti-app-backend/internal/x/sqlutil"
 )
 
 type scanner interface {
@@ -504,12 +505,10 @@ func scanRecipes(rows *sql.Rows) ([]models.Recipe, []string, error) {
 
 func scanRecipe(s scanner) (models.Recipe, error) {
 	var recipe models.Recipe
-	var authorName sql.NullString
+	var authorUsername string
+	var authorName, authorAvatarID sql.NullString
 	var originRecipeID sql.NullString
-	var originAuthorID sql.NullString
-	var originUsername sql.NullString
-	var originName sql.NullString
-	var originAvatarID sql.NullString
+	var originAuthorID, originUsername, originName, originAvatarID sql.NullString
 	var beanID, beanName, beanRoastType, beanRoaster sql.NullString
 	var beanDeletedAt sql.NullString
 
@@ -527,9 +526,9 @@ func scanRecipe(s scanner) (models.Recipe, error) {
 		&recipe.CreatedAt,
 		&recipe.UpdatedAt,
 		&originRecipeID,
-		&recipe.Author.Username,
+		&authorUsername,
 		&authorName,
-		&recipe.Author.AvatarId,
+		&authorAvatarID,
 		&originAuthorID,
 		&originUsername,
 		&originName,
@@ -540,24 +539,13 @@ func scanRecipe(s scanner) (models.Recipe, error) {
 		&beanRoaster,
 		&beanDeletedAt,
 	)
-	recipe.Author.Id = recipe.AuthorId
-	if authorName.Valid {
-		recipe.Author.Name = &authorName.String
-	}
+	recipe.Author = sqlutil.BuildUserPreview(recipe.AuthorId, authorUsername, authorName, authorAvatarID)
 
 	if originRecipeID.Valid {
-		origin := &models.RecipeOrigin{
+		recipe.Origin = &models.RecipeOrigin{
 			RecipeId: originRecipeID.String,
-			Author: models.UserPreview{
-				Id:       originAuthorID.String,
-				Username: originUsername.String,
-				AvatarId: &originAvatarID.String,
-			},
+			Author:   sqlutil.BuildUserPreview(originAuthorID.String, originUsername.String, originName, originAvatarID),
 		}
-		if originName.Valid {
-			origin.Author.Name = &originName.String
-		}
-		recipe.Origin = origin
 	}
 
 	if beanID.Valid {
@@ -579,42 +567,26 @@ func scanRecipe(s scanner) (models.Recipe, error) {
 
 func scanRecipePreview(s scanner) (models.RecipePreview, error) {
 	var p models.RecipePreview
-	var authorName sql.NullString
+	var authorUsername string
+	var authorName, authorAvatarID sql.NullString
 	var originRecipeID sql.NullString
-	var originAuthorID sql.NullString
-	var originUsername sql.NullString
-	var originName sql.NullString
-	var originAvatarID sql.NullString
+	var originAuthorID, originUsername, originName, originAvatarID sql.NullString
 
 	err := s.Scan(
 		&p.Id, &p.AuthorId, &p.Title, &p.ImageId,
 		&p.BrewMethod, &p.Difficulty, &p.RoastLevel,
 		&p.CreatedAt,
 		&originRecipeID,
-		&p.Author.Username, &authorName, &p.Author.AvatarId,
-		&originAuthorID,
-		&originUsername,
-		&originName,
-		&originAvatarID,
+		&authorUsername, &authorName, &authorAvatarID,
+		&originAuthorID, &originUsername, &originName, &originAvatarID,
 	)
-	p.Author.Id = p.AuthorId
-	if authorName.Valid {
-		p.Author.Name = &authorName.String
-	}
+	p.Author = sqlutil.BuildUserPreview(p.AuthorId, authorUsername, authorName, authorAvatarID)
 
 	if originRecipeID.Valid {
-		origin := &models.RecipeOrigin{
+		p.Origin = &models.RecipeOrigin{
 			RecipeId: originRecipeID.String,
-			Author: models.UserPreview{
-				Id:       originAuthorID.String,
-				Username: originUsername.String,
-				AvatarId: &originAvatarID.String,
-			},
+			Author:   sqlutil.BuildUserPreview(originAuthorID.String, originUsername.String, originName, originAvatarID),
 		}
-		if originName.Valid {
-			origin.Author.Name = &originName.String
-		}
-		p.Origin = origin
 	}
 
 	return p, err

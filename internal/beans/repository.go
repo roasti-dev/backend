@@ -11,6 +11,7 @@ import (
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
 	"github.com/nikpivkin/roasti-app-backend/internal/x/ptr"
+	"github.com/nikpivkin/roasti-app-backend/internal/x/sqlutil"
 )
 
 const beansTable = "beans"
@@ -191,22 +192,21 @@ func scanBean(s scanner) (models.Bean, error) {
 	var processJSON, descriptorsJSON sql.NullString
 	var country, region, farm, imageID, url sql.NullString
 	var qScore sql.NullFloat64
-	var authorAvatarID sql.NullString
-	var roastType string
-
-	var authorName sql.NullString
+	var roastType, authorID, authorUsername string
+	var authorName, authorAvatarID sql.NullString
 	err := s.Scan(
 		&bean.Id, &bean.Name, &roastType, &bean.Roaster,
 		&country, &region, &farm, &processJSON,
 		&descriptorsJSON, &qScore, &url, &imageID,
 		&bean.CreatedAt,
-		&bean.Author.Id, &bean.Author.Username, &authorName, &authorAvatarID,
+		&authorID, &authorUsername, &authorName, &authorAvatarID,
 	)
 	if err != nil {
 		return models.Bean{}, err
 	}
 
 	bean.RoastType = models.BeanRoastType(roastType)
+	bean.Author = sqlutil.BuildUserPreview(authorID, authorUsername, authorName, authorAvatarID)
 
 	if country.Valid {
 		bean.Country = &country.String
@@ -226,12 +226,6 @@ func scanBean(s scanner) (models.Bean, error) {
 	if qScore.Valid {
 		v := float32(qScore.Float64)
 		bean.QScore = &v
-	}
-	if authorName.Valid {
-		bean.Author.Name = &authorName.String
-	}
-	if authorAvatarID.Valid {
-		bean.Author.AvatarId = &authorAvatarID.String
 	}
 	if processJSON.Valid && processJSON.String != "" {
 		_ = json.Unmarshal([]byte(processJSON.String), &bean.Process) // nolint:errcheck
