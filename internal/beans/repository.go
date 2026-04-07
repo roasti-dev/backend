@@ -40,7 +40,11 @@ func NewRepository(db *sql.DB, runner sq.StdSqlCtx) *Repository {
 }
 
 func (r *Repository) Create(ctx context.Context, beanID, authorID string, req models.BeanPayload) error {
-	descriptorsJSON, err := marshalDescriptors(req.Descriptors)
+	processJSON, err := marshalStringSlice(req.Process)
+	if err != nil {
+		return err
+	}
+	descriptorsJSON, err := marshalStringSlice(req.Descriptors)
 	if err != nil {
 		return err
 	}
@@ -52,7 +56,7 @@ func (r *Repository) Create(ctx context.Context, beanID, authorID string, req mo
 		).
 		Values(
 			beanID, authorID, req.Name, req.RoastType, req.Roaster,
-			req.Country, req.Region, req.Farm, req.Process,
+			req.Country, req.Region, req.Farm, processJSON,
 			descriptorsJSON, req.QScore, req.Url, req.ImageId, time.Now().UTC(),
 		).
 		ExecContext(ctx)
@@ -139,7 +143,11 @@ func (r *Repository) List(ctx context.Context, params ListBeansParams) ([]models
 }
 
 func (r *Repository) Update(ctx context.Context, beanID string, req models.BeanPayload) error {
-	descriptorsJSON, err := marshalDescriptors(req.Descriptors)
+	processJSON, err := marshalStringSlice(req.Process)
+	if err != nil {
+		return err
+	}
+	descriptorsJSON, err := marshalStringSlice(req.Descriptors)
 	if err != nil {
 		return err
 	}
@@ -151,7 +159,7 @@ func (r *Repository) Update(ctx context.Context, beanID string, req models.BeanP
 			"country":     req.Country,
 			"region":      req.Region,
 			"farm":        req.Farm,
-			"process":     req.Process,
+			"process":     processJSON,
 			"descriptors": descriptorsJSON,
 			"q_score":     req.QScore,
 			"url":         req.Url,
@@ -180,15 +188,15 @@ func (r *Repository) SoftDelete(ctx context.Context, beanID string) error {
 
 func scanBean(s scanner) (models.Bean, error) {
 	var bean models.Bean
-	var descriptorsJSON sql.NullString
-	var country, region, farm, process, imageID, url sql.NullString
+	var processJSON, descriptorsJSON sql.NullString
+	var country, region, farm, imageID, url sql.NullString
 	var qScore sql.NullFloat64
 	var authorAvatarID sql.NullString
 	var roastType string
 
 	err := s.Scan(
 		&bean.Id, &bean.Name, &roastType, &bean.Roaster,
-		&country, &region, &farm, &process,
+		&country, &region, &farm, &processJSON,
 		&descriptorsJSON, &qScore, &url, &imageID,
 		&bean.CreatedAt,
 		&bean.Author.Id, &bean.Author.Username, &authorAvatarID,
@@ -208,9 +216,6 @@ func scanBean(s scanner) (models.Bean, error) {
 	if farm.Valid {
 		bean.Farm = &farm.String
 	}
-	if process.Valid {
-		bean.Process = &process.String
-	}
 	if imageID.Valid {
 		bean.ImageId = &imageID.String
 	}
@@ -224,21 +229,24 @@ func scanBean(s scanner) (models.Bean, error) {
 	if authorAvatarID.Valid {
 		bean.Author.AvatarId = &authorAvatarID.String
 	}
+	if processJSON.Valid && processJSON.String != "" {
+		_ = json.Unmarshal([]byte(processJSON.String), &bean.Process)
+	}
 	if descriptorsJSON.Valid && descriptorsJSON.String != "" {
-		_ = json.Unmarshal([]byte(descriptorsJSON.String), &bean.Descriptors) // nolint:errcheck
+		_ = json.Unmarshal([]byte(descriptorsJSON.String), &bean.Descriptors)
 	}
 
 	return bean, nil
 }
 
-func marshalDescriptors(descriptors *[]string) (*string, error) {
-	if descriptors == nil || len(*descriptors) == 0 {
+func marshalStringSlice(s *[]string) (*string, error) {
+	if s == nil || len(*s) == 0 {
 		return nil, nil
 	}
-	b, err := json.Marshal(*descriptors)
+	b, err := json.Marshal(*s)
 	if err != nil {
-		return nil, fmt.Errorf("marshal descriptors: %w", err)
+		return nil, fmt.Errorf("marshal string slice: %w", err)
 	}
-	s := string(b)
-	return &s, nil
+	v := string(b)
+	return &v, nil
 }

@@ -1056,8 +1056,10 @@ components:
           type: string
           description: Farm or cooperative name
         process:
-          type: string
-          description: Processing method (e.g. washed, natural, honey)
+          type: array
+          description: Processing methods (e.g. washed, natural, honey)
+          items:
+            type: string
         descriptors:
           type: array
           description: Flavor descriptors
@@ -1111,8 +1113,10 @@ components:
           type: string
           description: Farm or cooperative name
         process:
-          type: string
-          description: Processing method
+          type: array
+          description: Processing methods
+          items:
+            type: string
         descriptors:
           type: array
           description: Flavor descriptors

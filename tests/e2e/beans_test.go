@@ -47,7 +47,7 @@ func TestCreateBean(t *testing.T) {
 		country := "Ethiopia"
 		region := "Yirgacheffe"
 		farm := "Konga"
-		process := "Washed"
+		process := []string{"Washed", "Natural"}
 		url := "https://example.com/bean"
 		qScore := float32(89.5)
 		descriptors := []string{"floral", "citrus", "blueberry"}
