@@ -42,6 +42,18 @@ func (e ListRecipesParamsSortField) Valid() bool {
 	}
 }
 
+// ListBeansParams defines parameters for ListBeans.
+type ListBeansParams struct {
+	// Q Search query matched against bean name and roaster
+	Q *string `form:"q,omitempty" json:"q,omitempty"`
+
+	// Page Page number
+	Page *externalRef0.PageParam `form:"page,omitempty" json:"page,omitempty"`
+
+	// Limit Number of items per page
+	Limit *externalRef0.LimitParam `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // ListNotificationsParams defines parameters for ListNotifications.
 type ListNotificationsParams struct {
 	// Page Page number
@@ -117,6 +129,12 @@ type RefreshTokenJSONRequestBody = externalRef0.RefreshRequest
 
 // RegisterUserJSONRequestBody defines body for RegisterUser for application/json ContentType.
 type RegisterUserJSONRequestBody = externalRef0.RegisterRequest
+
+// CreateBeanJSONRequestBody defines body for CreateBean for application/json ContentType.
+type CreateBeanJSONRequestBody = externalRef0.CreateBeanRequest
+
+// UpdateBeanJSONRequestBody defines body for UpdateBean for application/json ContentType.
+type UpdateBeanJSONRequestBody = externalRef0.UpdateBeanRequest
 
 // UpdateCommentJSONRequestBody defines body for UpdateComment for application/json ContentType.
 type UpdateCommentJSONRequestBody = externalRef0.UpdatePostCommentRequest
@@ -242,6 +260,25 @@ type ClientInterface interface {
 	RegisterUserWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	RegisterUser(ctx context.Context, body RegisterUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListBeans request
+	ListBeans(ctx context.Context, params *ListBeansParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateBeanWithBody request with any body
+	CreateBeanWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateBean(ctx context.Context, body CreateBeanJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteBean request
+	DeleteBean(ctx context.Context, beanId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetBean request
+	GetBean(ctx context.Context, beanId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateBeanWithBody request with any body
+	UpdateBeanWithBody(ctx context.Context, beanId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateBean(ctx context.Context, beanId string, body UpdateBeanJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteComment request
 	DeleteComment(ctx context.Context, commentId string, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -460,6 +497,90 @@ func (c *Client) RegisterUserWithBody(ctx context.Context, contentType string, b
 
 func (c *Client) RegisterUser(ctx context.Context, body RegisterUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewRegisterUserRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListBeans(ctx context.Context, params *ListBeansParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListBeansRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateBeanWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateBeanRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateBean(ctx context.Context, body CreateBeanJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateBeanRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteBean(ctx context.Context, beanId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteBeanRequest(c.Server, beanId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetBean(ctx context.Context, beanId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetBeanRequest(c.Server, beanId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateBeanWithBody(ctx context.Context, beanId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateBeanRequestWithBody(c.Server, beanId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateBean(ctx context.Context, beanId string, body UpdateBeanJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateBeanRequest(c.Server, beanId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1117,6 +1238,242 @@ func NewRegisterUserRequestWithBody(server string, contentType string, body io.R
 	}
 
 	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewListBeansRequest generates requests for ListBeans
+func NewListBeansRequest(server string, params *ListBeansParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/beans")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Q != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "q", *params.Q, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Page != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "page", *params.Page, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateBeanRequest calls the generic CreateBean builder with application/json body
+func NewCreateBeanRequest(server string, body CreateBeanJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateBeanRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewCreateBeanRequestWithBody generates requests for CreateBean with any type of body
+func NewCreateBeanRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/beans")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteBeanRequest generates requests for DeleteBean
+func NewDeleteBeanRequest(server string, beanId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "bean_id", beanId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/beans/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetBeanRequest generates requests for GetBean
+func NewGetBeanRequest(server string, beanId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "bean_id", beanId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/beans/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateBeanRequest calls the generic UpdateBean builder with application/json body
+func NewUpdateBeanRequest(server string, beanId string, body UpdateBeanJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateBeanRequestWithBody(server, beanId, "application/json", bodyReader)
+}
+
+// NewUpdateBeanRequestWithBody generates requests for UpdateBean with any type of body
+func NewUpdateBeanRequestWithBody(server string, beanId string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "bean_id", beanId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/beans/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -2622,6 +2979,25 @@ type ClientWithResponsesInterface interface {
 
 	RegisterUserWithResponse(ctx context.Context, body RegisterUserJSONRequestBody, reqEditors ...RequestEditorFn) (*RegisterUserResponse, error)
 
+	// ListBeansWithResponse request
+	ListBeansWithResponse(ctx context.Context, params *ListBeansParams, reqEditors ...RequestEditorFn) (*ListBeansResponse, error)
+
+	// CreateBeanWithBodyWithResponse request with any body
+	CreateBeanWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateBeanResponse, error)
+
+	CreateBeanWithResponse(ctx context.Context, body CreateBeanJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateBeanResponse, error)
+
+	// DeleteBeanWithResponse request
+	DeleteBeanWithResponse(ctx context.Context, beanId string, reqEditors ...RequestEditorFn) (*DeleteBeanResponse, error)
+
+	// GetBeanWithResponse request
+	GetBeanWithResponse(ctx context.Context, beanId string, reqEditors ...RequestEditorFn) (*GetBeanResponse, error)
+
+	// UpdateBeanWithBodyWithResponse request with any body
+	UpdateBeanWithBodyWithResponse(ctx context.Context, beanId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateBeanResponse, error)
+
+	UpdateBeanWithResponse(ctx context.Context, beanId string, body UpdateBeanJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateBeanResponse, error)
+
 	// DeleteCommentWithResponse request
 	DeleteCommentWithResponse(ctx context.Context, commentId string, reqEditors ...RequestEditorFn) (*DeleteCommentResponse, error)
 
@@ -2840,6 +3216,115 @@ func (r RegisterUserResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r RegisterUserResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ListBeansResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *externalRef0.BeanPage
+}
+
+// Status returns HTTPResponse.Status
+func (r ListBeansResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListBeansResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateBeanResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *externalRef0.Bean
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateBeanResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateBeanResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteBeanResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteBeanResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteBeanResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetBeanResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *externalRef0.Bean
+}
+
+// Status returns HTTPResponse.Status
+func (r GetBeanResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetBeanResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateBeanResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *externalRef0.Bean
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateBeanResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateBeanResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -3616,6 +4101,67 @@ func (c *ClientWithResponses) RegisterUserWithResponse(ctx context.Context, body
 	return ParseRegisterUserResponse(rsp)
 }
 
+// ListBeansWithResponse request returning *ListBeansResponse
+func (c *ClientWithResponses) ListBeansWithResponse(ctx context.Context, params *ListBeansParams, reqEditors ...RequestEditorFn) (*ListBeansResponse, error) {
+	rsp, err := c.ListBeans(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListBeansResponse(rsp)
+}
+
+// CreateBeanWithBodyWithResponse request with arbitrary body returning *CreateBeanResponse
+func (c *ClientWithResponses) CreateBeanWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateBeanResponse, error) {
+	rsp, err := c.CreateBeanWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateBeanResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateBeanWithResponse(ctx context.Context, body CreateBeanJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateBeanResponse, error) {
+	rsp, err := c.CreateBean(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateBeanResponse(rsp)
+}
+
+// DeleteBeanWithResponse request returning *DeleteBeanResponse
+func (c *ClientWithResponses) DeleteBeanWithResponse(ctx context.Context, beanId string, reqEditors ...RequestEditorFn) (*DeleteBeanResponse, error) {
+	rsp, err := c.DeleteBean(ctx, beanId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteBeanResponse(rsp)
+}
+
+// GetBeanWithResponse request returning *GetBeanResponse
+func (c *ClientWithResponses) GetBeanWithResponse(ctx context.Context, beanId string, reqEditors ...RequestEditorFn) (*GetBeanResponse, error) {
+	rsp, err := c.GetBean(ctx, beanId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetBeanResponse(rsp)
+}
+
+// UpdateBeanWithBodyWithResponse request with arbitrary body returning *UpdateBeanResponse
+func (c *ClientWithResponses) UpdateBeanWithBodyWithResponse(ctx context.Context, beanId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateBeanResponse, error) {
+	rsp, err := c.UpdateBeanWithBody(ctx, beanId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateBeanResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateBeanWithResponse(ctx context.Context, beanId string, body UpdateBeanJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateBeanResponse, error) {
+	rsp, err := c.UpdateBean(ctx, beanId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateBeanResponse(rsp)
+}
+
 // DeleteCommentWithResponse request returning *DeleteCommentResponse
 func (c *ClientWithResponses) DeleteCommentWithResponse(ctx context.Context, commentId string, reqEditors ...RequestEditorFn) (*DeleteCommentResponse, error) {
 	rsp, err := c.DeleteComment(ctx, commentId, reqEditors...)
@@ -4120,6 +4666,126 @@ func ParseRegisterUserResponse(rsp *http.Response) (*RegisterUserResponse, error
 			return nil, err
 		}
 		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListBeansResponse parses an HTTP response from a ListBeansWithResponse call
+func ParseListBeansResponse(rsp *http.Response) (*ListBeansResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListBeansResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest externalRef0.BeanPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateBeanResponse parses an HTTP response from a CreateBeanWithResponse call
+func ParseCreateBeanResponse(rsp *http.Response) (*CreateBeanResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateBeanResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest externalRef0.Bean
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteBeanResponse parses an HTTP response from a DeleteBeanWithResponse call
+func ParseDeleteBeanResponse(rsp *http.Response) (*DeleteBeanResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteBeanResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseGetBeanResponse parses an HTTP response from a GetBeanWithResponse call
+func ParseGetBeanResponse(rsp *http.Response) (*GetBeanResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetBeanResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest externalRef0.Bean
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateBeanResponse parses an HTTP response from a UpdateBeanWithResponse call
+func ParseUpdateBeanResponse(rsp *http.Response) (*UpdateBeanResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateBeanResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest externalRef0.Bean
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
 
 	}
 

@@ -6,6 +6,7 @@ import (
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
 	"github.com/nikpivkin/roasti-app-backend/internal/auth"
+	"github.com/nikpivkin/roasti-app-backend/internal/beans"
 	"github.com/nikpivkin/roasti-app-backend/internal/likes"
 	"github.com/nikpivkin/roasti-app-backend/internal/posts"
 	"github.com/nikpivkin/roasti-app-backend/internal/recipes"
@@ -51,6 +52,14 @@ type PostService interface {
 	CreateComment(ctx context.Context, userID, postID, text string, parentID *string) (models.PostComment, error)
 }
 
+type BeanService interface {
+	CreateBean(ctx context.Context, userID string, req models.CreateBeanRequest) (models.Bean, error)
+	GetBean(ctx context.Context, beanID string) (models.Bean, error)
+	ListBeans(ctx context.Context, params beans.ListBeansParams) (models.GenericPage[models.Bean], error)
+	UpdateBean(ctx context.Context, userID, beanID string, req models.UpdateBeanRequest) (models.Bean, error)
+	DeleteBean(ctx context.Context, userID, beanID string) error
+}
+
 type ServerHandler struct {
 	logger              *slog.Logger
 	cfg                 Config
@@ -62,9 +71,11 @@ type ServerHandler struct {
 	userLibrary         UserLibrary
 	commentService      CommentService
 	notificationService NotificationService
+	beanService         BeanService
 }
 
 func NewServerHandler(
+	cfg Config,
 	recipeService *recipes.Service,
 	authService *auth.Service,
 	userService *users.Service,
@@ -73,7 +84,7 @@ func NewServerHandler(
 	userLibrary UserLibrary,
 	commentService CommentService,
 	notificationService NotificationService,
-	cfg Config,
+	beanService BeanService,
 ) *ServerHandler {
 	return &ServerHandler{
 		logger:              slog.Default(),
@@ -86,5 +97,6 @@ func NewServerHandler(
 		userLibrary:         userLibrary,
 		commentService:      commentService,
 		notificationService: notificationService,
+		beanService:         beanService,
 	}
 }

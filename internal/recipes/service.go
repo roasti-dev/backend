@@ -446,19 +446,22 @@ func (s *Service) confirmRecipeImages(ctx context.Context, recipe models.Recipe)
 }
 
 func recipePayloadToModel(payload models.RecipePayload) models.Recipe {
-	return models.Recipe{
+	recipe := models.Recipe{
 		Title:       payload.Title,
 		Description: payload.Description,
 		ImageId:     payload.ImageId,
 		BrewMethod:  payload.BrewMethod,
 		Difficulty:  payload.Difficulty,
 		RoastLevel:  payload.RoastLevel,
-		Beans:       payload.Beans,
 		Note:        payload.Note,
 		Public:      payload.Public != nil && *payload.Public,
 		Ingredients: mapSlice(derefSlice(payload.Ingredients), ingredientPayloadToModel),
 		Steps:       mapSlice(payload.Steps, brewStepPayloadToModel),
 	}
+	if payload.BeanId != nil {
+		recipe.Bean = &models.BeanRef{Id: *payload.BeanId}
+	}
+	return recipe
 }
 
 func ingredientPayloadToModel(payload models.RecipeIngredientPayload) models.RecipeIngredient {

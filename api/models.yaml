@@ -222,9 +222,9 @@ components:
           $ref: "#/components/schemas/Difficulty"
         roast_level:
           $ref: "#/components/schemas/RoastLevel"
-        beans:
-          type: string
-          description: Coffee beans used for the recipe
+        bean:
+          $ref: "#/components/schemas/BeanRef"
+          description: Coffee bean used for this recipe. Absent if no bean is attached.
         note:
           type: string
           description: Private note visible only to the recipe author
@@ -345,9 +345,9 @@ components:
           $ref: "#/components/schemas/Difficulty"
         roast_level:
           $ref: "#/components/schemas/RoastLevel"
-        beans:
+        bean_id:
           type: string
-          description: Coffee beans used for the recipe
+          description: ID of the bean to attach to this recipe. Omit or set to null to detach.
         note:
           type: string
           description: Private note visible only to the recipe author
@@ -983,3 +983,166 @@ components:
           format: int32
           minimum: 0
           description: Number of unread notifications for the current user
+
+    BeanRoastType:
+      type: string
+      description: Intended roast type for the bean
+      x-enum-varnames:
+        - BeanRoastTypeEspresso
+        - BeanRoastTypeFilter
+      enum:
+        - espresso
+        - filter
+
+    BeanRef:
+      type: object
+      description: Reference to a bean attached to a recipe
+      required:
+        - id
+        - name
+        - roast_type
+        - roaster
+        - status
+      properties:
+        id:
+          type: string
+          description: Unique bean identifier
+        name:
+          type: string
+          description: Bean name
+        roast_type:
+          $ref: "#/components/schemas/BeanRoastType"
+          description: Intended roast type
+        roaster:
+          type: string
+          description: Name of the roaster
+        status:
+          type: string
+          enum:
+            - available
+            - unavailable
+          description: Whether the bean is currently available in the catalog
+
+    Bean:
+      type: object
+      description: A coffee bean in the global catalog
+      required:
+        - id
+        - name
+        - roast_type
+        - roaster
+        - author
+        - created_at
+      properties:
+        id:
+          type: string
+          description: Unique bean identifier
+        name:
+          type: string
+          description: Bean name
+        roast_type:
+          $ref: "#/components/schemas/BeanRoastType"
+          description: Intended roast type
+        roaster:
+          type: string
+          description: Name of the roaster
+        country:
+          type: string
+          description: Country of origin
+        region:
+          type: string
+          description: Region within the country (e.g. Yirgacheffe, Huila)
+        farm:
+          type: string
+          description: Farm or cooperative name
+        process:
+          type: string
+          description: Processing method (e.g. washed, natural, honey)
+        descriptors:
+          type: array
+          description: Flavor descriptors
+          items:
+            type: string
+        q_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: Q-grading score on the SCA scale (0–100)
+        url:
+          type: string
+          description: Link to the bean's page at the roaster
+        image_id:
+          type: string
+          description: ID of the uploaded bean image
+        author:
+          $ref: "#/components/schemas/UserPreview"
+          description: User who added this bean to the catalog
+        created_at:
+          type: string
+          format: date-time
+          description: When the bean was added to the catalog
+
+    BeanPayload:
+      type: object
+      description: Fields for creating or updating a bean
+      additionalProperties: false
+      required:
+        - name
+        - roast_type
+        - roaster
+      properties:
+        name:
+          type: string
+          description: Bean name
+        roast_type:
+          $ref: "#/components/schemas/BeanRoastType"
+          description: Intended roast type
+        roaster:
+          type: string
+          description: Name of the roaster
+        country:
+          type: string
+          description: Country of origin
+        region:
+          type: string
+          description: Region within the country
+        farm:
+          type: string
+          description: Farm or cooperative name
+        process:
+          type: string
+          description: Processing method
+        descriptors:
+          type: array
+          description: Flavor descriptors
+          items:
+            type: string
+        q_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: Q-grading score on the SCA scale (0–100)
+        url:
+          type: string
+          description: Link to the bean's page at the roaster
+        image_id:
+          type: string
+          description: ID of the uploaded bean image
+
+    CreateBeanRequest:
+      $ref: "#/components/schemas/BeanPayload"
+
+    UpdateBeanRequest:
+      $ref: "#/components/schemas/BeanPayload"
+
+    BeanPage:
+      allOf:
+        - $ref: "#/components/schemas/Page"
+        - type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/Bean"

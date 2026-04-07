@@ -21,6 +21,7 @@ import (
 	"github.com/nikpivkin/roasti-app-backend/internal/api/apierr"
 	"github.com/nikpivkin/roasti-app-backend/internal/app/middleware"
 	"github.com/nikpivkin/roasti-app-backend/internal/auth"
+	"github.com/nikpivkin/roasti-app-backend/internal/beans"
 	"github.com/nikpivkin/roasti-app-backend/internal/comments"
 	"github.com/nikpivkin/roasti-app-backend/internal/db"
 	"github.com/nikpivkin/roasti-app-backend/internal/events"
@@ -103,6 +104,9 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 	notificationService := notifications.NewService(notificationRepo)
 	bus.Subscribe(notificationService.HandleEvent)
 
+	beanRepo := beans.NewRepository(database, runner)
+	beanService := beans.NewService(slog.Default(), database, beanRepo, uploader)
+
 	revokedTokenRepo := auth.NewRevokedTokenRepository(database)
 	startRevokedTokenCleanup(ctx, revokedTokenRepo)
 
@@ -116,16 +120,19 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 		return nil, err
 	}
 
+	ul := &userLibrary{users: userRepo, likes: likeService, recipes: recipeService, posts: postService}
+
 	strictHandler := handlers.NewServerHandler(
-		recipeService, authService,
-		userService, uploader,
-		postService,
-		&userLibrary{users: userRepo, likes: likeService, recipes: recipeService, posts: postService},
-		commentService,
-		notificationService,
 		handlers.Config{
 			SecureCookies: cfg.SecureCookies,
 		},
+		recipeService, authService,
+		userService, uploader,
+		postService,
+		ul,
+		commentService,
+		notificationService,
+		beanService,
 	)
 	handler := handlers.NewStrictHandlerWithOptions(strictHandler, nil, handlers.StrictHTTPServerOptions{
 		ResponseErrorHandlerFunc: responseErrorHandler,

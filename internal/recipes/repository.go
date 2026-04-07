@@ -34,7 +34,6 @@ var (
 		"recipes.brew_method",
 		"recipes.difficulty",
 		"recipes.roast_level",
-		"recipes.beans",
 		"recipes.note",
 		"recipes.public",
 		"recipes.created_at",
@@ -45,6 +44,11 @@ var (
 		"origin_recipes.author_id",
 		"origin_authors.username",
 		"origin_authors.avatar_id",
+		"b.id",
+		"b.name",
+		"b.roast_type",
+		"b.roaster",
+		"b.deleted_at",
 	}
 
 	recipeInsertColumns = []string{
@@ -56,7 +60,7 @@ var (
 		"brew_method",
 		"difficulty",
 		"roast_level",
-		"beans",
+		"bean_id",
 		"note",
 		"public",
 		"created_at",
@@ -134,6 +138,11 @@ func (r *Repository) UpsertRecipe(ctx context.Context, recipe models.Recipe) err
 		originRecipeID = &recipe.Origin.RecipeId
 	}
 
+	var beanID *string
+	if recipe.Bean != nil {
+		beanID = &recipe.Bean.Id
+	}
+
 	query := r.psql.Insert(recipesTable).
 		Columns(recipeInsertColumns...).
 		Values(
@@ -145,7 +154,7 @@ func (r *Repository) UpsertRecipe(ctx context.Context, recipe models.Recipe) err
 			recipe.BrewMethod,
 			recipe.Difficulty,
 			recipe.RoastLevel,
-			recipe.Beans,
+			beanID,
 			recipe.Note,
 			recipe.Public,
 			now,
@@ -159,7 +168,7 @@ func (r *Repository) UpsertRecipe(ctx context.Context, recipe models.Recipe) err
 			"brew_method = EXCLUDED.brew_method, " +
 			"difficulty = EXCLUDED.difficulty, " +
 			"roast_level = EXCLUDED.roast_level, " +
-			"beans = EXCLUDED.beans, " +
+			"bean_id = EXCLUDED.bean_id, " +
 			"note = EXCLUDED.note, " +
 			"public = EXCLUDED.public, " +
 			"updated_at = EXCLUDED.updated_at")
@@ -223,6 +232,7 @@ func (r *Repository) GetRecipeByID(ctx context.Context, recipeID string) (models
 		Join("users ON users.id = recipes.author_id").
 		LeftJoin("recipes AS origin_recipes ON origin_recipes.id = recipes.origin_recipe_id").
 		LeftJoin("users AS origin_authors ON origin_authors.id = origin_recipes.author_id").
+		LeftJoin("beans b ON b.id = recipes.bean_id").
 		Where(sq.Eq{"recipes.id": recipeID}).
 		Limit(1)
 
@@ -263,7 +273,8 @@ func (r *Repository) ListRecipes(
 		From(recipesTable).
 		Join("users ON users.id = recipes.author_id").
 		LeftJoin("recipes AS origin_recipes ON origin_recipes.id = recipes.origin_recipe_id").
-		LeftJoin("users AS origin_authors ON origin_authors.id = origin_recipes.author_id")
+		LeftJoin("users AS origin_authors ON origin_authors.id = origin_recipes.author_id").
+		LeftJoin("beans b ON b.id = recipes.bean_id")
 	sb = applyListRecipesFilter(sb, params, currentUserID)
 	sb = applyPagination(sb, pag)
 	sb = applySort(sb, params.SortField, params.SortDirection, recipeSortableColumns, "recipes.created_at")
@@ -323,6 +334,7 @@ func (r *Repository) GetRecipesByIDs(ctx context.Context, currentUserID string, 
 		Join("users ON users.id = recipes.author_id").
 		LeftJoin("recipes AS origin_recipes ON origin_recipes.id = recipes.origin_recipe_id").
 		LeftJoin("users AS origin_authors ON origin_authors.id = origin_recipes.author_id").
+		LeftJoin("beans b ON b.id = recipes.bean_id").
 		Where(sq.Eq{"recipes.id": ids}).
 		Where(sq.Or{
 			sq.Eq{"recipes.public": true},
@@ -492,6 +504,8 @@ func scanRecipe(s scanner) (models.Recipe, error) {
 	var originAuthorID sql.NullString
 	var originUsername sql.NullString
 	var originAvatarID sql.NullString
+	var beanID, beanName, beanRoastType, beanRoaster sql.NullString
+	var beanDeletedAt sql.NullString
 
 	err := s.Scan(
 		&recipe.Id,
@@ -502,7 +516,6 @@ func scanRecipe(s scanner) (models.Recipe, error) {
 		&recipe.BrewMethod,
 		&recipe.Difficulty,
 		&recipe.RoastLevel,
-		&recipe.Beans,
 		&recipe.Note,
 		&recipe.Public,
 		&recipe.CreatedAt,
@@ -513,6 +526,11 @@ func scanRecipe(s scanner) (models.Recipe, error) {
 		&originAuthorID,
 		&originUsername,
 		&originAvatarID,
+		&beanID,
+		&beanName,
+		&beanRoastType,
+		&beanRoaster,
+		&beanDeletedAt,
 	)
 	recipe.Author.Id = recipe.AuthorId
 
@@ -524,6 +542,20 @@ func scanRecipe(s scanner) (models.Recipe, error) {
 				Username: originUsername.String,
 				AvatarId: &originAvatarID.String,
 			},
+		}
+	}
+
+	if beanID.Valid {
+		status := models.BeanRefStatusAvailable
+		if beanDeletedAt.Valid {
+			status = models.BeanRefStatusUnavailable
+		}
+		recipe.Bean = &models.BeanRef{
+			Id:        beanID.String,
+			Name:      beanName.String,
+			RoastType: models.BeanRoastType(beanRoastType.String),
+			Roaster:   beanRoaster.String,
+			Status:    status,
 		}
 	}
 

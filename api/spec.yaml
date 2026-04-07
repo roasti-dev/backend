@@ -25,6 +25,8 @@ tags:
     description: Endpoints that do not require authentication
   - name: notifications
     description: In-app notification management
+  - name: beans
+    description: Global coffee bean catalog
 paths:
   /health:
     get:
@@ -1020,6 +1022,142 @@ paths:
           description: Unauthorized
         "404":
           description: User not found
+        "500":
+          description: Internal server error
+
+  /api/v1/beans:
+    post:
+      summary: Create bean
+      operationId: createBean
+      description: Adds a new coffee bean to the global catalog.
+      tags: [beans]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./models.yaml#/components/schemas/CreateBeanRequest"
+      responses:
+        "201":
+          description: Bean created
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/Bean"
+        "400":
+          description: Invalid request body
+        "500":
+          description: Internal server error
+
+    get:
+      summary: List beans
+      operationId: listBeans
+      description: Returns a paginated list of beans from the catalog. Supports search by name and roaster.
+      tags: [beans]
+      parameters:
+        - name: q
+          in: query
+          description: Search query matched against bean name and roaster
+          schema:
+            type: string
+        - name: page
+          in: query
+          description: Page number
+          schema:
+            $ref: "./models.yaml#/components/schemas/PageParam"
+        - name: limit
+          in: query
+          description: Number of items per page
+          schema:
+            $ref: "./models.yaml#/components/schemas/LimitParam"
+      responses:
+        "200":
+          description: Paginated list of beans
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/BeanPage"
+        "500":
+          description: Internal server error
+
+  /api/v1/beans/{bean_id}:
+    get:
+      summary: Get bean
+      operationId: getBean
+      description: Returns a single bean by ID.
+      tags: [beans]
+      parameters:
+        - name: bean_id
+          in: path
+          required: true
+          description: Bean identifier
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Bean found
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/Bean"
+        "404":
+          description: Bean not found
+        "500":
+          description: Internal server error
+
+    put:
+      summary: Update bean
+      operationId: updateBean
+      description: Updates a bean. Only the creator can update it.
+      tags: [beans]
+      parameters:
+        - name: bean_id
+          in: path
+          required: true
+          description: Bean identifier
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./models.yaml#/components/schemas/UpdateBeanRequest"
+      responses:
+        "200":
+          description: Bean updated
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/Bean"
+        "400":
+          description: Invalid request body
+        "403":
+          description: Not the creator of this bean
+        "404":
+          description: Bean not found
+        "500":
+          description: Internal server error
+
+    delete:
+      summary: Delete bean
+      operationId: deleteBean
+      description: Soft-deletes a bean. Only the creator can delete it.
+      tags: [beans]
+      parameters:
+        - name: bean_id
+          in: path
+          required: true
+          description: Bean identifier
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Bean deleted
+        "403":
+          description: Not the creator of this bean
+        "404":
+          description: Bean not found
         "500":
           description: Internal server error
 

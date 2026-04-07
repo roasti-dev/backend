@@ -100,7 +100,7 @@ func TestPostRepository_Create_WithBlocks(t *testing.T) {
 		assert.Equal(t, models.PostBlockTypeRecipe, got.Blocks[0].Type)
 		require.NotNil(t, got.Blocks[0].Recipe)
 		assert.Equal(t, recipeID, got.Blocks[0].Recipe.Id)
-		assert.Equal(t, models.Unavailable, got.Blocks[0].Recipe.Status)
+		assert.Equal(t, models.PostRecipeRefStatusUnavailable, got.Blocks[0].Recipe.Status)
 	})
 
 	t.Run("recipe block - unavailable when recipe is private", func(t *testing.T) {
@@ -122,7 +122,7 @@ func TestPostRepository_Create_WithBlocks(t *testing.T) {
 		got, err := repo.GetPostByID(t.Context(), p.Id)
 		require.NoError(t, err)
 		require.NotNil(t, got.Blocks[0].Recipe)
-		assert.Equal(t, models.Unavailable, got.Blocks[0].Recipe.Status)
+		assert.Equal(t, models.PostRecipeRefStatusUnavailable, got.Blocks[0].Recipe.Status)
 	})
 
 	t.Run("recipe block - available when recipe is public", func(t *testing.T) {
@@ -142,7 +142,7 @@ func TestPostRepository_Create_WithBlocks(t *testing.T) {
 		got, err := repo.GetPostByID(t.Context(), p.Id)
 		require.NoError(t, err)
 		require.NotNil(t, got.Blocks[0].Recipe)
-		assert.Equal(t, models.Available, got.Blocks[0].Recipe.Status)
+		assert.Equal(t, models.PostRecipeRefStatusAvailable, got.Blocks[0].Recipe.Status)
 	})
 
 	t.Run("preserves block order", func(t *testing.T) {
