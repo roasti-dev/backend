@@ -51,6 +51,11 @@ paths:
       description: Returns a paginated list of posts sorted by date (newest first).
       tags: [posts]
       parameters:
+        - name: author_id
+          in: query
+          schema:
+            type: string
+            description: Filter by author
         - name: page
           in: query
           schema:

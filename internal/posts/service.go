@@ -21,7 +21,7 @@ type PostRepository interface {
 	GetPostsByIDs(ctx context.Context, ids []string) ([]models.Post, error)
 	UpdatePost(ctx context.Context, postID, title string, blocks []models.PostBlock) error
 	DeletePost(ctx context.Context, postID string) error
-	ListPosts(ctx context.Context, pag models.PaginationParams) ([]models.Post, int, error)
+	ListPosts(ctx context.Context, params ListPostsParams) ([]models.Post, int, error)
 }
 
 type CommentService interface {
@@ -47,8 +47,9 @@ type EventPublisher interface {
 }
 
 type ListPostsParams struct {
-	Limit *int32
-	Page  *int32
+	AuthorID *string
+	Limit    *int32
+	Page     *int32
 }
 
 func (p ListPostsParams) Pagination() models.PaginationParams {
@@ -165,7 +166,7 @@ func (s *Service) CreatePost(ctx context.Context, userID string, req models.Crea
 func (s *Service) ListPosts(ctx context.Context, userID string, params ListPostsParams) (models.GenericPage[models.Post], error) {
 	pag := params.Pagination()
 
-	postList, total, err := s.repo.ListPosts(ctx, pag)
+	postList, total, err := s.repo.ListPosts(ctx, params)
 	if err != nil {
 		return models.GenericPage[models.Post]{}, err
 	}

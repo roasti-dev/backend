@@ -250,7 +250,7 @@ func TestPostRepository_ListPosts(t *testing.T) {
 		repo, _ := setupPostRepo(t)
 		testutil.CreateTestPost(t, repo, "post-1", "user-1")
 
-		posts, total, err := repo.ListPosts(t.Context(), models.NewPaginationParams(1, 20))
+		posts, total, err := repo.ListPosts(t.Context(), posts.ListPostsParams{Page: new(int32(1)), Limit: new(int32(20))})
 		require.NoError(t, err)
 		assert.Equal(t, 1, total)
 		require.Len(t, posts, 1)
@@ -262,7 +262,7 @@ func TestPostRepository_ListPosts(t *testing.T) {
 		repo, _ := setupPostRepo(t)
 		testutil.CreateTestPost(t, repo, "post-1", "user-1")
 
-		result, _, err := repo.ListPosts(t.Context(), models.NewPaginationParams(1, 20))
+		result, _, err := repo.ListPosts(t.Context(), posts.ListPostsParams{Page: new(int32(1)), Limit: new(int32(20))})
 		require.NoError(t, err)
 		assert.NotNil(t, result[0].Blocks)
 		assert.NotNil(t, result[0].Comments)
@@ -273,7 +273,7 @@ func TestPostRepository_ListPosts(t *testing.T) {
 		testutil.CreateTestPost(t, repo, "post-1", "user-1")
 		testutil.CreateTestPost(t, repo, "post-2", "user-1")
 
-		result, _, err := repo.ListPosts(t.Context(), models.NewPaginationParams(1, 20))
+		result, _, err := repo.ListPosts(t.Context(), posts.ListPostsParams{Page: new(int32(1)), Limit: new(int32(20))})
 		require.NoError(t, err)
 		require.Len(t, result, 2)
 		assert.Equal(t, "post-2", result[0].Id)
@@ -286,12 +286,12 @@ func TestPostRepository_ListPosts(t *testing.T) {
 		testutil.CreateTestPost(t, repo, "post-2", "user-1")
 		testutil.CreateTestPost(t, repo, "post-3", "user-1")
 
-		result, total, err := repo.ListPosts(t.Context(), models.NewPaginationParams(1, 2))
+		result, total, err := repo.ListPosts(t.Context(), posts.ListPostsParams{Page: new(int32(1)), Limit: new(int32(2))})
 		require.NoError(t, err)
 		assert.Equal(t, 3, total)
 		assert.Len(t, result, 2)
 
-		page2, _, err := repo.ListPosts(t.Context(), models.NewPaginationParams(2, 2))
+		page2, _, err := repo.ListPosts(t.Context(), posts.ListPostsParams{Page: new(int32(2)), Limit: new(int32(2))})
 		require.NoError(t, err)
 		assert.Len(t, page2, 1)
 	})
@@ -299,7 +299,7 @@ func TestPostRepository_ListPosts(t *testing.T) {
 	t.Run("returns empty when no posts", func(t *testing.T) {
 		repo, _ := setupPostRepo(t)
 
-		result, total, err := repo.ListPosts(t.Context(), models.NewPaginationParams(1, 20))
+		result, total, err := repo.ListPosts(t.Context(), posts.ListPostsParams{Page: new(int32(1)), Limit: new(int32(20))})
 		require.NoError(t, err)
 		assert.Equal(t, 0, total)
 		assert.Empty(t, result)
@@ -312,7 +312,7 @@ func TestPostRepository_ListPosts_WithComments(t *testing.T) {
 	testutil.CreateTestComment(t, db, "comment-1", "post-1", "user-2", "Nice post!")
 	testutil.CreateTestComment(t, db, "comment-2", "post-1", "user-1", "Thanks!")
 
-	result, _, err := repo.ListPosts(t.Context(), models.NewPaginationParams(1, 20))
+	result, _, err := repo.ListPosts(t.Context(), posts.ListPostsParams{Page: new(int32(1)), Limit: new(int32(20))})
 	require.NoError(t, err)
 	require.Len(t, result, 1)
 

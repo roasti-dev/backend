@@ -9,6 +9,9 @@ FIREBASE_CONTAINER_NAME := firebase-emulator-dev
 FIREBASE_TEST_CONTAINER_NAME := firebase-emulator-test
 FIREBASE_DATA_DIR := $(PWD)/.firebase-data
 
+DATABASE_PATH  ?= data.db
+UPLOADS_PATH   ?= ./uploads
+
 OAPI_SPEC            := api/spec.yaml
 OAPI_CONFIG          := api/spec-config.yaml
 OAPI_MODELS_CONFIG   := api/models-config.yaml
@@ -95,6 +98,19 @@ firebase-emulator-test: firebase-pull
 		andreysenov/firebase-tools:$(FIREBASE_TOOLS_VERSION) \
 		firebase emulators:start --only auth --project $(FIREBASE_PROJECT)
 
+dev: firebase-emulator wait-firebase
+	FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:$(FIREBASE_AUTH_PORT) \
+	FIREBASE_IDENTITY_BASE_URL=http://localhost:$(FIREBASE_AUTH_PORT)/identitytoolkit.googleapis.com/v1/accounts \
+	FIREBASE_TOKEN_BASE_URL=http://localhost:$(FIREBASE_AUTH_PORT)/securetoken.googleapis.com/v1/token \
+	DATABASE_PATH=$(DATABASE_PATH) \
+	UPLOADS_PATH=$(UPLOADS_PATH) \
+	SERVER_PORT=9090 DEBUG=1 $(GO) run ./cmd/server
+
+clean:
+	rm -f $(DATABASE_PATH)
+	rm -rf $(UPLOADS_PATH)
+	rm -rf $(FIREBASE_DATA_DIR)
+
 firebase-emulator-stop:
 	docker stop $(FIREBASE_CONTAINER_NAME)
 
@@ -108,7 +124,7 @@ wait-firebase:
 	done
 	@echo "Firebase emulator is ready"
 
-.PHONY: build build-debian start setup-server deploy lint \
+.PHONY: build build-debian start dev clean setup-server deploy lint \
 	test-e2e test-unit firebase-pull \
 	firebase-emulator firebase-emulator-stop \
 	firebase-emulator-test firebase-emulator-test-stop \

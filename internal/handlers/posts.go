@@ -21,8 +21,9 @@ func (s *ServerHandler) ListPostComments(ctx context.Context, request ListPostCo
 func (s *ServerHandler) ListPosts(ctx context.Context, request ListPostsRequestObject) (ListPostsResponseObject, error) {
 	userID := requestctx.GetUserID(ctx)
 	page, err := s.postService.ListPosts(ctx, userID, posts.ListPostsParams{
-		Limit: request.Params.Limit,
-		Page:  request.Params.Page,
+		AuthorID: request.Params.AuthorId,
+		Limit:    request.Params.Limit,
+		Page:     request.Params.Page,
 	})
 	if err != nil {
 		return nil, err

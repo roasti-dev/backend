@@ -65,8 +65,9 @@ type ListNotificationsParams struct {
 
 // ListPostsParams defines parameters for ListPosts.
 type ListPostsParams struct {
-	Page  *externalRef0.PageParam  `form:"page,omitempty" json:"page,omitempty"`
-	Limit *externalRef0.LimitParam `form:"limit,omitempty" json:"limit,omitempty"`
+	AuthorId *string                  `form:"author_id,omitempty" json:"author_id,omitempty"`
+	Page     *externalRef0.PageParam  `form:"page,omitempty" json:"page,omitempty"`
+	Limit    *externalRef0.LimitParam `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // ListPostCommentsParams defines parameters for ListPostComments.
@@ -1704,6 +1705,22 @@ func NewListPostsRequest(server string, params *ListPostsParams) (*http.Request,
 
 	if params != nil {
 		queryValues := queryURL.Query()
+
+		if params.AuthorId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "author_id", *params.AuthorId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
 
 		if params.Page != nil {
 

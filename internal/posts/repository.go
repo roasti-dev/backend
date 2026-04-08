@@ -135,16 +135,19 @@ func (r *Repository) GetPostByID(ctx context.Context, postID string) (models.Pos
 	return post, nil
 }
 
-func (r *Repository) ListPosts(ctx context.Context, pag models.PaginationParams) ([]models.Post, int, error) {
-	rows, err := r.psql.
+func (r *Repository) ListPosts(ctx context.Context, params ListPostsParams) ([]models.Post, int, error) {
+	pag := params.Pagination()
+	q := r.psql.
 		Select(postSelectColumns...).
 		From(postsTable).
 		Join("users ON users.id = posts.author_id").
 		OrderBy("posts.created_at DESC, posts.id DESC").
 		Limit(uint64(pag.GetLimit())).
-		Offset(uint64(pag.Offset())).
-		RunWith(r.runner).
-		QueryContext(ctx)
+		Offset(uint64(pag.Offset()))
+	if params.AuthorID != nil {
+		q = q.Where(sq.Eq{"posts.author_id": *params.AuthorID})
+	}
+	rows, err := q.RunWith(r.runner).QueryContext(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -175,8 +178,11 @@ func (r *Repository) ListPosts(ctx context.Context, pag models.PaginationParams)
 	}
 
 	var total int
-	if err := r.psql.Select("COUNT(*)").From(postsTable).
-		RunWith(r.runner).QueryRowContext(ctx).Scan(&total); err != nil {
+	countQ := r.psql.Select("COUNT(*)").From(postsTable)
+	if params.AuthorID != nil {
+		countQ = countQ.Where(sq.Eq{"author_id": *params.AuthorID})
+	}
+	if err := countQ.RunWith(r.runner).QueryRowContext(ctx).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 
