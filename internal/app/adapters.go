@@ -32,8 +32,12 @@ func (f *firebaseIdentityCreator) CreateIdentity(ctx context.Context, email, pas
 	return user.UID, nil
 }
 
+type userStore interface {
+	GetByID(ctx context.Context, userID string) (users.User, error)
+}
+
 type userLibrary struct {
-	users   users.UserStore
+	users   userStore
 	likes   *likes.Service
 	recipes *recipes.Service
 	posts   *posts.Service

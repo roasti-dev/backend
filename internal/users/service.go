@@ -10,7 +10,7 @@ import (
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
 )
 
-type UserStore interface {
+type userStore interface {
 	GetByID(ctx context.Context, userID string) (User, error)
 	GetByUsername(ctx context.Context, username string) (User, error)
 	Create(ctx context.Context, user User) error
@@ -42,13 +42,13 @@ type RegisterInput struct {
 }
 
 type Service struct {
-	repo     UserStore
+	repo     userStore
 	identity identityCreator
 	uploader uploader
 }
 
 func NewUserService(
-	repo UserStore,
+	repo userStore,
 	identity identityCreator,
 	uploader uploader,
 ) *Service {
