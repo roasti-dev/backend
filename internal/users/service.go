@@ -21,12 +21,12 @@ type UserStore interface {
 
 // IdentityCreator creates a user identity in an external auth provider
 // and returns the assigned UID.
-type IdentityCreator interface {
+type identityCreator interface {
 	CreateIdentity(ctx context.Context, email, password string) (uid string, err error)
 }
 
 // Uploader manages uploaded files.
-type Uploader interface {
+type uploader interface {
 	Confirm(ctx context.Context, fileID string) error
 	Delete(ctx context.Context, fileID string) error
 }
@@ -43,14 +43,14 @@ type RegisterInput struct {
 
 type Service struct {
 	repo     UserStore
-	identity IdentityCreator
-	uploader Uploader
+	identity identityCreator
+	uploader uploader
 }
 
 func NewUserService(
 	repo UserStore,
-	identity IdentityCreator,
-	uploader Uploader,
+	identity identityCreator,
+	uploader uploader,
 ) *Service {
 	return &Service{
 		repo:     repo,

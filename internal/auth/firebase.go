@@ -21,7 +21,7 @@ type firebasePasswordSigner struct {
 	client          *http.Client
 }
 
-func NewFirebasePasswordSigner(apiKey, identityBaseURL, tokenBaseURL string) FirebasePasswordSigner {
+func NewFirebasePasswordSigner(apiKey, identityBaseURL, tokenBaseURL string) passwordSigner {
 	return &firebasePasswordSigner{
 		identityBaseURL: identityBaseURL,
 		tokenBaseURL:    tokenBaseURL,

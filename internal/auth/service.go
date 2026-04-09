@@ -13,7 +13,7 @@ import (
 	"github.com/nikpivkin/roasti-app-backend/internal/users"
 )
 
-type FirebasePasswordSigner interface {
+type passwordSigner interface {
 	SignInWithPassword(ctx context.Context, email, password string) (SignInResult, error)
 	RefreshToken(ctx context.Context, refreshToken string) (SignInResult, error)
 }
@@ -23,13 +23,13 @@ type SignInResult struct {
 	RefreshToken string
 }
 
-type RevokedTokenStore interface {
+type revokedTokenStore interface {
 	IsRevoked(ctx context.Context, token string) (bool, error)
 	Add(ctx context.Context, token string) error
 }
 
 // UserService is the subset of users.Service that auth needs.
-type UserService interface {
+type userService interface {
 	Register(ctx context.Context, input users.RegisterInput) (users.User, error)
 	FindByUsername(ctx context.Context, username string) (users.User, error)
 	FindByID(ctx context.Context, userID string) (users.User, error)
@@ -38,17 +38,17 @@ type UserService interface {
 type Service struct {
 	logger        *slog.Logger
 	policy        PasswordPolicy
-	users         UserService
-	revokedTokens RevokedTokenStore
+	users         userService
+	revokedTokens revokedTokenStore
 	firebaseAuth  *firebaseAuth.Client
-	signer        FirebasePasswordSigner
+	signer        passwordSigner
 }
 
 func NewService(
-	users UserService,
-	revokedTokens RevokedTokenStore,
+	users userService,
+	revokedTokens revokedTokenStore,
 	firebaseAuth *firebaseAuth.Client,
-	passwordSigner FirebasePasswordSigner,
+	passwordSigner passwordSigner,
 	policy PasswordPolicy,
 ) *Service {
 	return &Service{

@@ -12,7 +12,7 @@ import (
 
 var ErrTargetNotFound = apierr.NewApiError(http.StatusNotFound, "target not found")
 
-type LikeRepository interface {
+type likeRepository interface {
 	Exists(ctx context.Context, userID, targetID string, targetType models.LikeTargetType) (bool, error)
 	Create(ctx context.Context, like Like) error
 	Delete(ctx context.Context, userID, targetID string, targetType models.LikeTargetType) error
@@ -24,10 +24,10 @@ type LikeRepository interface {
 }
 
 type Service struct {
-	repo LikeRepository
+	repo likeRepository
 }
 
-func NewService(repo LikeRepository) *Service {
+func NewService(repo likeRepository) *Service {
 	return &Service{repo: repo}
 }
 

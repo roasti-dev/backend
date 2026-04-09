@@ -14,7 +14,7 @@ import (
 	"github.com/nikpivkin/roasti-app-backend/internal/x/id"
 )
 
-type PostRepository interface {
+type postRepository interface {
 	Create(ctx context.Context, post models.Post) error
 	GetPostByID(ctx context.Context, postID string) (models.Post, error)
 	GetPostsByIDs(ctx context.Context, ids []string) ([]models.Post, error)
@@ -23,25 +23,25 @@ type PostRepository interface {
 	ListPosts(ctx context.Context, params ListPostsParams) ([]models.Post, int, error)
 }
 
-type CommentService interface {
+type commentService interface {
 	Create(ctx context.Context, userID, targetID, targetType, text string, parentID *string) (models.PostComment, error)
 	List(ctx context.Context, targetID string, pag models.PaginationParams) (models.GenericPage[models.CommentThread], error)
 }
 
-type LikeEnricher interface {
+type likeEnricher interface {
 	EnrichOne(ctx context.Context, userID string, item likes.Likeable) error
 	EnrichMany(ctx context.Context, userID string, items []likes.Likeable) error
 }
 
-type LikeToggler interface {
+type likeToggler interface {
 	Toggle(ctx context.Context, userID, targetID string, targetType models.LikeTargetType) (likes.ToggleResult, error)
 }
 
-type Uploader interface {
+type uploader interface {
 	Confirm(ctx context.Context, fileID string) error
 }
 
-type EventPublisher interface {
+type eventPublisher interface {
 	Publish(e events.Event)
 }
 
@@ -65,15 +65,15 @@ func (p ListPostsParams) Pagination() models.PaginationParams {
 
 type Service struct {
 	logger         *slog.Logger
-	repo           PostRepository
-	uploader       Uploader
-	likeEnricher   LikeEnricher
-	likeToggler    LikeToggler
-	publisher      EventPublisher
-	commentService CommentService
+	repo           postRepository
+	uploader       uploader
+	likeEnricher   likeEnricher
+	likeToggler    likeToggler
+	publisher      eventPublisher
+	commentService commentService
 }
 
-func NewService(repo PostRepository, uploader Uploader, likeEnricher LikeEnricher, likeToggler LikeToggler, publisher EventPublisher, commentService CommentService) *Service {
+func NewService(repo postRepository, uploader uploader, likeEnricher likeEnricher, likeToggler likeToggler, publisher eventPublisher, commentService commentService) *Service {
 	return &Service{
 		logger:         slog.Default(),
 		repo:           repo,

@@ -11,7 +11,7 @@ import (
 	"github.com/nikpivkin/roasti-app-backend/internal/x/id"
 )
 
-type NotificationRepository interface {
+type notificationRepository interface {
 	Create(ctx context.Context, n Notification) error
 	List(ctx context.Context, userID string, pag models.PaginationParams) ([]models.Notification, int, error)
 	UnreadCount(ctx context.Context, userID string) (int, error)
@@ -20,10 +20,10 @@ type NotificationRepository interface {
 
 type Service struct {
 	logger *slog.Logger
-	repo   NotificationRepository
+	repo   notificationRepository
 }
 
-func NewService(repo NotificationRepository) *Service {
+func NewService(repo notificationRepository) *Service {
 	return &Service{
 		logger: slog.Default(),
 		repo:   repo,

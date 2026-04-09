@@ -15,7 +15,7 @@ import (
 	"github.com/nikpivkin/roasti-app-backend/internal/x/id"
 )
 
-type RecipeRepository interface {
+type recipeRepository interface {
 	UpsertRecipe(ctx context.Context, recipe models.Recipe) error
 	GetRecipeByID(ctx context.Context, recipeID string) (models.Recipe, error)
 	ListRecipes(ctx context.Context, currentUserID string, params models.ListRecipesParams) (models.GenericPage[models.Recipe], error)
@@ -24,8 +24,7 @@ type RecipeRepository interface {
 	DeleteRecipe(ctx context.Context, userID, recipeID string) error
 }
 
-// Uploader manages uploaded files.
-type Uploader interface {
+type uploader interface {
 	Confirm(ctx context.Context, fileID string) error
 	Copy(ctx context.Context, fileID string) (string, error)
 	Delete(ctx context.Context, fileID string) error
@@ -36,30 +35,30 @@ type likeEnricher interface {
 	EnrichMany(ctx context.Context, userID string, items []likes.Likeable) error
 }
 
-type LikeToggler interface {
+type likeToggler interface {
 	Toggle(ctx context.Context, userID, targetID string, targetType models.LikeTargetType) (likes.ToggleResult, error)
 }
 
-type EventPublisher interface {
+type eventPublisher interface {
 	Publish(e events.Event)
 }
 
-type CommentService interface {
+type commentService interface {
 	Create(ctx context.Context, userID, targetID, targetType, text string, parentID *string) (models.PostComment, error)
 	List(ctx context.Context, targetID string, pag models.PaginationParams) (models.GenericPage[models.CommentThread], error)
 }
 
 type Service struct {
 	logger         *slog.Logger
-	repo           RecipeRepository
-	uploader       Uploader
+	repo           recipeRepository
+	uploader       uploader
 	likeEnricher   likeEnricher
-	likeToggler    LikeToggler
-	publisher      EventPublisher
-	commentService CommentService
+	likeToggler    likeToggler
+	publisher      eventPublisher
+	commentService commentService
 }
 
-func NewService(repo RecipeRepository, uploader Uploader, likeEnricher likeEnricher, likeToggler LikeToggler, publisher EventPublisher, commentService CommentService) *Service {
+func NewService(repo recipeRepository, uploader uploader, likeEnricher likeEnricher, likeToggler likeToggler, publisher eventPublisher, commentService commentService) *Service {
 	return &Service{
 		logger:         slog.Default(),
 		repo:           repo,

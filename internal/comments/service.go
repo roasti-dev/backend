@@ -13,7 +13,7 @@ import (
 
 const textMaxLen = 1000
 
-type Repository interface {
+type repository interface {
 	Create(ctx context.Context, comment models.PostComment, targetID, targetType string) error
 	GetByID(ctx context.Context, commentID string) (models.PostComment, error)
 	Update(ctx context.Context, commentID, text string) error
@@ -25,10 +25,10 @@ type Repository interface {
 
 type Service struct {
 	logger *slog.Logger
-	repo   Repository
+	repo   repository
 }
 
-func NewService(repo Repository) *Service {
+func NewService(repo repository) *Service {
 	return &Service{
 		logger: slog.Default(),
 		repo:   repo,
