@@ -60,6 +60,11 @@ func (s *Service) HandleEvent(e events.Event) {
 			return
 		}
 		n = Notification{ID: id.NewID(), UserID: ev.OwnerID, Type: TypeCommentPost, ActorID: ev.ByUserID, EntityID: ev.PostID}
+	case events.BeanCommentCreated:
+		if ev.OwnerID == ev.ByUserID {
+			return
+		}
+		n = Notification{ID: id.NewID(), UserID: ev.OwnerID, Type: TypeCommentBean, ActorID: ev.ByUserID, EntityID: ev.BeanID}
 	default:
 		return
 	}

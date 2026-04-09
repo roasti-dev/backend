@@ -59,6 +59,8 @@ type BeanService interface {
 	UpdateBean(ctx context.Context, userID, beanID string, req models.UpdateBeanRequest) (models.Bean, error)
 	DeleteBean(ctx context.Context, userID, beanID string) error
 	ToggleLike(ctx context.Context, userID, beanID string) (likes.ToggleResult, error)
+	CreateComment(ctx context.Context, userID, beanID, text string, parentID *string) (models.PostComment, error)
+	ListComments(ctx context.Context, beanID string, pag models.PaginationParams) (models.GenericPage[models.CommentThread], error)
 }
 
 type ServerHandler struct {

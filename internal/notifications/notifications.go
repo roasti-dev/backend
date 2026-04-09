@@ -15,4 +15,5 @@ const (
 	TypeLikeBean      = "like_bean"
 	TypeCommentRecipe = "comment_recipe"
 	TypeCommentPost   = "comment_post"
+	TypeCommentBean   = "comment_bean"
 )

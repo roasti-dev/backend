@@ -54,6 +54,12 @@ type ListBeansParams struct {
 	Limit *externalRef0.LimitParam `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListBeanCommentsParams defines parameters for ListBeanComments.
+type ListBeanCommentsParams struct {
+	Page  *externalRef0.PageParam  `form:"page,omitempty" json:"page,omitempty"`
+	Limit *externalRef0.LimitParam `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // ListNotificationsParams defines parameters for ListNotifications.
 type ListNotificationsParams struct {
 	// Page Page number
@@ -136,6 +142,9 @@ type CreateBeanJSONRequestBody = externalRef0.CreateBeanRequest
 
 // UpdateBeanJSONRequestBody defines body for UpdateBean for application/json ContentType.
 type UpdateBeanJSONRequestBody = externalRef0.UpdateBeanRequest
+
+// CreateBeanCommentJSONRequestBody defines body for CreateBeanComment for application/json ContentType.
+type CreateBeanCommentJSONRequestBody = externalRef0.CreatePostCommentRequest
 
 // UpdateCommentJSONRequestBody defines body for UpdateComment for application/json ContentType.
 type UpdateCommentJSONRequestBody = externalRef0.UpdatePostCommentRequest
@@ -280,6 +289,14 @@ type ClientInterface interface {
 	UpdateBeanWithBody(ctx context.Context, beanId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	UpdateBean(ctx context.Context, beanId string, body UpdateBeanJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListBeanComments request
+	ListBeanComments(ctx context.Context, beanId string, params *ListBeanCommentsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateBeanCommentWithBody request with any body
+	CreateBeanCommentWithBody(ctx context.Context, beanId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateBeanComment(ctx context.Context, beanId string, body CreateBeanCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ToggleBeanLike request
 	ToggleBeanLike(ctx context.Context, beanId string, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -585,6 +602,42 @@ func (c *Client) UpdateBeanWithBody(ctx context.Context, beanId string, contentT
 
 func (c *Client) UpdateBean(ctx context.Context, beanId string, body UpdateBeanJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateBeanRequest(c.Server, beanId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListBeanComments(ctx context.Context, beanId string, params *ListBeanCommentsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListBeanCommentsRequest(c.Server, beanId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateBeanCommentWithBody(ctx context.Context, beanId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateBeanCommentRequestWithBody(c.Server, beanId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateBeanComment(ctx context.Context, beanId string, body CreateBeanCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateBeanCommentRequest(c.Server, beanId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1490,6 +1543,125 @@ func NewUpdateBeanRequestWithBody(server string, beanId string, contentType stri
 	}
 
 	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewListBeanCommentsRequest generates requests for ListBeanComments
+func NewListBeanCommentsRequest(server string, beanId string, params *ListBeanCommentsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "bean_id", beanId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/beans/%s/comments", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Page != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "page", *params.Page, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateBeanCommentRequest calls the generic CreateBeanComment builder with application/json body
+func NewCreateBeanCommentRequest(server string, beanId string, body CreateBeanCommentJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateBeanCommentRequestWithBody(server, beanId, "application/json", bodyReader)
+}
+
+// NewCreateBeanCommentRequestWithBody generates requests for CreateBeanComment with any type of body
+func NewCreateBeanCommentRequestWithBody(server string, beanId string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "bean_id", beanId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/beans/%s/comments", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -3064,6 +3236,14 @@ type ClientWithResponsesInterface interface {
 
 	UpdateBeanWithResponse(ctx context.Context, beanId string, body UpdateBeanJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateBeanResponse, error)
 
+	// ListBeanCommentsWithResponse request
+	ListBeanCommentsWithResponse(ctx context.Context, beanId string, params *ListBeanCommentsParams, reqEditors ...RequestEditorFn) (*ListBeanCommentsResponse, error)
+
+	// CreateBeanCommentWithBodyWithResponse request with any body
+	CreateBeanCommentWithBodyWithResponse(ctx context.Context, beanId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateBeanCommentResponse, error)
+
+	CreateBeanCommentWithResponse(ctx context.Context, beanId string, body CreateBeanCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateBeanCommentResponse, error)
+
 	// ToggleBeanLikeWithResponse request
 	ToggleBeanLikeWithResponse(ctx context.Context, beanId string, reqEditors ...RequestEditorFn) (*ToggleBeanLikeResponse, error)
 
@@ -3394,6 +3574,53 @@ func (r UpdateBeanResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r UpdateBeanResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ListBeanCommentsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *externalRef0.CommentPage
+	JSON404      *externalRef0.ApiErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r ListBeanCommentsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListBeanCommentsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateBeanCommentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *externalRef0.PostComment
+	JSON401      *externalRef0.ApiErrorResponse
+	JSON404      *externalRef0.ApiErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateBeanCommentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateBeanCommentResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -4254,6 +4481,32 @@ func (c *ClientWithResponses) UpdateBeanWithResponse(ctx context.Context, beanId
 	return ParseUpdateBeanResponse(rsp)
 }
 
+// ListBeanCommentsWithResponse request returning *ListBeanCommentsResponse
+func (c *ClientWithResponses) ListBeanCommentsWithResponse(ctx context.Context, beanId string, params *ListBeanCommentsParams, reqEditors ...RequestEditorFn) (*ListBeanCommentsResponse, error) {
+	rsp, err := c.ListBeanComments(ctx, beanId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListBeanCommentsResponse(rsp)
+}
+
+// CreateBeanCommentWithBodyWithResponse request with arbitrary body returning *CreateBeanCommentResponse
+func (c *ClientWithResponses) CreateBeanCommentWithBodyWithResponse(ctx context.Context, beanId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateBeanCommentResponse, error) {
+	rsp, err := c.CreateBeanCommentWithBody(ctx, beanId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateBeanCommentResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateBeanCommentWithResponse(ctx context.Context, beanId string, body CreateBeanCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateBeanCommentResponse, error) {
+	rsp, err := c.CreateBeanComment(ctx, beanId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateBeanCommentResponse(rsp)
+}
+
 // ToggleBeanLikeWithResponse request returning *ToggleBeanLikeResponse
 func (c *ClientWithResponses) ToggleBeanLikeWithResponse(ctx context.Context, beanId string, reqEditors ...RequestEditorFn) (*ToggleBeanLikeResponse, error) {
 	rsp, err := c.ToggleBeanLike(ctx, beanId, reqEditors...)
@@ -4887,6 +5140,79 @@ func ParseUpdateBeanResponse(rsp *http.Response) (*UpdateBeanResponse, error) {
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListBeanCommentsResponse parses an HTTP response from a ListBeanCommentsWithResponse call
+func ParseListBeanCommentsResponse(rsp *http.Response) (*ListBeanCommentsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListBeanCommentsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest externalRef0.CommentPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateBeanCommentResponse parses an HTTP response from a CreateBeanCommentWithResponse call
+func ParseCreateBeanCommentResponse(rsp *http.Response) (*CreateBeanCommentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateBeanCommentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest externalRef0.PostComment
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
 
 	}
 

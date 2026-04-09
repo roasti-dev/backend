@@ -1166,6 +1166,78 @@ paths:
         "500":
           description: Internal server error
 
+  /api/v1/beans/{bean_id}/comments:
+    get:
+      summary: List bean comments
+      operationId: listBeanComments
+      description: Returns a paginated list of root comments with their replies.
+      tags: [beans]
+      parameters:
+        - name: bean_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Bean identifier
+        - name: page
+          in: query
+          schema:
+            $ref: "./models.yaml#/components/schemas/PageParam"
+        - name: limit
+          in: query
+          schema:
+            $ref: "./models.yaml#/components/schemas/LimitParam"
+      responses:
+        "200":
+          description: Paginated list of comments
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/CommentPage"
+        "404":
+          description: Bean not found
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
+    post:
+      summary: Add comment to bean
+      operationId: createBeanComment
+      description: Adds a comment to a bean on behalf of the authenticated user.
+      tags: [beans]
+      parameters:
+        - name: bean_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Bean identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./models.yaml#/components/schemas/CreatePostCommentRequest"
+      responses:
+        "201":
+          description: Comment created
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/PostComment"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
+        "404":
+          description: Bean not found
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
+
   /api/v1/beans/{bean_id}/like:
     post:
       summary: Toggle like on a bean

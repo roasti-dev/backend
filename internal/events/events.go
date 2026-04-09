@@ -35,6 +35,14 @@ type BeanLikeToggled struct {
 	Liked    bool
 }
 
+// BeanCommentCreated is published when a user comments on a bean.
+type BeanCommentCreated struct {
+	BeanID    string
+	OwnerID   string
+	ByUserID  string
+	CommentID string
+}
+
 // RecipeCommentCreated is published when a user comments on a recipe.
 type RecipeCommentCreated struct {
 	RecipeID  string

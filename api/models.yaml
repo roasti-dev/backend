@@ -945,6 +945,7 @@ components:
         - like_bean
         - comment_recipe
         - comment_post
+        - comment_bean
 
     Notification:
       type: object

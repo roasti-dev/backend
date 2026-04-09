@@ -36,21 +36,27 @@ type likeToggler interface {
 	Toggle(ctx context.Context, userID, targetID string, targetType models.LikeTargetType) (likes.ToggleResult, error)
 }
 
+type commentService interface {
+	Create(ctx context.Context, userID, targetID, targetType, text string, parentID *string) (models.PostComment, error)
+	List(ctx context.Context, targetID string, pag models.PaginationParams) (models.GenericPage[models.CommentThread], error)
+}
+
 type eventPublisher interface {
 	Publish(e events.Event)
 }
 
 type Service struct {
-	logger      *slog.Logger
-	repo        repository
-	uploader    uploader
-	likeChecker likeChecker
-	likeToggler likeToggler
-	publisher   eventPublisher
+	logger         *slog.Logger
+	repo           repository
+	uploader       uploader
+	likeChecker    likeChecker
+	likeToggler    likeToggler
+	publisher      eventPublisher
+	commentService commentService
 }
 
-func NewService(logger *slog.Logger, repo repository, uploader uploader, likeChecker likeChecker, likeToggler likeToggler, publisher eventPublisher) *Service {
-	return &Service{logger: logger, repo: repo, uploader: uploader, likeChecker: likeChecker, likeToggler: likeToggler, publisher: publisher}
+func NewService(logger *slog.Logger, repo repository, uploader uploader, likeChecker likeChecker, likeToggler likeToggler, publisher eventPublisher, commentService commentService) *Service {
+	return &Service{logger: logger, repo: repo, uploader: uploader, likeChecker: likeChecker, likeToggler: likeToggler, publisher: publisher, commentService: commentService}
 }
 
 func (s *Service) CreateBean(ctx context.Context, userID string, req models.CreateBeanRequest) (models.Bean, error) {
@@ -182,6 +188,39 @@ func (s *Service) DeleteBean(ctx context.Context, userID, beanID string) error {
 		return ErrForbidden
 	}
 	return s.repo.SoftDelete(ctx, beanID)
+}
+
+func (s *Service) CreateComment(ctx context.Context, userID, beanID, text string, parentID *string) (models.PostComment, error) {
+	bean, err := s.repo.GetByID(ctx, beanID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return models.PostComment{}, ErrNotFound
+		}
+		return models.PostComment{}, err
+	}
+	created, err := s.commentService.Create(ctx, userID, beanID, "bean", text, parentID)
+	if err != nil {
+		return models.PostComment{}, err
+	}
+	if s.publisher != nil {
+		s.publisher.Publish(events.BeanCommentCreated{
+			BeanID:    beanID,
+			OwnerID:   bean.Author.Id,
+			ByUserID:  userID,
+			CommentID: created.Id,
+		})
+	}
+	return created, nil
+}
+
+func (s *Service) ListComments(ctx context.Context, beanID string, pag models.PaginationParams) (models.GenericPage[models.CommentThread], error) {
+	if _, err := s.repo.GetByID(ctx, beanID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return models.GenericPage[models.CommentThread]{}, ErrNotFound
+		}
+		return models.GenericPage[models.CommentThread]{}, err
+	}
+	return s.commentService.List(ctx, beanID, pag)
 }
 
 func (s *Service) confirmBeanImage(ctx context.Context, beanID string, imageID *string) {
