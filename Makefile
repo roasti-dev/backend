@@ -1,12 +1,10 @@
 GO ?= go
+FIREBASE := pnpm exec firebase
 
 GIT_COMMIT := $(shell git rev-parse --short HEAD)
 
-FIREBASE_TOOLS_VERSION := 15.10.0@sha256:740d133bffbcda740b49f7e5ce883ecf7412752a931c68a6ad2040a0622e03a4
 FIREBASE_PROJECT := roasti-dev-project
 FIREBASE_AUTH_PORT := 9099
-FIREBASE_CONTAINER_NAME := firebase-emulator-dev
-FIREBASE_TEST_CONTAINER_NAME := firebase-emulator-test
 FIREBASE_DATA_DIR := $(PWD)/.firebase-data
 
 DATABASE_PATH  ?= data.db
@@ -78,44 +76,28 @@ test-e2e: firebase-emulator-test wait-firebase
 cover:
 	$(GO) tool cover -html=coverage.out
 
-firebase-pull:
-	docker pull andreysenov/firebase-tools:$(FIREBASE_TOOLS_VERSION)
-
-firebase-emulator: firebase-pull
+firebase-emulator:
 	mkdir -p $(FIREBASE_DATA_DIR)
-	docker run -d --rm --name $(FIREBASE_CONTAINER_NAME) \
-		-p $(FIREBASE_AUTH_PORT):9099 -p 4000:4000 -p 4400:4400 -p 4500:4500 \
-		-v $(PWD)/firebase.json:/home/node/firebase.json \
-		-v $(FIREBASE_DATA_DIR):/data \
-		andreysenov/firebase-tools:$(FIREBASE_TOOLS_VERSION) \
-		firebase emulators:start --only auth --project $(FIREBASE_PROJECT) \
-		--import /data --export-on-exit /data
+	@bash -c '\
+		set -m; \
+		$(FIREBASE) emulators:start --only auth --project $(FIREBASE_PROJECT) \
+			--import $(FIREBASE_DATA_DIR) & \
+		FPID=$$!; \
+		trap "$(FIREBASE) emulators:export $(FIREBASE_DATA_DIR) --project $(FIREBASE_PROJECT) --force; kill $$FPID; wait $$FPID; exit 0" INT TERM; \
+		wait $$FPID \
+	'
 
-firebase-emulator-test: firebase-pull
-	docker run -d --rm --name $(FIREBASE_TEST_CONTAINER_NAME) \
-		-p $(FIREBASE_AUTH_PORT):9099 -p 4000:4000 -p 4400:4400 -p 4500:4500 \
-		-v $(PWD)/firebase.json:/home/node/firebase.json \
-		andreysenov/firebase-tools:$(FIREBASE_TOOLS_VERSION) \
-		firebase emulators:start --only auth --project $(FIREBASE_PROJECT)
+firebase-emulator-test:
+	$(FIREBASE) emulators:start --only auth --project $(FIREBASE_PROJECT) & echo $$! > .firebase-test.pid
 
-dev: firebase-emulator wait-firebase
-	FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:$(FIREBASE_AUTH_PORT) \
-	FIREBASE_IDENTITY_BASE_URL=http://localhost:$(FIREBASE_AUTH_PORT)/identitytoolkit.googleapis.com/v1/accounts \
-	FIREBASE_TOKEN_BASE_URL=http://localhost:$(FIREBASE_AUTH_PORT)/securetoken.googleapis.com/v1/token \
-	DATABASE_PATH=$(DATABASE_PATH) \
-	UPLOADS_PATH=$(UPLOADS_PATH) \
-	SERVER_PORT=9090 DEBUG=1 $(GO) run ./cmd/server
+firebase-emulator-test-stop:
+	kill $$(cat .firebase-test.pid) 2>/dev/null || true
+	rm -f .firebase-test.pid
 
 clean:
 	rm -f $(DATABASE_PATH)
 	rm -rf $(UPLOADS_PATH)
 	rm -rf $(FIREBASE_DATA_DIR)
-
-firebase-emulator-stop:
-	docker stop $(FIREBASE_CONTAINER_NAME)
-
-firebase-emulator-test-stop:
-	docker stop $(FIREBASE_TEST_CONTAINER_NAME)
 
 wait-firebase:
 	@echo "Waiting for Firebase emulator..."
@@ -124,8 +106,7 @@ wait-firebase:
 	done
 	@echo "Firebase emulator is ready"
 
-.PHONY: build build-debian start dev clean setup-server deploy lint \
-	test-e2e test-unit firebase-pull \
-	firebase-emulator firebase-emulator-stop \
-	firebase-emulator-test firebase-emulator-test-stop \
+.PHONY: build start clean setup-server deploy lint \
+	test-e2e test-unit \
+	firebase-emulator firebase-emulator-test firebase-emulator-test-stop \
 	wait-firebase

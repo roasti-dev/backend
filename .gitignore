@@ -21,6 +21,10 @@ coverage.out
 # Editor / tools
 /.ogrep/
 
+# Node.js
+/node_modules/
+/.firebase-test.pid
+
 # Firebase emulator data
 /.firebase-data/
 
