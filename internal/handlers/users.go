@@ -66,6 +66,7 @@ func (s *ServerHandler) ListUserLikes(ctx context.Context, request ListUserLikes
 		page, err = s.userLibrary.ListLikedPosts(ctx, currentUserID, request.UserId, params)
 	case models.LikeTargetTypeRecipe:
 		page, err = s.userLibrary.ListLikedRecipes(ctx, currentUserID, request.UserId, params)
+	case models.LikeTargetTypeBean:
 	default:
 		return ListUserLikes400JSONResponse{Error: fmt.Sprintf("unsupported type: %s", request.Params.Type)}, nil
 	}
