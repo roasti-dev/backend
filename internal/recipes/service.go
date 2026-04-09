@@ -31,11 +31,9 @@ type Uploader interface {
 	Delete(ctx context.Context, fileID string) error
 }
 
-type LikeChecker interface {
-	IsLiked(ctx context.Context, userID, targetID string, targetType models.LikeTargetType) (bool, error)
-	GetLikedIDs(ctx context.Context, userID string, targetType models.LikeTargetType, targetIDs []string) (map[string]bool, error)
-	CountByTarget(ctx context.Context, targetID string, targetType models.LikeTargetType) (int, error)
-	CountByTargets(ctx context.Context, targetIDs []string, targetType models.LikeTargetType) (map[string]int, error)
+type likeEnricher interface {
+	EnrichOne(ctx context.Context, userID string, item likes.Likeable) error
+	EnrichMany(ctx context.Context, userID string, items []likes.Likeable) error
 }
 
 type LikeToggler interface {
@@ -55,18 +53,18 @@ type Service struct {
 	logger         *slog.Logger
 	repo           RecipeRepository
 	uploader       Uploader
-	likeChecker    LikeChecker
+	likeEnricher   likeEnricher
 	likeToggler    LikeToggler
 	publisher      EventPublisher
 	commentService CommentService
 }
 
-func NewService(repo RecipeRepository, uploader Uploader, likeChecker LikeChecker, likeToggler LikeToggler, publisher EventPublisher, commentService CommentService) *Service {
+func NewService(repo RecipeRepository, uploader Uploader, likeEnricher likeEnricher, likeToggler LikeToggler, publisher EventPublisher, commentService CommentService) *Service {
 	return &Service{
 		logger:         slog.Default(),
 		repo:           repo,
 		uploader:       uploader,
-		likeChecker:    likeChecker,
+		likeEnricher:   likeEnricher,
 		likeToggler:    likeToggler,
 		publisher:      publisher,
 		commentService: commentService,
@@ -86,19 +84,11 @@ func (s *Service) GetRecipeByID(ctx context.Context, userID, recipeID string) (m
 		return models.Recipe{}, ErrNotFound
 	}
 
-	recipe.IsLiked, err = s.likeChecker.IsLiked(ctx, userID, recipeID, models.LikeTargetTypeRecipe)
-	if err != nil {
-		return models.Recipe{}, err
-	}
-
-	likesCount, err := s.likeChecker.CountByTarget(ctx, recipeID, models.LikeTargetTypeRecipe)
-	if err != nil {
-		return models.Recipe{}, err
-	}
-	recipe.LikesCount = int32(likesCount)
-
 	recipe.RedactForUser(userID)
 
+	if err := s.likeEnricher.EnrichOne(ctx, userID, &recipe); err != nil {
+		return models.Recipe{}, err
+	}
 	return recipe, nil
 }
 
@@ -110,25 +100,17 @@ func (s *Service) ListRecipes(
 		return models.GenericPage[models.Recipe]{}, err
 	}
 
-	ids := make([]string, len(page.Items))
-	for i, r := range page.Items {
-		ids[i] = r.Id
-	}
-
-	likedIDs, err := s.likeChecker.GetLikedIDs(ctx, userID, models.LikeTargetTypeRecipe, ids)
-	if err != nil {
-		return models.GenericPage[models.Recipe]{}, err
-	}
-
-	likesCounts, err := s.likeChecker.CountByTargets(ctx, ids, models.LikeTargetTypeRecipe)
-	if err != nil {
-		return models.GenericPage[models.Recipe]{}, err
-	}
-
-	for i, r := range page.Items {
-		page.Items[i].IsLiked = likedIDs[r.Id]
-		page.Items[i].LikesCount = int32(likesCounts[r.Id])
+	for i := range page.Items {
 		page.Items[i].RedactForUser(userID)
+	}
+
+	likeables := make([]likes.Likeable, len(page.Items))
+	for i := range page.Items {
+		likeables[i] = &page.Items[i]
+	}
+
+	if err := s.likeEnricher.EnrichMany(ctx, userID, likeables); err != nil {
+		return models.GenericPage[models.Recipe]{}, err
 	}
 
 	return page, nil
@@ -140,20 +122,17 @@ func (s *Service) GetRecipesByIDs(ctx context.Context, currentUserID string, ids
 		return nil, fmt.Errorf("get recipe previews: %w", err)
 	}
 
-	likedMap, err := s.likeChecker.GetLikedIDs(ctx, currentUserID, models.LikeTargetTypeRecipe, ids)
-	if err != nil {
-		return nil, fmt.Errorf("get liked ids: %w", err)
-	}
-
-	likesCounts, err := s.likeChecker.CountByTargets(ctx, ids, models.LikeTargetTypeRecipe)
-	if err != nil {
-		return nil, fmt.Errorf("count likes: %w", err)
-	}
-
 	for i := range recipes {
-		recipes[i].IsLiked = likedMap[recipes[i].Id]
-		recipes[i].LikesCount = int32(likesCounts[recipes[i].Id])
 		recipes[i].RedactForUser(currentUserID)
+	}
+
+	likeables := make([]likes.Likeable, len(recipes))
+	for i := range recipes {
+		likeables[i] = &recipes[i]
+	}
+
+	if err := s.likeEnricher.EnrichMany(ctx, currentUserID, likeables); err != nil {
+		return nil, err
 	}
 
 	return recipes, nil
@@ -165,24 +144,13 @@ func (s *Service) GetPreviewsByIDs(ctx context.Context, currentUserID, ownerID s
 		return nil, fmt.Errorf("get recipe previews: %w", err)
 	}
 
-	previewIDs := make([]string, len(previews))
-	for i, p := range previews {
-		previewIDs[i] = p.Id
-	}
-
-	likedMap, err := s.likeChecker.GetLikedIDs(ctx, currentUserID, models.LikeTargetTypeRecipe, previewIDs)
-	if err != nil {
-		return nil, fmt.Errorf("get liked ids: %w", err)
-	}
-
-	likesCounts, err := s.likeChecker.CountByTargets(ctx, previewIDs, models.LikeTargetTypeRecipe)
-	if err != nil {
-		return nil, fmt.Errorf("count likes: %w", err)
-	}
-
+	likeables := make([]likes.Likeable, len(previews))
 	for i := range previews {
-		previews[i].IsLiked = likedMap[previews[i].Id]
-		previews[i].LikesCount = int32(likesCounts[previews[i].Id])
+		likeables[i] = &previews[i]
+	}
+
+	if err := s.likeEnricher.EnrichMany(ctx, currentUserID, likeables); err != nil {
+		return nil, err
 	}
 
 	return previews, nil

@@ -6,6 +6,11 @@ import (
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
 )
 
+type Info struct {
+	IsLiked bool
+	Count   int
+}
+
 type Like struct {
 	ID         string
 	UserID     string

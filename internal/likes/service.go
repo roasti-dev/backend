@@ -36,6 +36,34 @@ type ToggleResult struct {
 	LikesCount int
 }
 
+func (s *Service) GetInfo(ctx context.Context, userID, targetID string, targetType models.LikeTargetType) (Info, error) {
+	isLiked, err := s.repo.Exists(ctx, userID, targetID, targetType)
+	if err != nil {
+		return Info{}, err
+	}
+	count, err := s.repo.CountByTarget(ctx, targetID, targetType)
+	if err != nil {
+		return Info{}, err
+	}
+	return Info{IsLiked: isLiked, Count: count}, nil
+}
+
+func (s *Service) GetInfoBatch(ctx context.Context, userID string, targetType models.LikeTargetType, targetIDs []string) (map[string]Info, error) {
+	likedIDs, err := s.repo.GetLikedIDs(ctx, userID, targetType, targetIDs)
+	if err != nil {
+		return nil, err
+	}
+	counts, err := s.repo.CountByTargets(ctx, targetIDs, targetType)
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[string]Info, len(targetIDs))
+	for _, id := range targetIDs {
+		result[id] = Info{IsLiked: likedIDs[id], Count: counts[id]}
+	}
+	return result, nil
+}
+
 func (s *Service) IsLiked(ctx context.Context, userID, targetID string, targetType models.LikeTargetType) (bool, error) {
 	return s.repo.Exists(ctx, userID, targetID, targetType)
 }

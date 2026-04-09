@@ -25,11 +25,9 @@ type uploader interface {
 	Confirm(ctx context.Context, fileID string) error
 }
 
-type likeChecker interface {
-	IsLiked(ctx context.Context, userID, targetID string, targetType models.LikeTargetType) (bool, error)
-	GetLikedIDs(ctx context.Context, userID string, targetType models.LikeTargetType, targetIDs []string) (map[string]bool, error)
-	CountByTarget(ctx context.Context, targetID string, targetType models.LikeTargetType) (int, error)
-	CountByTargets(ctx context.Context, targetIDs []string, targetType models.LikeTargetType) (map[string]int, error)
+type likeEnricher interface {
+	EnrichOne(ctx context.Context, userID string, item likes.Likeable) error
+	EnrichMany(ctx context.Context, userID string, items []likes.Likeable) error
 }
 
 type likeToggler interface {
@@ -49,14 +47,14 @@ type Service struct {
 	logger         *slog.Logger
 	repo           repository
 	uploader       uploader
-	likeChecker    likeChecker
+	likeEnricher   likeEnricher
 	likeToggler    likeToggler
 	publisher      eventPublisher
 	commentService commentService
 }
 
-func NewService(logger *slog.Logger, repo repository, uploader uploader, likeChecker likeChecker, likeToggler likeToggler, publisher eventPublisher, commentService commentService) *Service {
-	return &Service{logger: logger, repo: repo, uploader: uploader, likeChecker: likeChecker, likeToggler: likeToggler, publisher: publisher, commentService: commentService}
+func NewService(logger *slog.Logger, repo repository, uploader uploader, enricher likeEnricher, likeToggler likeToggler, publisher eventPublisher, commentService commentService) *Service {
+	return &Service{logger: logger, repo: repo, uploader: uploader, likeEnricher: enricher, likeToggler: likeToggler, publisher: publisher, commentService: commentService}
 }
 
 func (s *Service) CreateBean(ctx context.Context, userID string, req models.CreateBeanRequest) (models.Bean, error) {
@@ -83,15 +81,9 @@ func (s *Service) GetBean(ctx context.Context, userID, beanID string) (models.Be
 		return models.Bean{}, err
 	}
 
-	bean.IsLiked, err = s.likeChecker.IsLiked(ctx, userID, beanID, models.LikeTargetTypeBean)
-	if err != nil {
+	if err := s.likeEnricher.EnrichOne(ctx, userID, &bean); err != nil {
 		return models.Bean{}, err
 	}
-	likesCount, err := s.likeChecker.CountByTarget(ctx, beanID, models.LikeTargetTypeBean)
-	if err != nil {
-		return models.Bean{}, err
-	}
-	bean.LikesCount = int32(likesCount)
 
 	return bean, nil
 }
@@ -107,21 +99,12 @@ func (s *Service) ListBeans(ctx context.Context, userID string, params ListBeans
 	}
 
 	if len(items) > 0 {
-		ids := make([]string, len(items))
-		for i, b := range items {
-			ids[i] = b.Id
-		}
-		likedMap, err := s.likeChecker.GetLikedIDs(ctx, userID, models.LikeTargetTypeBean, ids)
-		if err != nil {
-			return models.GenericPage[models.Bean]{}, err
-		}
-		countsMap, err := s.likeChecker.CountByTargets(ctx, ids, models.LikeTargetTypeBean)
-		if err != nil {
-			return models.GenericPage[models.Bean]{}, err
-		}
+		likeables := make([]likes.Likeable, len(items))
 		for i := range items {
-			items[i].IsLiked = likedMap[items[i].Id]
-			items[i].LikesCount = int32(countsMap[items[i].Id])
+			likeables[i] = &items[i]
+		}
+		if err := s.likeEnricher.EnrichMany(ctx, userID, likeables); err != nil {
+			return models.GenericPage[models.Bean]{}, err
 		}
 	}
 

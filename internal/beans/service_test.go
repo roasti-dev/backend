@@ -13,29 +13,15 @@ import (
 	"github.com/nikpivkin/roasti-app-backend/internal/testutil"
 )
 
-type mockLikeChecker struct {
-	likedIDs map[string]bool
-	isLiked  bool
+type mockLikeChecker struct{}
+
+func (m *mockLikeChecker) GetInfo(_ context.Context, _, _ string, _ models.LikeTargetType) (likes.Info, error) {
+	return likes.Info{}, nil
 }
 
-func (m *mockLikeChecker) IsLiked(_ context.Context, _, _ string, _ models.LikeTargetType) (bool, error) {
-	return m.isLiked, nil
-}
-
-func (m *mockLikeChecker) GetLikedIDs(_ context.Context, _ string, _ models.LikeTargetType, targetIDs []string) (map[string]bool, error) {
-	result := make(map[string]bool, len(targetIDs))
-	for _, id := range targetIDs {
-		result[id] = m.likedIDs[id]
-	}
+func (m *mockLikeChecker) GetInfoBatch(_ context.Context, _ string, _ models.LikeTargetType, targetIDs []string) (map[string]likes.Info, error) {
+	result := make(map[string]likes.Info, len(targetIDs))
 	return result, nil
-}
-
-func (m *mockLikeChecker) CountByTarget(_ context.Context, _ string, _ models.LikeTargetType) (int, error) {
-	return 0, nil
-}
-
-func (m *mockLikeChecker) CountByTargets(_ context.Context, targetIDs []string, _ models.LikeTargetType) (map[string]int, error) {
-	return make(map[string]int, len(targetIDs)), nil
 }
 
 type mockLikeToggler struct {
@@ -59,7 +45,7 @@ func setupBeanService(t *testing.T) (*beans.Service, *beans.Repository) {
 	testutil.CreateTestUser(t, database, "user-1")
 	testutil.CreateTestUser(t, database, "user-2")
 	repo := beans.NewRepository(database, database)
-	svc := beans.NewService(nil, repo, nil, &mockLikeChecker{likedIDs: make(map[string]bool)}, &mockLikeToggler{}, nil, nil)
+	svc := beans.NewService(nil, repo, nil, likes.NewEnricher(&mockLikeChecker{}), &mockLikeToggler{}, nil, nil)
 	return svc, repo
 }
 

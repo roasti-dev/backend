@@ -94,9 +94,10 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 	likeService := likes.NewService(likeRepo)
 	commentRepo := comments.NewRepository(runner)
 	commentService := comments.NewService(commentRepo)
-	recipeService := recipes.NewService(recipeRepo, uploader, likeService, likeService, bus, commentService)
+	likeEnricher := likes.NewEnricher(likeService)
+	recipeService := recipes.NewService(recipeRepo, uploader, likeEnricher, likeService, bus, commentService)
 	postRepo := posts.NewRepository(database, runner)
-	postService := posts.NewService(postRepo, uploader, likeService, likeService, bus, commentService)
+	postService := posts.NewService(postRepo, uploader, likeEnricher, likeService, bus, commentService)
 	userRepo := users.NewUserRepository(database)
 	userService := users.NewUserService(userRepo, &firebaseIdentityCreator{firebaseAuth}, uploader)
 
@@ -105,7 +106,7 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 	bus.Subscribe(notificationService.HandleEvent)
 
 	beanRepo := beans.NewRepository(database, runner)
-	beanService := beans.NewService(slog.Default(), beanRepo, uploader, likeService, likeService, bus, commentService)
+	beanService := beans.NewService(slog.Default(), beanRepo, uploader, likeEnricher, likeService, bus, commentService)
 
 	revokedTokenRepo := auth.NewRevokedTokenRepository(database)
 	startRevokedTokenCleanup(ctx, revokedTokenRepo)

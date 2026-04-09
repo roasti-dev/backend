@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"log/slog"
 	"strings"
 	"time"
@@ -29,9 +28,9 @@ type CommentService interface {
 	List(ctx context.Context, targetID string, pag models.PaginationParams) (models.GenericPage[models.CommentThread], error)
 }
 
-type LikeChecker interface {
-	GetLikedIDs(ctx context.Context, userID string, targetType models.LikeTargetType, targetIDs []string) (map[string]bool, error)
-	CountByTargets(ctx context.Context, targetIDs []string, targetType models.LikeTargetType) (map[string]int, error)
+type LikeEnricher interface {
+	EnrichOne(ctx context.Context, userID string, item likes.Likeable) error
+	EnrichMany(ctx context.Context, userID string, items []likes.Likeable) error
 }
 
 type LikeToggler interface {
@@ -68,18 +67,18 @@ type Service struct {
 	logger         *slog.Logger
 	repo           PostRepository
 	uploader       Uploader
-	likeChecker    LikeChecker
+	likeEnricher   LikeEnricher
 	likeToggler    LikeToggler
 	publisher      EventPublisher
 	commentService CommentService
 }
 
-func NewService(repo PostRepository, uploader Uploader, likeChecker LikeChecker, likeToggler LikeToggler, publisher EventPublisher, commentService CommentService) *Service {
+func NewService(repo PostRepository, uploader Uploader, likeEnricher LikeEnricher, likeToggler LikeToggler, publisher EventPublisher, commentService CommentService) *Service {
 	return &Service{
 		logger:         slog.Default(),
 		repo:           repo,
 		uploader:       uploader,
-		likeChecker:    likeChecker,
+		likeEnricher:   likeEnricher,
 		likeToggler:    likeToggler,
 		publisher:      publisher,
 		commentService: commentService,
@@ -175,24 +174,12 @@ func (s *Service) ListPosts(ctx context.Context, userID string, params ListPosts
 		return models.NewPage(postList, pag, 0), nil
 	}
 
-	ids := make([]string, len(postList))
-	for i, p := range postList {
-		ids[i] = p.Id
+	likeables := make([]likes.Likeable, len(postList))
+	for i := range postList {
+		likeables[i] = &postList[i]
 	}
-
-	likedIDs, err := s.likeChecker.GetLikedIDs(ctx, userID, models.LikeTargetTypePost, ids)
-	if err != nil {
-		return models.GenericPage[models.Post]{}, fmt.Errorf("get liked ids: %w", err)
-	}
-
-	likesCounts, err := s.likeChecker.CountByTargets(ctx, ids, models.LikeTargetTypePost)
-	if err != nil {
-		return models.GenericPage[models.Post]{}, fmt.Errorf("count likes: %w", err)
-	}
-
-	for i, p := range postList {
-		postList[i].IsLiked = likedIDs[p.Id]
-		postList[i].LikesCount = int32(likesCounts[p.Id])
+	if err := s.likeEnricher.EnrichMany(ctx, userID, likeables); err != nil {
+		return models.GenericPage[models.Post]{}, err
 	}
 
 	return models.NewPage(postList, pag, total), nil
@@ -207,18 +194,9 @@ func (s *Service) GetPost(ctx context.Context, userID, postID string) (models.Po
 		return models.Post{}, err
 	}
 
-	likedIDs, err := s.likeChecker.GetLikedIDs(ctx, userID, models.LikeTargetTypePost, []string{postID})
-	if err != nil {
-		return models.Post{}, fmt.Errorf("get liked ids: %w", err)
+	if err := s.likeEnricher.EnrichOne(ctx, userID, &post); err != nil {
+		return models.Post{}, err
 	}
-
-	likesCounts, err := s.likeChecker.CountByTargets(ctx, []string{postID}, models.LikeTargetTypePost)
-	if err != nil {
-		return models.Post{}, fmt.Errorf("count likes: %w", err)
-	}
-
-	post.IsLiked = likedIDs[postID]
-	post.LikesCount = int32(likesCounts[postID])
 	return post, nil
 }
 
@@ -282,24 +260,12 @@ func (s *Service) GetPostsByIDs(ctx context.Context, currentUserID string, ids [
 		return postList, nil
 	}
 
-	postIDs := make([]string, len(postList))
-	for i, p := range postList {
-		postIDs[i] = p.Id
+	likeables := make([]likes.Likeable, len(postList))
+	for i := range postList {
+		likeables[i] = &postList[i]
 	}
-
-	likedIDs, err := s.likeChecker.GetLikedIDs(ctx, currentUserID, models.LikeTargetTypePost, postIDs)
-	if err != nil {
-		return nil, fmt.Errorf("get liked ids: %w", err)
-	}
-
-	likesCounts, err := s.likeChecker.CountByTargets(ctx, postIDs, models.LikeTargetTypePost)
-	if err != nil {
-		return nil, fmt.Errorf("count likes: %w", err)
-	}
-
-	for i, p := range postList {
-		postList[i].IsLiked = likedIDs[p.Id]
-		postList[i].LikesCount = int32(likesCounts[p.Id])
+	if err := s.likeEnricher.EnrichMany(ctx, currentUserID, likeables); err != nil {
+		return nil, err
 	}
 	return postList, nil
 }
