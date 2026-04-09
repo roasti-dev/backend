@@ -45,6 +45,11 @@ func (s *Service) HandleEvent(e events.Event) {
 			return
 		}
 		n = Notification{ID: id.NewID(), UserID: ev.OwnerID, Type: TypeLikePost, ActorID: ev.ByUserID, EntityID: ev.PostID}
+	case events.BeanLikeToggled:
+		if !ev.Liked || ev.OwnerID == ev.ByUserID {
+			return
+		}
+		n = Notification{ID: id.NewID(), UserID: ev.OwnerID, Type: TypeLikeBean, ActorID: ev.ByUserID, EntityID: ev.BeanID}
 	case events.RecipeCommentCreated:
 		if ev.OwnerID == ev.ByUserID {
 			return

@@ -59,7 +59,7 @@ func setupBeanService(t *testing.T) (*beans.Service, *beans.Repository) {
 	testutil.CreateTestUser(t, database, "user-1")
 	testutil.CreateTestUser(t, database, "user-2")
 	repo := beans.NewRepository(database, database)
-	svc := beans.NewService(nil, repo, nil, &mockLikeChecker{likedIDs: make(map[string]bool)}, &mockLikeToggler{})
+	svc := beans.NewService(nil, repo, nil, &mockLikeChecker{likedIDs: make(map[string]bool)}, &mockLikeToggler{}, nil)
 	return svc, repo
 }
 

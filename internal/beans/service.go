@@ -7,6 +7,7 @@ import (
 	"log/slog"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
+	"github.com/nikpivkin/roasti-app-backend/internal/events"
 	"github.com/nikpivkin/roasti-app-backend/internal/likes"
 	"github.com/nikpivkin/roasti-app-backend/internal/x/id"
 	"github.com/nikpivkin/roasti-app-backend/internal/x/ptr"
@@ -35,16 +36,21 @@ type likeToggler interface {
 	Toggle(ctx context.Context, userID, targetID string, targetType models.LikeTargetType) (likes.ToggleResult, error)
 }
 
+type eventPublisher interface {
+	Publish(e events.Event)
+}
+
 type Service struct {
 	logger      *slog.Logger
 	repo        repository
 	uploader    uploader
 	likeChecker likeChecker
 	likeToggler likeToggler
+	publisher   eventPublisher
 }
 
-func NewService(logger *slog.Logger, repo repository, uploader uploader, likeChecker likeChecker, likeToggler likeToggler) *Service {
-	return &Service{logger: logger, repo: repo, uploader: uploader, likeChecker: likeChecker, likeToggler: likeToggler}
+func NewService(logger *slog.Logger, repo repository, uploader uploader, likeChecker likeChecker, likeToggler likeToggler, publisher eventPublisher) *Service {
+	return &Service{logger: logger, repo: repo, uploader: uploader, likeChecker: likeChecker, likeToggler: likeToggler, publisher: publisher}
 }
 
 func (s *Service) CreateBean(ctx context.Context, userID string, req models.CreateBeanRequest) (models.Bean, error) {
@@ -117,10 +123,26 @@ func (s *Service) ListBeans(ctx context.Context, userID string, params ListBeans
 }
 
 func (s *Service) ToggleLike(ctx context.Context, userID, beanID string) (likes.ToggleResult, error) {
-	if _, err := s.GetBean(ctx, userID, beanID); err != nil {
+	bean, err := s.GetBean(ctx, userID, beanID)
+	if err != nil {
 		return likes.ToggleResult{}, err
 	}
-	return s.likeToggler.Toggle(ctx, userID, beanID, models.LikeTargetTypeBean)
+
+	result, err := s.likeToggler.Toggle(ctx, userID, beanID, models.LikeTargetTypeBean)
+	if err != nil {
+		return likes.ToggleResult{}, err
+	}
+
+	if s.publisher != nil {
+		s.publisher.Publish(events.BeanLikeToggled{
+			BeanID:   beanID,
+			OwnerID:  bean.Author.Id,
+			ByUserID: userID,
+			Liked:    result.Liked,
+		})
+	}
+
+	return result, nil
 }
 
 func (s *Service) UpdateBean(ctx context.Context, userID, beanID string, req models.UpdateBeanRequest) (models.Bean, error) {

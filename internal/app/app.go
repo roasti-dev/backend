@@ -105,7 +105,7 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 	bus.Subscribe(notificationService.HandleEvent)
 
 	beanRepo := beans.NewRepository(database, runner)
-	beanService := beans.NewService(slog.Default(), beanRepo, uploader, likeService, likeService)
+	beanService := beans.NewService(slog.Default(), beanRepo, uploader, likeService, likeService, bus)
 
 	revokedTokenRepo := auth.NewRevokedTokenRepository(database)
 	startRevokedTokenCleanup(ctx, revokedTokenRepo)

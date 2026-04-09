@@ -942,6 +942,7 @@ components:
       enum:
         - like_recipe
         - like_post
+        - like_bean
         - comment_recipe
         - comment_post
 
