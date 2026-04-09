@@ -24,6 +24,7 @@ coverage.out
 # Node.js
 /node_modules/
 /.firebase-test.pid
+/.firebase.pid
 
 # Firebase emulator data
 /.firebase-data/

@@ -80,12 +80,17 @@ firebase-emulator:
 	mkdir -p $(FIREBASE_DATA_DIR)
 	@bash -c '\
 		set -m; \
+		echo $$$$ > .firebase.pid; \
 		$(FIREBASE) emulators:start --only auth --project $(FIREBASE_PROJECT) \
 			--import $(FIREBASE_DATA_DIR) & \
 		FPID=$$!; \
-		trap "$(FIREBASE) emulators:export $(FIREBASE_DATA_DIR) --project $(FIREBASE_PROJECT) --force; kill $$FPID; wait $$FPID; exit 0" INT TERM; \
+		trap "$(FIREBASE) emulators:export $(FIREBASE_DATA_DIR) --project $(FIREBASE_PROJECT) --force; kill $$FPID; wait $$FPID; rm -f .firebase.pid; exit 0" INT TERM; \
 		wait $$FPID \
 	'
+
+firebase-emulator-stop:
+	@kill $$(cat .firebase.pid 2>/dev/null) 2>/dev/null || lsof -ti:$(FIREBASE_AUTH_PORT),4000,4400 | xargs kill 2>/dev/null || true
+	@rm -f .firebase.pid
 
 firebase-emulator-test:
 	$(FIREBASE) emulators:start --only auth --project $(FIREBASE_PROJECT) & echo $$! > .firebase-test.pid
@@ -108,5 +113,5 @@ wait-firebase:
 
 .PHONY: build start clean setup-server deploy lint \
 	test-e2e test-unit \
-	firebase-emulator firebase-emulator-test firebase-emulator-test-stop \
+	firebase-emulator firebase-emulator-stop firebase-emulator-test firebase-emulator-test-stop \
 	wait-firebase
