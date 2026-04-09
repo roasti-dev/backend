@@ -28,5 +28,3 @@ coverage.out
 # Firebase emulator data
 /.firebase-data/
 
-# Generated API docs
-/docs/
