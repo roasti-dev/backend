@@ -9,7 +9,8 @@ import (
 )
 
 func (s *ServerHandler) ListBeans(ctx context.Context, request ListBeansRequestObject) (ListBeansResponseObject, error) {
-	page, err := s.beanService.ListBeans(ctx, beans.ListBeansParams{
+	userID := requestctx.GetUserID(ctx)
+	page, err := s.beanService.ListBeans(ctx, userID, beans.ListBeansParams{
 		Query: request.Params.Q,
 		Page:  request.Params.Page,
 		Limit: request.Params.Limit,
@@ -41,11 +42,24 @@ func (s *ServerHandler) DeleteBean(ctx context.Context, request DeleteBeanReques
 }
 
 func (s *ServerHandler) GetBean(ctx context.Context, request GetBeanRequestObject) (GetBeanResponseObject, error) {
-	bean, err := s.beanService.GetBean(ctx, request.BeanId)
+	userID := requestctx.GetUserID(ctx)
+	bean, err := s.beanService.GetBean(ctx, userID, request.BeanId)
 	if err != nil {
 		return nil, err
 	}
 	return GetBean200JSONResponse(bean), nil
+}
+
+func (s *ServerHandler) ToggleBeanLike(ctx context.Context, request ToggleBeanLikeRequestObject) (ToggleBeanLikeResponseObject, error) {
+	userID := requestctx.GetUserID(ctx)
+	result, err := s.beanService.ToggleLike(ctx, userID, request.BeanId)
+	if err != nil {
+		return nil, err
+	}
+	return ToggleBeanLike200JSONResponse(models.ToggleLikeResponse{
+		Liked:      result.Liked,
+		LikesCount: int32(result.LikesCount),
+	}), nil
 }
 
 func (s *ServerHandler) UpdateBean(ctx context.Context, request UpdateBeanRequestObject) (UpdateBeanResponseObject, error) {

@@ -1166,6 +1166,33 @@ paths:
         "500":
           description: Internal server error
 
+  /api/v1/beans/{bean_id}/like:
+    post:
+      summary: Toggle like on a bean
+      operationId: toggleBeanLike
+      description: Adds a like if not liked, removes if already liked.
+      tags: [likes]
+      parameters:
+        - name: bean_id
+          in: path
+          required: true
+          description: Bean identifier
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Like toggled
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ToggleLikeResponse"
+        "404":
+          description: Bean not found
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
+
   /api/v1/notifications:
     get:
       summary: List notifications

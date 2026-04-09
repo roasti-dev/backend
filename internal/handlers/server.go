@@ -54,10 +54,11 @@ type PostService interface {
 
 type BeanService interface {
 	CreateBean(ctx context.Context, userID string, req models.CreateBeanRequest) (models.Bean, error)
-	GetBean(ctx context.Context, beanID string) (models.Bean, error)
-	ListBeans(ctx context.Context, params beans.ListBeansParams) (models.GenericPage[models.Bean], error)
+	GetBean(ctx context.Context, userID, beanID string) (models.Bean, error)
+	ListBeans(ctx context.Context, userID string, params beans.ListBeansParams) (models.GenericPage[models.Bean], error)
 	UpdateBean(ctx context.Context, userID, beanID string, req models.UpdateBeanRequest) (models.Bean, error)
 	DeleteBean(ctx context.Context, userID, beanID string) error
+	ToggleLike(ctx context.Context, userID, beanID string) (likes.ToggleResult, error)
 }
 
 type ServerHandler struct {

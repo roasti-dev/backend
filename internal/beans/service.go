@@ -7,6 +7,7 @@ import (
 	"log/slog"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
+	"github.com/nikpivkin/roasti-app-backend/internal/likes"
 	"github.com/nikpivkin/roasti-app-backend/internal/x/id"
 	"github.com/nikpivkin/roasti-app-backend/internal/x/ptr"
 )
@@ -23,14 +24,27 @@ type uploader interface {
 	Confirm(ctx context.Context, fileID string) error
 }
 
-type Service struct {
-	logger   *slog.Logger
-	repo     repository
-	uploader uploader
+type likeChecker interface {
+	IsLiked(ctx context.Context, userID, targetID string, targetType models.LikeTargetType) (bool, error)
+	GetLikedIDs(ctx context.Context, userID string, targetType models.LikeTargetType, targetIDs []string) (map[string]bool, error)
+	CountByTarget(ctx context.Context, targetID string, targetType models.LikeTargetType) (int, error)
+	CountByTargets(ctx context.Context, targetIDs []string, targetType models.LikeTargetType) (map[string]int, error)
 }
 
-func NewService(logger *slog.Logger, repo repository, uploader uploader) *Service {
-	return &Service{logger: logger, repo: repo, uploader: uploader}
+type likeToggler interface {
+	Toggle(ctx context.Context, userID, targetID string, targetType models.LikeTargetType) (likes.ToggleResult, error)
+}
+
+type Service struct {
+	logger      *slog.Logger
+	repo        repository
+	uploader    uploader
+	likeChecker likeChecker
+	likeToggler likeToggler
+}
+
+func NewService(logger *slog.Logger, repo repository, uploader uploader, likeChecker likeChecker, likeToggler likeToggler) *Service {
+	return &Service{logger: logger, repo: repo, uploader: uploader, likeChecker: likeChecker, likeToggler: likeToggler}
 }
 
 func (s *Service) CreateBean(ctx context.Context, userID string, req models.CreateBeanRequest) (models.Bean, error) {
@@ -48,7 +62,7 @@ func (s *Service) CreateBean(ctx context.Context, userID string, req models.Crea
 	return created, nil
 }
 
-func (s *Service) GetBean(ctx context.Context, beanID string) (models.Bean, error) {
+func (s *Service) GetBean(ctx context.Context, userID, beanID string) (models.Bean, error) {
 	bean, err := s.repo.GetByID(ctx, beanID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -56,10 +70,21 @@ func (s *Service) GetBean(ctx context.Context, beanID string) (models.Bean, erro
 		}
 		return models.Bean{}, err
 	}
+
+	bean.IsLiked, err = s.likeChecker.IsLiked(ctx, userID, beanID, models.LikeTargetTypeBean)
+	if err != nil {
+		return models.Bean{}, err
+	}
+	likesCount, err := s.likeChecker.CountByTarget(ctx, beanID, models.LikeTargetTypeBean)
+	if err != nil {
+		return models.Bean{}, err
+	}
+	bean.LikesCount = int32(likesCount)
+
 	return bean, nil
 }
 
-func (s *Service) ListBeans(ctx context.Context, params ListBeansParams) (models.GenericPage[models.Bean], error) {
+func (s *Service) ListBeans(ctx context.Context, userID string, params ListBeansParams) (models.GenericPage[models.Bean], error) {
 	pag := models.NewPaginationParams(
 		ptr.FromPtr(params.Page),
 		ptr.FromPtr(params.Limit),
@@ -68,7 +93,34 @@ func (s *Service) ListBeans(ctx context.Context, params ListBeansParams) (models
 	if err != nil {
 		return models.GenericPage[models.Bean]{}, err
 	}
+
+	if len(items) > 0 {
+		ids := make([]string, len(items))
+		for i, b := range items {
+			ids[i] = b.Id
+		}
+		likedMap, err := s.likeChecker.GetLikedIDs(ctx, userID, models.LikeTargetTypeBean, ids)
+		if err != nil {
+			return models.GenericPage[models.Bean]{}, err
+		}
+		countsMap, err := s.likeChecker.CountByTargets(ctx, ids, models.LikeTargetTypeBean)
+		if err != nil {
+			return models.GenericPage[models.Bean]{}, err
+		}
+		for i := range items {
+			items[i].IsLiked = likedMap[items[i].Id]
+			items[i].LikesCount = int32(countsMap[items[i].Id])
+		}
+	}
+
 	return models.NewPage(items, pag, total), nil
+}
+
+func (s *Service) ToggleLike(ctx context.Context, userID, beanID string) (likes.ToggleResult, error) {
+	if _, err := s.GetBean(ctx, userID, beanID); err != nil {
+		return likes.ToggleResult{}, err
+	}
+	return s.likeToggler.Toggle(ctx, userID, beanID, models.LikeTargetTypeBean)
 }
 
 func (s *Service) UpdateBean(ctx context.Context, userID, beanID string, req models.UpdateBeanRequest) (models.Bean, error) {

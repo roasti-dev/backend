@@ -560,6 +560,7 @@ components:
       enum:
         - recipe
         - post
+        - bean
       description: Type of likeable resource
 
     ToggleLikeResponse:
@@ -1046,6 +1047,8 @@ components:
         - roaster
         - author
         - created_at
+        - likes_count
+        - is_liked
       properties:
         id:
           type: string
@@ -1097,6 +1100,13 @@ components:
           type: string
           format: date-time
           description: When the bean was added to the catalog
+        likes_count:
+          type: integer
+          format: int32
+          description: Number of likes on this bean
+        is_liked:
+          type: boolean
+          description: Whether the current user has liked this bean
 
     BeanPayload:
       type: object

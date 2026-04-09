@@ -281,6 +281,9 @@ type ClientInterface interface {
 
 	UpdateBean(ctx context.Context, beanId string, body UpdateBeanJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ToggleBeanLike request
+	ToggleBeanLike(ctx context.Context, beanId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// DeleteComment request
 	DeleteComment(ctx context.Context, commentId string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -582,6 +585,18 @@ func (c *Client) UpdateBeanWithBody(ctx context.Context, beanId string, contentT
 
 func (c *Client) UpdateBean(ctx context.Context, beanId string, body UpdateBeanJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateBeanRequest(c.Server, beanId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ToggleBeanLike(ctx context.Context, beanId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewToggleBeanLikeRequest(c.Server, beanId)
 	if err != nil {
 		return nil, err
 	}
@@ -1480,6 +1495,40 @@ func NewUpdateBeanRequestWithBody(server string, beanId string, contentType stri
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewToggleBeanLikeRequest generates requests for ToggleBeanLike
+func NewToggleBeanLikeRequest(server string, beanId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "bean_id", beanId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/beans/%s/like", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -3015,6 +3064,9 @@ type ClientWithResponsesInterface interface {
 
 	UpdateBeanWithResponse(ctx context.Context, beanId string, body UpdateBeanJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateBeanResponse, error)
 
+	// ToggleBeanLikeWithResponse request
+	ToggleBeanLikeWithResponse(ctx context.Context, beanId string, reqEditors ...RequestEditorFn) (*ToggleBeanLikeResponse, error)
+
 	// DeleteCommentWithResponse request
 	DeleteCommentWithResponse(ctx context.Context, commentId string, reqEditors ...RequestEditorFn) (*DeleteCommentResponse, error)
 
@@ -3342,6 +3394,29 @@ func (r UpdateBeanResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r UpdateBeanResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ToggleBeanLikeResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *externalRef0.ToggleLikeResponse
+	JSON404      *externalRef0.ApiErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r ToggleBeanLikeResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ToggleBeanLikeResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -4179,6 +4254,15 @@ func (c *ClientWithResponses) UpdateBeanWithResponse(ctx context.Context, beanId
 	return ParseUpdateBeanResponse(rsp)
 }
 
+// ToggleBeanLikeWithResponse request returning *ToggleBeanLikeResponse
+func (c *ClientWithResponses) ToggleBeanLikeWithResponse(ctx context.Context, beanId string, reqEditors ...RequestEditorFn) (*ToggleBeanLikeResponse, error) {
+	rsp, err := c.ToggleBeanLike(ctx, beanId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseToggleBeanLikeResponse(rsp)
+}
+
 // DeleteCommentWithResponse request returning *DeleteCommentResponse
 func (c *ClientWithResponses) DeleteCommentWithResponse(ctx context.Context, commentId string, reqEditors ...RequestEditorFn) (*DeleteCommentResponse, error) {
 	rsp, err := c.DeleteComment(ctx, commentId, reqEditors...)
@@ -4803,6 +4887,39 @@ func ParseUpdateBeanResponse(rsp *http.Response) (*UpdateBeanResponse, error) {
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseToggleBeanLikeResponse parses an HTTP response from a ToggleBeanLikeWithResponse call
+func ParseToggleBeanLikeResponse(rsp *http.Response) (*ToggleBeanLikeResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ToggleBeanLikeResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest externalRef0.ToggleLikeResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
 
 	}
 

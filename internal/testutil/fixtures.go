@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
+	"github.com/nikpivkin/roasti-app-backend/internal/beans"
 	"github.com/nikpivkin/roasti-app-backend/internal/likes"
 	"github.com/nikpivkin/roasti-app-backend/internal/posts"
 	"github.com/nikpivkin/roasti-app-backend/internal/recipes"
@@ -75,6 +76,18 @@ func CreateTestCommentReply(t *testing.T, db *sql.DB, commentID, postID, authorI
 		commentID, postID, authorID, text, parentID, now, now,
 	)
 	require.NoError(t, err)
+}
+
+func CreateTestBean(t *testing.T, repo *beans.Repository, beanID, authorID string) models.Bean {
+	t.Helper()
+	require.NoError(t, repo.Create(t.Context(), beanID, authorID, models.BeanPayload{
+		Name:      beanID,
+		RoastType: models.BeanRoastTypeEspresso,
+		Roaster:   "Test Roaster",
+	}))
+	bean, err := repo.GetByID(t.Context(), beanID)
+	require.NoError(t, err)
+	return bean
 }
 
 func CreateTestLike(t *testing.T, repo *likes.Repository, userID, targetID string, targetType models.LikeTargetType) likes.Like {
