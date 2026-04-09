@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
+	"github.com/nikpivkin/roasti-app-backend/internal/x/id"
 	"github.com/nikpivkin/roasti-app-backend/tests/client"
 )
 
@@ -389,5 +390,111 @@ func TestBeanInRecipe(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 200, resp.StatusCode())
 		assert.Nil(t, resp.JSON200.Bean)
+	})
+}
+
+func toggleBeanLike(t *testing.T, c *authenticatedClient, beanID string) {
+	t.Helper()
+	resp, err := c.ToggleBeanLikeWithResponse(t.Context(), beanID)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode())
+}
+
+func TestToggleBeanLike(t *testing.T) {
+	srv := setupTestServer(t)
+
+	t.Run("like a bean", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		bean := createBean(t, c, defaultBeanPayload)
+
+		resp, err := c.ToggleBeanLikeWithResponse(t.Context(), bean.Id)
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode())
+		assert.True(t, resp.JSON200.Liked)
+		assert.Equal(t, int32(1), resp.JSON200.LikesCount)
+	})
+
+	t.Run("unlike a bean", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		bean := createBean(t, c, defaultBeanPayload)
+
+		toggleBeanLike(t, c, bean.Id)
+
+		resp, err := c.ToggleBeanLikeWithResponse(t.Context(), bean.Id)
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode())
+		assert.False(t, resp.JSON200.Liked)
+		assert.Equal(t, int32(0), resp.JSON200.LikesCount)
+	})
+
+	t.Run("two users like same bean", func(t *testing.T) {
+		c1 := newAuthenticatedTestClient(t, srv)
+		c2 := newAuthenticatedTestClient(t, srv)
+		bean := createBean(t, c1, defaultBeanPayload)
+
+		toggleBeanLike(t, c1, bean.Id)
+
+		resp, err := c2.ToggleBeanLikeWithResponse(t.Context(), bean.Id)
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode())
+		assert.True(t, resp.JSON200.Liked)
+		assert.Equal(t, int32(2), resp.JSON200.LikesCount)
+	})
+
+	t.Run("like does not affect other beans", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		b1 := createBean(t, c, defaultBeanPayload)
+		b2 := createBean(t, c, defaultBeanPayload)
+
+		toggleBeanLike(t, c, b1.Id)
+
+		resp, err := c.ToggleBeanLikeWithResponse(t.Context(), b2.Id)
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode())
+		assert.True(t, resp.JSON200.Liked)
+		assert.Equal(t, int32(1), resp.JSON200.LikesCount)
+	})
+
+	t.Run("is_liked reflects state in get and list", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		bean := createBean(t, c, defaultBeanPayload)
+
+		toggleBeanLike(t, c, bean.Id)
+
+		getResp, err := c.GetBeanWithResponse(t.Context(), bean.Id)
+		require.NoError(t, err)
+		assert.True(t, getResp.JSON200.IsLiked)
+		assert.Equal(t, int32(1), getResp.JSON200.LikesCount)
+
+		listResp, err := c.ListBeansWithResponse(t.Context(), &client.ListBeansParams{})
+		require.NoError(t, err)
+		var found *models.Bean
+		for i := range listResp.JSON200.Items {
+			if listResp.JSON200.Items[i].Id == bean.Id {
+				found = &listResp.JSON200.Items[i]
+				break
+			}
+		}
+		require.NotNil(t, found)
+		assert.True(t, found.IsLiked)
+		assert.Equal(t, int32(1), found.LikesCount)
+	})
+
+	t.Run("unauthenticated returns 401", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		bean := createBean(t, c, defaultBeanPayload)
+
+		unauth := newTestClient(t, srv)
+		resp, err := unauth.ToggleBeanLikeWithResponse(t.Context(), bean.Id)
+		require.NoError(t, err)
+		assert.Equal(t, 401, resp.StatusCode())
+	})
+
+	t.Run("non-existent bean returns 404", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+
+		resp, err := c.ToggleBeanLikeWithResponse(t.Context(), id.NewID())
+		require.NoError(t, err)
+		assert.Equal(t, 404, resp.StatusCode())
 	})
 }
