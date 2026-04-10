@@ -10,7 +10,7 @@ CREATE TABLE comments_new (
     updated_at  DATETIME NOT NULL,
     deleted_at  DATETIME,
     FOREIGN KEY (author_id) REFERENCES users(id),
-    FOREIGN KEY (parent_id) REFERENCES comments(id)
+    FOREIGN KEY (parent_id) REFERENCES comments_new(id)
 );
 
 INSERT INTO comments_new SELECT id, target_id, target_type, author_id, text, parent_id, created_at, updated_at, deleted_at FROM comments;
@@ -33,7 +33,7 @@ CREATE TABLE comments_old (
     updated_at  DATETIME NOT NULL,
     deleted_at  DATETIME,
     FOREIGN KEY (author_id) REFERENCES users(id),
-    FOREIGN KEY (parent_id) REFERENCES comments(id)
+    FOREIGN KEY (parent_id) REFERENCES comments_old(id)
 );
 
 INSERT INTO comments_old SELECT id, target_id, target_type, author_id, text, parent_id, created_at, updated_at, deleted_at FROM comments WHERE target_type IN ('post', 'recipe');
