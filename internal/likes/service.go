@@ -16,10 +16,9 @@ type likeRepository interface {
 	Exists(ctx context.Context, userID, targetID string, targetType models.LikeTargetType) (bool, error)
 	Create(ctx context.Context, like Like) error
 	Delete(ctx context.Context, userID, targetID string, targetType models.LikeTargetType) error
-	CountByTarget(ctx context.Context, targetID string, targetType models.LikeTargetType) (int, error)
-	CountByUser(ctx context.Context, userID string, targetType models.LikeTargetType) (int, error)
 	GetLikedIDs(ctx context.Context, userID string, targetType models.LikeTargetType, targetIDs []string) (map[string]bool, error)
 	CountByTargets(ctx context.Context, targetIDs []string, targetType models.LikeTargetType) (map[string]int, error)
+	CountByUser(ctx context.Context, userID string, targetType models.LikeTargetType) (int, error)
 	ListByUser(ctx context.Context, userID string, targetType models.LikeTargetType, limit, offset int) ([]Like, error)
 }
 
@@ -37,15 +36,11 @@ type ToggleResult struct {
 }
 
 func (s *Service) GetInfo(ctx context.Context, userID, targetID string, targetType models.LikeTargetType) (Info, error) {
-	isLiked, err := s.repo.Exists(ctx, userID, targetID, targetType)
+	batch, err := s.GetInfoBatch(ctx, userID, targetType, []string{targetID})
 	if err != nil {
 		return Info{}, err
 	}
-	count, err := s.repo.CountByTarget(ctx, targetID, targetType)
-	if err != nil {
-		return Info{}, err
-	}
-	return Info{IsLiked: isLiked, Count: count}, nil
+	return batch[targetID], nil
 }
 
 func (s *Service) GetInfoBatch(ctx context.Context, userID string, targetType models.LikeTargetType, targetIDs []string) (map[string]Info, error) {
@@ -62,10 +57,6 @@ func (s *Service) GetInfoBatch(ctx context.Context, userID string, targetType mo
 		result[id] = Info{IsLiked: likedIDs[id], Count: counts[id]}
 	}
 	return result, nil
-}
-
-func (s *Service) IsLiked(ctx context.Context, userID, targetID string, targetType models.LikeTargetType) (bool, error) {
-	return s.repo.Exists(ctx, userID, targetID, targetType)
 }
 
 func (s *Service) Toggle(ctx context.Context, userID, targetID string, targetType models.LikeTargetType) (ToggleResult, error) {
@@ -93,24 +84,12 @@ func (s *Service) Toggle(ctx context.Context, userID, targetID string, targetTyp
 		liked = false
 	}
 
-	count, err := s.repo.CountByTarget(ctx, targetID, targetType)
+	counts, err := s.repo.CountByTargets(ctx, []string{targetID}, targetType)
 	if err != nil {
 		return ToggleResult{}, fmt.Errorf("count likes: %w", err)
 	}
 
-	return ToggleResult{Liked: liked, LikesCount: count}, nil
-}
-
-func (s *Service) GetLikedIDs(ctx context.Context, userID string, targetType models.LikeTargetType, targetIDs []string) (map[string]bool, error) {
-	return s.repo.GetLikedIDs(ctx, userID, targetType, targetIDs)
-}
-
-func (s *Service) CountByTarget(ctx context.Context, targetID string, targetType models.LikeTargetType) (int, error) {
-	return s.repo.CountByTarget(ctx, targetID, targetType)
-}
-
-func (s *Service) CountByTargets(ctx context.Context, targetIDs []string, targetType models.LikeTargetType) (map[string]int, error) {
-	return s.repo.CountByTargets(ctx, targetIDs, targetType)
+	return ToggleResult{Liked: liked, LikesCount: counts[targetID]}, nil
 }
 
 func (s *Service) CountByUser(ctx context.Context, userID string, targetType models.LikeTargetType) (int, error) {
