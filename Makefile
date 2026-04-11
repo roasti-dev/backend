@@ -1,5 +1,6 @@
 GO ?= go
 FIREBASE := pnpm exec firebase
+REDOCLY := pnpm exec redocly
 
 GIT_COMMIT := $(shell git rev-parse --short HEAD)
 
@@ -58,7 +59,7 @@ lint:
 
 openapi-lint:
 	REDOCLY_TELEMETRY=off REDOCLY_SUPPRESS_UPDATE_NOTICE=true \
-		pnpm --package=@redocly/cli@2.22.1 dlx openapi lint $(OAPI_SPEC)
+		$(REDOCLY) lint $(OAPI_SPEC)
 
 test-unit:
 	$(GO) test ./internal/...

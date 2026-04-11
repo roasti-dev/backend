@@ -11,6 +11,7 @@
   "license": "ISC",
   "packageManager": "pnpm@10.32.1",
   "devDependencies": {
+    "@redocly/cli": "^2.26.0",
     "firebase-tools": "15.10.0"
   }
 }
