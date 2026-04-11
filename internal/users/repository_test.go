@@ -100,25 +100,25 @@ func TestLikeRepository_ListByUser(t *testing.T) {
 	testutil.CreateTestLike(t, likesRepo, "user-1", "recipe-2", models.LikeTargetTypeRecipe)
 
 	t.Run("returns liked recipes", func(t *testing.T) {
-		result, err := likesRepo.ListByUser(t.Context(), "user-1", models.LikeTargetTypeRecipe, 10, 0)
+		result, _, err := likesRepo.ListByUser(t.Context(), "user-1", models.LikeTargetTypeRecipe, 10, 0)
 		require.NoError(t, err)
 		assert.Len(t, result, 2)
 	})
 
 	t.Run("respects limit", func(t *testing.T) {
-		result, err := likesRepo.ListByUser(t.Context(), "user-1", models.LikeTargetTypeRecipe, 1, 0)
+		result, _, err := likesRepo.ListByUser(t.Context(), "user-1", models.LikeTargetTypeRecipe, 1, 0)
 		require.NoError(t, err)
 		assert.Len(t, result, 1)
 	})
 
 	t.Run("respects offset", func(t *testing.T) {
-		result, err := likesRepo.ListByUser(t.Context(), "user-1", models.LikeTargetTypeRecipe, 10, 1)
+		result, _, err := likesRepo.ListByUser(t.Context(), "user-1", models.LikeTargetTypeRecipe, 10, 1)
 		require.NoError(t, err)
 		assert.Len(t, result, 1)
 	})
 
 	t.Run("returns empty for unknown user", func(t *testing.T) {
-		result, err := likesRepo.ListByUser(t.Context(), "unknown", models.LikeTargetTypeRecipe, 10, 0)
+		result, _, err := likesRepo.ListByUser(t.Context(), "unknown", models.LikeTargetTypeRecipe, 10, 0)
 		require.NoError(t, err)
 		assert.Empty(t, result)
 	})

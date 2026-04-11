@@ -18,8 +18,7 @@ type likeRepository interface {
 	Delete(ctx context.Context, userID, targetID string, targetType models.LikeTargetType) error
 	GetLikedIDs(ctx context.Context, userID string, targetType models.LikeTargetType, targetIDs []string) (map[string]bool, error)
 	CountByTargets(ctx context.Context, targetIDs []string, targetType models.LikeTargetType) (map[string]int, error)
-	CountByUser(ctx context.Context, userID string, targetType models.LikeTargetType) (int, error)
-	ListByUser(ctx context.Context, userID string, targetType models.LikeTargetType, limit, offset int) ([]Like, error)
+	ListByUser(ctx context.Context, userID string, targetType models.LikeTargetType, limit, offset int) ([]Like, int, error)
 }
 
 type Service struct {
@@ -92,10 +91,6 @@ func (s *Service) Toggle(ctx context.Context, userID, targetID string, targetTyp
 	return ToggleResult{Liked: liked, LikesCount: counts[targetID]}, nil
 }
 
-func (s *Service) CountByUser(ctx context.Context, userID string, targetType models.LikeTargetType) (int, error) {
-	return s.repo.CountByUser(ctx, userID, targetType)
-}
-
-func (s *Service) ListByUser(ctx context.Context, userID string, targetType models.LikeTargetType, limit, offset int) ([]Like, error) {
+func (s *Service) ListByUser(ctx context.Context, userID string, targetType models.LikeTargetType, limit, offset int) ([]Like, int, error) {
 	return s.repo.ListByUser(ctx, userID, targetType, limit, offset)
 }

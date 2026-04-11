@@ -55,21 +55,12 @@ func (f *userLibrary) ListLikedPosts(ctx context.Context, currentUserID, targetU
 
 	pag := params.Pagination()
 
-	total, err := f.likes.CountByUser(ctx, targetUserID, models.LikeTargetTypePost)
-	if err != nil {
-		return models.GenericPage[models.LikedPost]{}, fmt.Errorf("count liked posts: %w", err)
-	}
-
-	if total == 0 {
-		return models.NewPage([]models.LikedPost{}, pag, 0), nil
-	}
-
-	likedList, err := f.likes.ListByUser(ctx, targetUserID, models.LikeTargetTypePost, int(pag.GetLimit()), int(pag.Offset()))
+	likedList, total, err := f.likes.ListByUser(ctx, targetUserID, models.LikeTargetTypePost, int(pag.GetLimit()), int(pag.Offset()))
 	if err != nil {
 		return models.GenericPage[models.LikedPost]{}, fmt.Errorf("list liked posts: %w", err)
 	}
 
-	if len(likedList) == 0 {
+	if total == 0 {
 		return models.NewPage([]models.LikedPost{}, pag, 0), nil
 	}
 
@@ -103,18 +94,13 @@ func (f *userLibrary) ListLikedRecipes(ctx context.Context, currentUserID, targe
 
 	pag := params.Pagination()
 
-	total, err := f.likes.CountByUser(ctx, targetUserID, models.LikeTargetTypeRecipe)
+	likedList, total, err := f.likes.ListByUser(ctx, targetUserID, models.LikeTargetTypeRecipe, int(pag.GetLimit()), int(pag.Offset()))
 	if err != nil {
-		return models.GenericPage[models.LikedRecipe]{}, fmt.Errorf("count liked recipes: %w", err)
+		return models.GenericPage[models.LikedRecipe]{}, fmt.Errorf("list liked recipes: %w", err)
 	}
 
 	if total == 0 {
 		return models.NewPage([]models.LikedRecipe{}, pag, 0), nil
-	}
-
-	likedList, err := f.likes.ListByUser(ctx, targetUserID, models.LikeTargetTypeRecipe, int(pag.GetLimit()), int(pag.Offset()))
-	if err != nil {
-		return models.GenericPage[models.LikedRecipe]{}, fmt.Errorf("list liked recipes: %w", err)
 	}
 
 	if len(likedList) == 0 {

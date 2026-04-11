@@ -112,16 +112,24 @@ func (r *Repository) GetLikedIDs(ctx context.Context, userID string, targetType 
 	return result, nil
 }
 
-func (r *Repository) ListByUser(ctx context.Context, userID string, targetType models.LikeTargetType, limit, offset int) ([]Like, error) {
+func (r *Repository) ListByUser(ctx context.Context, userID string, targetType models.LikeTargetType, limit, offset int) ([]Like, int, error) {
+	where := sq.Eq{"user_id": userID, "target_type": targetType}
+
+	var total int
+	if err := r.psql.Select("COUNT(*)").From(likesTable).Where(where).
+		QueryRowContext(ctx).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("count likes by user: %w", err)
+	}
+
 	rows, err := r.psql.Select(likeColumns...).
 		From(likesTable).
-		Where(sq.Eq{"user_id": userID, "target_type": targetType}).
+		Where(where).
 		OrderBy("created_at DESC").
 		Limit(uint64(limit)).
 		Offset(uint64(offset)).
 		QueryContext(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("list likes by user: %w", err)
+		return nil, 0, fmt.Errorf("list likes by user: %w", err)
 	}
 	defer rows.Close()
 
@@ -129,27 +137,14 @@ func (r *Repository) ListByUser(ctx context.Context, userID string, targetType m
 	for rows.Next() {
 		var like Like
 		if err := rows.Scan(&like.ID, &like.UserID, &like.TargetID, &like.TargetType, &like.CreatedAt); err != nil {
-			return nil, fmt.Errorf("scan like: %w", err)
+			return nil, 0, fmt.Errorf("scan like: %w", err)
 		}
 		likes = append(likes, like)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("rows error: %w", err)
+		return nil, 0, fmt.Errorf("rows error: %w", err)
 	}
-	return likes, nil
-}
-
-func (r *Repository) CountByUser(ctx context.Context, userID string, targetType models.LikeTargetType) (int, error) {
-	var count int
-	err := r.psql.Select("COUNT(*)").
-		From(likesTable).
-		Where(sq.Eq{"user_id": userID, "target_type": targetType}).
-		QueryRowContext(ctx).
-		Scan(&count)
-	if err != nil {
-		return 0, fmt.Errorf("count likes by user: %w", err)
-	}
-	return count, nil
+	return likes, total, nil
 }
 
 func (r *Repository) CountByTargets(ctx context.Context, targetIDs []string, targetType models.LikeTargetType) (map[string]int, error) {
