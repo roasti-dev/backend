@@ -5,13 +5,13 @@
 ### Start the Firebase emulator:
 ```bash
 make firebase-emulator
-export FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099
-export FIREBASE_IDENTITY_BASE_URL=http://localhost:9099/identitytoolkit.googleapis.com/v1/accounts
-export FIREBASE_TOKEN_BASE_URL=http://localhost:9099/securetoken.googleapis.com/v1/token
 ```
 
 ### Start the app:
 ```bash
+export FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099
+export FIREBASE_IDENTITY_BASE_URL=http://localhost:9099/identitytoolkit.googleapis.com/v1/accounts
+export FIREBASE_TOKEN_BASE_URL=http://localhost:9099/securetoken.googleapis.com/v1/token
 SERVER_PORT=9090 DEBUG=1 go run ./cmd/server
 ```
 

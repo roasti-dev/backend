@@ -28,4 +28,4 @@ coverage.out
 
 # Firebase emulator data
 /.firebase-data/
-
+/firebase-debug.log
