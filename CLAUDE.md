@@ -108,11 +108,18 @@ Use `s.logger` (injected via constructor) for all logging inside services — ne
 ## Go Notes
 
 - Use `new(expr)` to create a pointer to a value — Go 1.26+ allows expressions as operands: `new("foo")` returns `*string`, `new(float32(15))` returns `*float32`. No need for helper functions or intermediate variables.
+- Use `ptr.GetOr(p, default)` from `internal/x/ptr` to dereference nullable params — used in `Pagination()` methods on params structs
 
 ## SQLite / Squirrel Notes
 
 - Use `sq.Expr("datetime('now')")` for current timestamp — SQLite does not support `NOW()`
 - To detect "not found" on DELETE/UPDATE, check `result.RowsAffected() == 0` (no error is returned for missing rows)
+
+## Pagination Pattern
+
+- Services return `models.GenericPage[T]`; handlers cast to the concrete page type (e.g. `models.PostPage(page)`)
+- Build empty page responses with `models.EmptyPage[T]()`, not manual struct literals
+- Params structs expose `.Pagination() models.PaginationParams` — use `ptr.GetOr` inside
 
 ## Generated Code
 
