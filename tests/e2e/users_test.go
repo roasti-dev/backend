@@ -267,6 +267,123 @@ func TestCheckUsernameAvailability(t *testing.T) {
 	})
 }
 
+func TestListUsersRecommended(t *testing.T) {
+	srv := setupTestServer(t)
+
+	sortRecommended := client.Recommended
+
+	listRecommended := func(t *testing.T, c *authenticatedClient) *client.ListUsersResponse {
+		t.Helper()
+		resp, err := c.ListUsersWithResponse(t.Context(), &client.ListUsersParams{
+			Sort: &sortRecommended,
+		})
+		require.NoError(t, err)
+		return resp
+	}
+
+	t.Run("returns 200 with empty list when no qualifying users", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		resp := listRecommended(t, c)
+		assert.Equal(t, 200, resp.StatusCode())
+		assert.NotNil(t, resp.JSON200.Items)
+		assert.Empty(t, resp.JSON200.Items)
+	})
+
+	t.Run("returns users with liked public recipes", func(t *testing.T) {
+		viewer := newAuthenticatedTestClient(t, srv)
+		author := newAuthenticatedTestClient(t, srv)
+
+		recipe := createRecipe(t, author, defaultPayload)
+		toggleRecipeLike(t, viewer, recipe.Id)
+
+		resp := listRecommended(t, viewer)
+		assert.Equal(t, 200, resp.StatusCode())
+
+		ids := make([]string, 0, len(resp.JSON200.Items))
+		for _, u := range resp.JSON200.Items {
+			ids = append(ids, u.Id)
+		}
+		assert.Contains(t, ids, author.ID)
+	})
+
+	t.Run("does not include current user", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		recipe := createRecipe(t, c, defaultPayload)
+		toggleRecipeLike(t, c, recipe.Id)
+
+		resp := listRecommended(t, c)
+		assert.Equal(t, 200, resp.StatusCode())
+
+		for _, u := range resp.JSON200.Items {
+			assert.NotEqual(t, c.ID, u.Id)
+		}
+	})
+
+	t.Run("does not include users without public recipes", func(t *testing.T) {
+		viewer := newAuthenticatedTestClient(t, srv)
+		author := newAuthenticatedTestClient(t, srv)
+
+		privatePayload := defaultPayload
+		privatePayload.Public = new(false)
+		createRecipe(t, author, privatePayload)
+
+		resp := listRecommended(t, viewer)
+		assert.Equal(t, 200, resp.StatusCode())
+
+		for _, u := range resp.JSON200.Items {
+			assert.NotEqual(t, author.ID, u.Id)
+		}
+	})
+
+	t.Run("ranks by like count descending", func(t *testing.T) {
+		viewer := newAuthenticatedTestClient(t, srv)
+		authorA := newAuthenticatedTestClient(t, srv)
+		authorB := newAuthenticatedTestClient(t, srv)
+
+		// authorA gets 1 like, authorB gets 2 likes
+		recipeA := createRecipe(t, authorA, defaultPayload)
+		toggleRecipeLike(t, viewer, recipeA.Id)
+
+		recipeB1 := createRecipe(t, authorB, defaultPayload)
+		recipeB2 := createRecipe(t, authorB, defaultPayload)
+		toggleRecipeLike(t, viewer, recipeB1.Id)
+		toggleRecipeLike(t, viewer, recipeB2.Id)
+
+		resp := listRecommended(t, viewer)
+		assert.Equal(t, 200, resp.StatusCode())
+
+		var posA, posB int
+		for i, u := range resp.JSON200.Items {
+			if u.Id == authorA.ID {
+				posA = i + 1
+			}
+			if u.Id == authorB.ID {
+				posB = i + 1
+			}
+		}
+		assert.NotZero(t, posA)
+		assert.NotZero(t, posB)
+		assert.Less(t, posB, posA, "authorB (2 likes) should rank above authorA (1 like)")
+	})
+
+	t.Run("returns empty list when sort is not specified", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		resp, err := c.ListUsersWithResponse(t.Context(), &client.ListUsersParams{})
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode())
+		assert.Empty(t, resp.JSON200.Items)
+	})
+
+	t.Run("unauthenticated returns 401", func(t *testing.T) {
+		unauth := newTestClient(t, srv)
+		resp, err := unauth.ListUsersWithResponse(t.Context(), &client.ListUsersParams{
+			Sort: &sortRecommended,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 401, resp.StatusCode())
+	})
+}
+
 func parseLikedRecipePage(t *testing.T, resp *client.ListUserLikesResponse) models.LikedRecipePage {
 	t.Helper()
 	var page models.LikedRecipePage

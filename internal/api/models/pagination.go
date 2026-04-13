@@ -54,6 +54,10 @@ type GenericPage[T any] struct {
 	Pagination PaginationMeta `json:"pagination"`
 }
 
+func EmptyPage[T any]() GenericPage[T] {
+	return NewPage([]T{}, NewPaginationParams(0, 0), 0)
+}
+
 func NewPage[T any](items []T, pag PaginationParams, total int) GenericPage[T] {
 	if len(items) == 0 {
 		items = []T{}

@@ -42,6 +42,21 @@ func (e ListRecipesParamsSortField) Valid() bool {
 	}
 }
 
+// Defines values for ListUsersParamsSort.
+const (
+	Recommended ListUsersParamsSort = "recommended"
+)
+
+// Valid indicates whether the value is a known member of the ListUsersParamsSort enum.
+func (e ListUsersParamsSort) Valid() bool {
+	switch e {
+	case Recommended:
+		return true
+	default:
+		return false
+	}
+}
+
 // accessTokenCookieContextKey is the context key for AccessTokenCookie security scheme
 type accessTokenCookieContextKey string
 
@@ -117,6 +132,21 @@ type ListRecipeCommentsParams struct {
 type UploadImageMultipartBody struct {
 	File openapi_types.File `json:"file"`
 }
+
+// ListUsersParams defines parameters for ListUsers.
+type ListUsersParams struct {
+	// Sort Sort order. Use `recommended` to rank users by recent recipe likes.
+	Sort *ListUsersParamsSort `form:"sort,omitempty" json:"sort,omitempty"`
+
+	// Limit Number of items per page
+	Limit *externalRef0.LimitParam `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Page Page number
+	Page *externalRef0.PageParam `form:"page,omitempty" json:"page,omitempty"`
+}
+
+// ListUsersParamsSort defines parameters for ListUsers.
+type ListUsersParamsSort string
 
 // CheckUsernameAvailabilityParams defines parameters for CheckUsernameAvailability.
 type CheckUsernameAvailabilityParams struct {
@@ -395,6 +425,9 @@ type ClientInterface interface {
 
 	// GetImage request
 	GetImage(ctx context.Context, imageId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListUsers request
+	ListUsers(ctx context.Context, params *ListUsersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetCurrentUser request
 	GetCurrentUser(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -1031,6 +1064,18 @@ func (c *Client) UploadImageWithBody(ctx context.Context, contentType string, bo
 
 func (c *Client) GetImage(ctx context.Context, imageId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetImageRequest(c.Server, imageId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListUsers(ctx context.Context, params *ListUsersParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListUsersRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -2856,6 +2901,84 @@ func NewGetImageRequest(server string, imageId string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewListUsersRequest generates requests for ListUsers
+func NewListUsersRequest(server string, params *ListUsersParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/users")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Sort != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "sort", *params.Sort, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Page != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "page", *params.Page, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewGetCurrentUserRequest generates requests for GetCurrentUser
 func NewGetCurrentUserRequest(server string) (*http.Request, error) {
 	var err error
@@ -3310,6 +3433,9 @@ type ClientWithResponsesInterface interface {
 
 	// GetImageWithResponse request
 	GetImageWithResponse(ctx context.Context, imageId string, reqEditors ...RequestEditorFn) (*GetImageResponse, error)
+
+	// ListUsersWithResponse request
+	ListUsersWithResponse(ctx context.Context, params *ListUsersParams, reqEditors ...RequestEditorFn) (*ListUsersResponse, error)
 
 	// GetCurrentUserWithResponse request
 	GetCurrentUserWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetCurrentUserResponse, error)
@@ -4174,6 +4300,28 @@ func (r GetImageResponse) StatusCode() int {
 	return 0
 }
 
+type ListUsersResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *externalRef0.UserPreviewPage
+}
+
+// Status returns HTTPResponse.Status
+func (r ListUsersResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListUsersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GetCurrentUserResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -4764,6 +4912,15 @@ func (c *ClientWithResponses) GetImageWithResponse(ctx context.Context, imageId 
 		return nil, err
 	}
 	return ParseGetImageResponse(rsp)
+}
+
+// ListUsersWithResponse request returning *ListUsersResponse
+func (c *ClientWithResponses) ListUsersWithResponse(ctx context.Context, params *ListUsersParams, reqEditors ...RequestEditorFn) (*ListUsersResponse, error) {
+	rsp, err := c.ListUsers(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListUsersResponse(rsp)
 }
 
 // GetCurrentUserWithResponse request returning *GetCurrentUserResponse
@@ -5963,6 +6120,32 @@ func ParseGetImageResponse(rsp *http.Response) (*GetImageResponse, error) {
 	response := &GetImageResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseListUsersResponse parses an HTTP response from a ListUsersWithResponse call
+func ParseListUsersResponse(rsp *http.Response) (*ListUsersResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListUsersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest externalRef0.UserPreviewPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	}
 
 	return response, nil

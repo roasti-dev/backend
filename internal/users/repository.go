@@ -126,6 +126,42 @@ func (r *UserRepository) ExistsByUsername(ctx context.Context, username string) 
 	return count > 0, nil
 }
 
+func (r *UserRepository) ListRecommended(ctx context.Context, excludeUserID string, limit, offset int) ([]User, int, error) {
+	q := `
+SELECT u.id, u.username, u.name, u.avatar_id, COUNT(*) OVER() AS total
+FROM users u
+JOIN recipes r ON r.author_id = u.id AND r.public = true
+JOIN likes l ON l.target_id = r.id AND l.target_type = 'recipe' AND l.created_at >= datetime('now', '-30 days')
+WHERE u.id != ?
+GROUP BY u.id
+ORDER BY COUNT(l.id) DESC
+LIMIT ? OFFSET ?`
+
+	rows, err := r.db.QueryContext(ctx, q, excludeUserID, limit, offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("list recommended users: %w", err)
+	}
+	defer rows.Close()
+
+	var users []User
+	var total int
+	for rows.Next() {
+		var u User
+		var name sql.NullString
+		if err := rows.Scan(&u.ID, &u.Username, &name, &u.AvatarID, &total); err != nil {
+			return nil, 0, fmt.Errorf("scan recommended user: %w", err)
+		}
+		if name.Valid {
+			u.Name = &name.String
+		}
+		users = append(users, u)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("iterate recommended users: %w", err)
+	}
+	return users, total, nil
+}
+
 func (r *UserRepository) ExistsByEmail(ctx context.Context, email string) (bool, error) {
 	var count int
 	err := r.psql.Select("COUNT(1)").

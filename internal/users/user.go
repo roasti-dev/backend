@@ -18,6 +18,15 @@ type User struct {
 	CreatedAt time.Time
 }
 
+func (u User) ToPreview() models.UserPreview {
+	return models.UserPreview{
+		Id:       u.ID,
+		Username: u.Username,
+		Name:     u.Name,
+		AvatarId: u.AvatarID,
+	}
+}
+
 func (u User) ToPublicProfile() models.UserProfile {
 	return models.UserProfile{
 		Id:       u.ID,

@@ -12,6 +12,7 @@ import (
 	"github.com/nikpivkin/roasti-app-backend/internal/events"
 	"github.com/nikpivkin/roasti-app-backend/internal/likes"
 	"github.com/nikpivkin/roasti-app-backend/internal/x/id"
+	"github.com/nikpivkin/roasti-app-backend/internal/x/ptr"
 )
 
 type postRepository interface {
@@ -52,15 +53,10 @@ type ListPostsParams struct {
 }
 
 func (p ListPostsParams) Pagination() models.PaginationParams {
-	page := int32(models.DefaultPage)
-	limit := int32(models.DefaultLimit)
-	if p.Page != nil {
-		page = *p.Page
-	}
-	if p.Limit != nil {
-		limit = *p.Limit
-	}
-	return models.NewPaginationParams(page, limit)
+	return models.NewPaginationParams(
+		ptr.GetOr(p.Page, models.DefaultPage),
+		ptr.GetOr(p.Limit, models.DefaultLimit),
+	)
 }
 
 type Service struct {

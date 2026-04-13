@@ -1078,6 +1078,13 @@ type UserPreview struct {
 	Username string `json:"username"`
 }
 
+// UserPreviewPage defines model for UserPreviewPage.
+type UserPreviewPage struct {
+	// Items List of user previews
+	Items      []UserPreview  `json:"items"`
+	Pagination PaginationMeta `json:"pagination"`
+}
+
 // UserProfile Public profile of a user, visible to everyone
 type UserProfile struct {
 	// AvatarId ID of the uploaded avatar image. Can be resolved via the image upload endpoint.
@@ -1163,9 +1170,9 @@ var swaggerSpec = []string{
 	"0brkfNxGW1Yc78U53otzvBfnJ7oXx6r9wffi+Ftt3sFt2T902LU1FZrHa2sG+kMcmaRYsgS+g2ib54lt",
 	"8jgzfWSHRd+jwCYF1KNQ+uNeFPcvG/T2MPx4T9GxWH4slh+L5d9osbz+jzNN3nO0ZW3jyDxbjwcUVry1",
 	"gwlXjP6Odq24BrdVzXf6XksDIbbnZN3ye3cKfpUMltaXMW6DYgRY79ksrisqD7t6dgqmOG2rVH9SDae9",
-	"Y2+5RXSPf0TgvJg8Hqlf9bvXEkTtjocJ5dvBSlBdyrrWytgIktn39ogCQgtL06UFgQ3IreAQ/EBlyy8h",
-	"ABd78717s8dhXL83fnRp6OMsZfBWxJDYyCsIgw1IZec+nZ3OnpvNiww4zVhwFvwyO52dmmKjXqvgDMOd",
-	"+38EAAD//yZFJ8clcAAA",
+	"Y2+5RXSPf0TgvJg8Hqlf9bvXEkTtjocJ5dvBSlCNNw+7Je4/dmzPL9r5Jit8a4Nnyu55XXm6RtiYPpLZ",
+	"9/bkBSIWlhZZCwIbkFvBIfiBqrFfQq4v9hbn7oUlhwnzvQkPloY+zgEEb0UMiQ0ogzDYgFR27tPZ6ey5",
+	"2ZPJgNOMBWfBL7PT2ampoeq1Cs4wirv/RwAAAP//MFKp9/xwAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

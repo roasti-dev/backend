@@ -8,6 +8,7 @@ import (
 	"log/slog"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
+	"github.com/nikpivkin/roasti-app-backend/internal/x/ptr"
 )
 
 type userStore interface {
@@ -17,6 +18,7 @@ type userStore interface {
 	Update(ctx context.Context, userID string, req UpdateUserFields) error
 	ExistsByUsername(ctx context.Context, username string) (bool, error)
 	ExistsByEmail(ctx context.Context, email string) (bool, error)
+	ListRecommended(ctx context.Context, excludeUserID string, limit, offset int) ([]User, int, error)
 }
 
 // IdentityCreator creates a user identity in an external auth provider
@@ -159,6 +161,34 @@ func (s *Service) GetPublicProfileByUsername(ctx context.Context, username strin
 		return models.UserProfile{}, fmt.Errorf("get user by username: %w", err)
 	}
 	return user.ToPublicProfile(), nil
+}
+
+type ListRecommendedParams struct {
+	Limit *int32
+	Page  *int32
+}
+
+func (p ListRecommendedParams) Pagination() models.PaginationParams {
+	return models.NewPaginationParams(
+		ptr.GetOr(p.Page, models.DefaultPage),
+		ptr.GetOr(p.Limit, models.DefaultLimit),
+	)
+}
+
+func (s *Service) ListRecommended(ctx context.Context, currentUserID string, params ListRecommendedParams) (models.GenericPage[models.UserPreview], error) {
+	pag := params.Pagination()
+
+	users, total, err := s.repo.ListRecommended(ctx, currentUserID, int(pag.GetLimit()), int(pag.Offset()))
+	if err != nil {
+		return models.GenericPage[models.UserPreview]{}, fmt.Errorf("list recommended users: %w", err)
+	}
+
+	previews := make([]models.UserPreview, len(users))
+	for i, u := range users {
+		previews[i] = u.ToPreview()
+	}
+
+	return models.NewPage(previews, pag, total), nil
 }
 
 func (s *Service) ExistsByUsername(ctx context.Context, username string) (bool, error) {

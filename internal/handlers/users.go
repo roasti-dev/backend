@@ -49,6 +49,21 @@ func (s *ServerHandler) CheckUsernameAvailability(ctx context.Context, request C
 	return CheckUsernameAvailability200JSONResponse{Available: !exists}, nil
 }
 
+func (s *ServerHandler) ListUsers(ctx context.Context, request ListUsersRequestObject) (ListUsersResponseObject, error) {
+	if request.Params.Sort == nil || *request.Params.Sort != Recommended {
+		return ListUsers200JSONResponse(models.UserPreviewPage(models.EmptyPage[models.UserPreview]())), nil
+	}
+	currentUserID := requestctx.GetUserID(ctx)
+	page, err := s.userService.ListRecommended(ctx, currentUserID, users.ListRecommendedParams{
+		Page:  request.Params.Page,
+		Limit: request.Params.Limit,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return ListUsers200JSONResponse(models.UserPreviewPage(page)), nil
+}
+
 func (s *ServerHandler) ListUserLikes(ctx context.Context, request ListUserLikesRequestObject) (ListUserLikesResponseObject, error) {
 	currentUserID := requestctx.GetUserID(ctx)
 

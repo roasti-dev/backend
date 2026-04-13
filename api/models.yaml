@@ -1175,3 +1175,14 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/Bean"
+
+    UserPreviewPage:
+      allOf:
+        - $ref: "#/components/schemas/Page"
+        - type: object
+          properties:
+            items:
+              type: array
+              description: List of user previews
+              items:
+                $ref: "#/components/schemas/UserPreview"
