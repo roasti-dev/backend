@@ -28,9 +28,9 @@ import (
 )
 
 const (
-	AccessTokenCookieScopes  = "AccessTokenCookie.Scopes"
-	BearerAuthScopes         = "BearerAuth.Scopes"
-	RefreshTokenCookieScopes = "RefreshTokenCookie.Scopes"
+	AccessTokenCookieScopes  accessTokenCookieContextKey  = "AccessTokenCookie.Scopes"
+	BearerAuthScopes         bearerAuthContextKey         = "BearerAuth.Scopes"
+	RefreshTokenCookieScopes refreshTokenCookieContextKey = "RefreshTokenCookie.Scopes"
 )
 
 // Defines values for ListRecipesParamsSortField.
@@ -50,6 +50,15 @@ func (e ListRecipesParamsSortField) Valid() bool {
 		return false
 	}
 }
+
+// accessTokenCookieContextKey is the context key for AccessTokenCookie security scheme
+type accessTokenCookieContextKey string
+
+// bearerAuthContextKey is the context key for BearerAuth security scheme
+type bearerAuthContextKey string
+
+// refreshTokenCookieContextKey is the context key for RefreshTokenCookie security scheme
+type refreshTokenCookieContextKey string
 
 // ListBeansParams defines parameters for ListBeans.
 type ListBeansParams struct {
@@ -1833,10 +1842,10 @@ func Handler(si ServerInterface) http.Handler {
 	return HandlerWithOptions(si, StdHTTPServerOptions{})
 }
 
-// ServeMux is an abstraction of http.ServeMux.
+// ServeMux is an abstraction of [http.ServeMux].
 type ServeMux interface {
 	HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request))
-	ServeHTTP(w http.ResponseWriter, r *http.Request)
+	http.Handler
 }
 
 type StdHTTPServerOptions struct {
@@ -1879,49 +1888,49 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 		ErrorHandlerFunc:   options.ErrorHandlerFunc,
 	}
 
-	m.HandleFunc("POST "+options.BaseURL+"/api/v1/auth/change-password", wrapper.ChangePassword)
-	m.HandleFunc("POST "+options.BaseURL+"/api/v1/auth/login", wrapper.LoginUser)
-	m.HandleFunc("POST "+options.BaseURL+"/api/v1/auth/logout", wrapper.LogoutUser)
-	m.HandleFunc("POST "+options.BaseURL+"/api/v1/auth/refresh", wrapper.RefreshToken)
-	m.HandleFunc("POST "+options.BaseURL+"/api/v1/auth/register", wrapper.RegisterUser)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/beans", wrapper.ListBeans)
-	m.HandleFunc("POST "+options.BaseURL+"/api/v1/beans", wrapper.CreateBean)
-	m.HandleFunc("DELETE "+options.BaseURL+"/api/v1/beans/{bean_id}", wrapper.DeleteBean)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/beans/{bean_id}", wrapper.GetBean)
-	m.HandleFunc("PUT "+options.BaseURL+"/api/v1/beans/{bean_id}", wrapper.UpdateBean)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/beans/{bean_id}/comments", wrapper.ListBeanComments)
-	m.HandleFunc("POST "+options.BaseURL+"/api/v1/beans/{bean_id}/comments", wrapper.CreateBeanComment)
-	m.HandleFunc("POST "+options.BaseURL+"/api/v1/beans/{bean_id}/like", wrapper.ToggleBeanLike)
-	m.HandleFunc("DELETE "+options.BaseURL+"/api/v1/comments/{comment_id}", wrapper.DeleteComment)
-	m.HandleFunc("PATCH "+options.BaseURL+"/api/v1/comments/{comment_id}", wrapper.UpdateComment)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/notifications", wrapper.ListNotifications)
-	m.HandleFunc("POST "+options.BaseURL+"/api/v1/notifications/read_all", wrapper.MarkAllNotificationsRead)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/notifications/unread_count", wrapper.GetNotificationUnreadCount)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/posts", wrapper.ListPosts)
-	m.HandleFunc("POST "+options.BaseURL+"/api/v1/posts", wrapper.CreatePost)
-	m.HandleFunc("DELETE "+options.BaseURL+"/api/v1/posts/{post_id}", wrapper.DeletePost)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/posts/{post_id}", wrapper.GetPost)
-	m.HandleFunc("PUT "+options.BaseURL+"/api/v1/posts/{post_id}", wrapper.UpdatePost)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/posts/{post_id}/comments", wrapper.ListPostComments)
-	m.HandleFunc("POST "+options.BaseURL+"/api/v1/posts/{post_id}/comments", wrapper.CreatePostComment)
-	m.HandleFunc("POST "+options.BaseURL+"/api/v1/posts/{post_id}/like", wrapper.TogglePostLike)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/recipes", wrapper.ListRecipes)
-	m.HandleFunc("POST "+options.BaseURL+"/api/v1/recipes", wrapper.CreateRecipe)
-	m.HandleFunc("DELETE "+options.BaseURL+"/api/v1/recipes/{recipe_id}", wrapper.DeleteRecipe)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/recipes/{recipe_id}", wrapper.GetRecipe)
-	m.HandleFunc("PUT "+options.BaseURL+"/api/v1/recipes/{recipe_id}", wrapper.UpdateRecipe)
-	m.HandleFunc("POST "+options.BaseURL+"/api/v1/recipes/{recipe_id}/clone", wrapper.CloneRecipe)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/recipes/{recipe_id}/comments", wrapper.ListRecipeComments)
-	m.HandleFunc("POST "+options.BaseURL+"/api/v1/recipes/{recipe_id}/comments", wrapper.CreateRecipeComment)
-	m.HandleFunc("POST "+options.BaseURL+"/api/v1/recipes/{recipe_id}/like", wrapper.ToggleRecipeLike)
-	m.HandleFunc("POST "+options.BaseURL+"/api/v1/uploads/images", wrapper.UploadImage)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/uploads/images/{image_id}", wrapper.GetImage)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/users/me", wrapper.GetCurrentUser)
-	m.HandleFunc("PATCH "+options.BaseURL+"/api/v1/users/me", wrapper.UpdateCurrentUser)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/users/username-availability", wrapper.CheckUsernameAvailability)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/users/{user_id}/likes", wrapper.ListUserLikes)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/users/{username}", wrapper.GetUserProfile)
-	m.HandleFunc("GET "+options.BaseURL+"/health", wrapper.HealthCheck)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/auth/change-password", wrapper.ChangePassword)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/auth/login", wrapper.LoginUser)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/auth/logout", wrapper.LogoutUser)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/auth/refresh", wrapper.RefreshToken)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/auth/register", wrapper.RegisterUser)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/beans", wrapper.ListBeans)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/beans", wrapper.CreateBean)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/beans/{bean_id}", wrapper.DeleteBean)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/beans/{bean_id}", wrapper.GetBean)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/v1/beans/{bean_id}", wrapper.UpdateBean)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/beans/{bean_id}/comments", wrapper.ListBeanComments)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/beans/{bean_id}/comments", wrapper.CreateBeanComment)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/beans/{bean_id}/like", wrapper.ToggleBeanLike)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/comments/{comment_id}", wrapper.DeleteComment)
+	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/api/v1/comments/{comment_id}", wrapper.UpdateComment)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/notifications", wrapper.ListNotifications)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/notifications/read_all", wrapper.MarkAllNotificationsRead)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/notifications/unread_count", wrapper.GetNotificationUnreadCount)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/posts", wrapper.ListPosts)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/posts", wrapper.CreatePost)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/posts/{post_id}", wrapper.DeletePost)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/posts/{post_id}", wrapper.GetPost)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/v1/posts/{post_id}", wrapper.UpdatePost)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/posts/{post_id}/comments", wrapper.ListPostComments)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/posts/{post_id}/comments", wrapper.CreatePostComment)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/posts/{post_id}/like", wrapper.TogglePostLike)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/recipes", wrapper.ListRecipes)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/recipes", wrapper.CreateRecipe)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/recipes/{recipe_id}", wrapper.DeleteRecipe)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/recipes/{recipe_id}", wrapper.GetRecipe)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/v1/recipes/{recipe_id}", wrapper.UpdateRecipe)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/recipes/{recipe_id}/clone", wrapper.CloneRecipe)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/recipes/{recipe_id}/comments", wrapper.ListRecipeComments)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/recipes/{recipe_id}/comments", wrapper.CreateRecipeComment)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/recipes/{recipe_id}/like", wrapper.ToggleRecipeLike)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/uploads/images", wrapper.UploadImage)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/uploads/images/{image_id}", wrapper.GetImage)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/users/me", wrapper.GetCurrentUser)
+	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/api/v1/users/me", wrapper.UpdateCurrentUser)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/users/username-availability", wrapper.CheckUsernameAvailability)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/users/{user_id}/likes", wrapper.ListUserLikes)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/users/{username}", wrapper.GetUserProfile)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/health", wrapper.HealthCheck)
 
 	return m
 }
@@ -1937,28 +1946,43 @@ type ChangePasswordResponseObject interface {
 type ChangePassword200JSONResponse externalRef0.TokensResponse
 
 func (response ChangePassword200JSONResponse) VisitChangePasswordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type ChangePassword401JSONResponse externalRef0.ApiErrorResponse
 
 func (response ChangePassword401JSONResponse) VisitChangePasswordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(401)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type ChangePassword422JSONResponse externalRef0.ApiErrorResponse
 
 func (response ChangePassword422JSONResponse) VisitChangePasswordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(422)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type LoginUserRequestObject struct {
@@ -1972,28 +1996,43 @@ type LoginUserResponseObject interface {
 type LoginUser200JSONResponse externalRef0.AuthResponse
 
 func (response LoginUser200JSONResponse) VisitLoginUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type LoginUser400JSONResponse externalRef0.ApiErrorResponse
 
 func (response LoginUser400JSONResponse) VisitLoginUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(400)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type LoginUser401JSONResponse externalRef0.ApiErrorResponse
 
 func (response LoginUser401JSONResponse) VisitLoginUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(401)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type LoginUser500Response struct {
@@ -2055,19 +2094,29 @@ type RefreshTokenResponseObject interface {
 type RefreshToken200JSONResponse externalRef0.TokensResponse
 
 func (response RefreshToken200JSONResponse) VisitRefreshTokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type RefreshToken401JSONResponse externalRef0.ApiErrorResponse
 
 func (response RefreshToken401JSONResponse) VisitRefreshTokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(401)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type RefreshToken500Response struct {
@@ -2089,37 +2138,57 @@ type RegisterUserResponseObject interface {
 type RegisterUser201JSONResponse externalRef0.AuthResponse
 
 func (response RegisterUser201JSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(201)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type RegisterUser400JSONResponse externalRef0.ApiErrorResponse
 
 func (response RegisterUser400JSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(400)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type RegisterUser409JSONResponse externalRef0.ApiErrorResponse
 
 func (response RegisterUser409JSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(409)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type RegisterUser422JSONResponse externalRef0.ApiErrorResponse
 
 func (response RegisterUser422JSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(422)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type RegisterUser500Response struct {
@@ -2141,10 +2210,15 @@ type ListBeansResponseObject interface {
 type ListBeans200JSONResponse externalRef0.BeanPage
 
 func (response ListBeans200JSONResponse) VisitListBeansResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type ListBeans500Response struct {
@@ -2166,10 +2240,15 @@ type CreateBeanResponseObject interface {
 type CreateBean201JSONResponse externalRef0.Bean
 
 func (response CreateBean201JSONResponse) VisitCreateBeanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(201)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type CreateBean400Response struct {
@@ -2239,10 +2318,15 @@ type GetBeanResponseObject interface {
 type GetBean200JSONResponse externalRef0.Bean
 
 func (response GetBean200JSONResponse) VisitGetBeanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type GetBean404Response struct {
@@ -2273,10 +2357,15 @@ type UpdateBeanResponseObject interface {
 type UpdateBean200JSONResponse externalRef0.Bean
 
 func (response UpdateBean200JSONResponse) VisitUpdateBeanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type UpdateBean400Response struct {
@@ -2323,19 +2412,29 @@ type ListBeanCommentsResponseObject interface {
 type ListBeanComments200JSONResponse externalRef0.CommentPage
 
 func (response ListBeanComments200JSONResponse) VisitListBeanCommentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type ListBeanComments404JSONResponse externalRef0.ApiErrorResponse
 
 func (response ListBeanComments404JSONResponse) VisitListBeanCommentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type CreateBeanCommentRequestObject struct {
@@ -2350,28 +2449,43 @@ type CreateBeanCommentResponseObject interface {
 type CreateBeanComment201JSONResponse externalRef0.PostComment
 
 func (response CreateBeanComment201JSONResponse) VisitCreateBeanCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(201)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type CreateBeanComment401JSONResponse externalRef0.ApiErrorResponse
 
 func (response CreateBeanComment401JSONResponse) VisitCreateBeanCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(401)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type CreateBeanComment404JSONResponse externalRef0.ApiErrorResponse
 
 func (response CreateBeanComment404JSONResponse) VisitCreateBeanCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type ToggleBeanLikeRequestObject struct {
@@ -2385,19 +2499,29 @@ type ToggleBeanLikeResponseObject interface {
 type ToggleBeanLike200JSONResponse externalRef0.ToggleLikeResponse
 
 func (response ToggleBeanLike200JSONResponse) VisitToggleBeanLikeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type ToggleBeanLike404JSONResponse externalRef0.ApiErrorResponse
 
 func (response ToggleBeanLike404JSONResponse) VisitToggleBeanLikeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type DeleteCommentRequestObject struct {
@@ -2419,19 +2543,29 @@ func (response DeleteComment204Response) VisitDeleteCommentResponse(w http.Respo
 type DeleteComment403JSONResponse externalRef0.ApiErrorResponse
 
 func (response DeleteComment403JSONResponse) VisitDeleteCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(403)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type DeleteComment404JSONResponse externalRef0.ApiErrorResponse
 
 func (response DeleteComment404JSONResponse) VisitDeleteCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type UpdateCommentRequestObject struct {
@@ -2446,28 +2580,43 @@ type UpdateCommentResponseObject interface {
 type UpdateComment200JSONResponse externalRef0.PostComment
 
 func (response UpdateComment200JSONResponse) VisitUpdateCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type UpdateComment403JSONResponse externalRef0.ApiErrorResponse
 
 func (response UpdateComment403JSONResponse) VisitUpdateCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(403)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type UpdateComment404JSONResponse externalRef0.ApiErrorResponse
 
 func (response UpdateComment404JSONResponse) VisitUpdateCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type ListNotificationsRequestObject struct {
@@ -2481,10 +2630,15 @@ type ListNotificationsResponseObject interface {
 type ListNotifications200JSONResponse externalRef0.NotificationPage
 
 func (response ListNotifications200JSONResponse) VisitListNotificationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type ListNotifications500Response struct {
@@ -2528,10 +2682,15 @@ type GetNotificationUnreadCountResponseObject interface {
 type GetNotificationUnreadCount200JSONResponse externalRef0.NotificationUnreadCount
 
 func (response GetNotificationUnreadCount200JSONResponse) VisitGetNotificationUnreadCountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type GetNotificationUnreadCount500Response struct {
@@ -2553,10 +2712,15 @@ type ListPostsResponseObject interface {
 type ListPosts200JSONResponse externalRef0.PostPage
 
 func (response ListPosts200JSONResponse) VisitListPostsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type ListPosts500Response struct {
@@ -2578,19 +2742,29 @@ type CreatePostResponseObject interface {
 type CreatePost201JSONResponse externalRef0.Post
 
 func (response CreatePost201JSONResponse) VisitCreatePostResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(201)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type CreatePost400JSONResponse externalRef0.ApiErrorResponse
 
 func (response CreatePost400JSONResponse) VisitCreatePostResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(400)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type DeletePostRequestObject struct {
@@ -2620,19 +2794,29 @@ type GetPostResponseObject interface {
 type GetPost200JSONResponse externalRef0.Post
 
 func (response GetPost200JSONResponse) VisitGetPostResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type GetPost404JSONResponse externalRef0.ApiErrorResponse
 
 func (response GetPost404JSONResponse) VisitGetPostResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type UpdatePostRequestObject struct {
@@ -2647,37 +2831,57 @@ type UpdatePostResponseObject interface {
 type UpdatePost200JSONResponse externalRef0.Post
 
 func (response UpdatePost200JSONResponse) VisitUpdatePostResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type UpdatePost400JSONResponse externalRef0.ApiErrorResponse
 
 func (response UpdatePost400JSONResponse) VisitUpdatePostResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(400)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type UpdatePost403JSONResponse externalRef0.ApiErrorResponse
 
 func (response UpdatePost403JSONResponse) VisitUpdatePostResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(403)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type UpdatePost404JSONResponse externalRef0.ApiErrorResponse
 
 func (response UpdatePost404JSONResponse) VisitUpdatePostResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type ListPostCommentsRequestObject struct {
@@ -2692,19 +2896,29 @@ type ListPostCommentsResponseObject interface {
 type ListPostComments200JSONResponse externalRef0.CommentPage
 
 func (response ListPostComments200JSONResponse) VisitListPostCommentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type ListPostComments404JSONResponse externalRef0.ApiErrorResponse
 
 func (response ListPostComments404JSONResponse) VisitListPostCommentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type CreatePostCommentRequestObject struct {
@@ -2719,28 +2933,43 @@ type CreatePostCommentResponseObject interface {
 type CreatePostComment201JSONResponse externalRef0.PostComment
 
 func (response CreatePostComment201JSONResponse) VisitCreatePostCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(201)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type CreatePostComment400JSONResponse externalRef0.ApiErrorResponse
 
 func (response CreatePostComment400JSONResponse) VisitCreatePostCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(400)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type CreatePostComment404JSONResponse externalRef0.ApiErrorResponse
 
 func (response CreatePostComment404JSONResponse) VisitCreatePostCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type TogglePostLikeRequestObject struct {
@@ -2754,19 +2983,29 @@ type TogglePostLikeResponseObject interface {
 type TogglePostLike200JSONResponse externalRef0.ToggleLikeResponse
 
 func (response TogglePostLike200JSONResponse) VisitTogglePostLikeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type TogglePostLike404JSONResponse externalRef0.ApiErrorResponse
 
 func (response TogglePostLike404JSONResponse) VisitTogglePostLikeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type ListRecipesRequestObject struct {
@@ -2780,10 +3019,15 @@ type ListRecipesResponseObject interface {
 type ListRecipes200JSONResponse externalRef0.RecipePage
 
 func (response ListRecipes200JSONResponse) VisitListRecipesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type ListRecipes400Response struct {
@@ -2813,10 +3057,15 @@ type CreateRecipeResponseObject interface {
 type CreateRecipe201JSONResponse externalRef0.Recipe
 
 func (response CreateRecipe201JSONResponse) VisitCreateRecipeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(201)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type CreateRecipe400Response struct {
@@ -2854,19 +3103,29 @@ type GetRecipeResponseObject interface {
 type GetRecipe200JSONResponse externalRef0.Recipe
 
 func (response GetRecipe200JSONResponse) VisitGetRecipeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type GetRecipe404JSONResponse externalRef0.ApiErrorResponse
 
 func (response GetRecipe404JSONResponse) VisitGetRecipeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type GetRecipe500Response struct {
@@ -2889,37 +3148,57 @@ type UpdateRecipeResponseObject interface {
 type UpdateRecipe200JSONResponse externalRef0.Recipe
 
 func (response UpdateRecipe200JSONResponse) VisitUpdateRecipeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type UpdateRecipe400JSONResponse externalRef0.ApiErrorResponse
 
 func (response UpdateRecipe400JSONResponse) VisitUpdateRecipeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(400)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type UpdateRecipe403JSONResponse externalRef0.ApiErrorResponse
 
 func (response UpdateRecipe403JSONResponse) VisitUpdateRecipeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(403)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type UpdateRecipe404JSONResponse externalRef0.ApiErrorResponse
 
 func (response UpdateRecipe404JSONResponse) VisitUpdateRecipeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type CloneRecipeRequestObject struct {
@@ -2933,10 +3212,15 @@ type CloneRecipeResponseObject interface {
 type CloneRecipe201JSONResponse externalRef0.Recipe
 
 func (response CloneRecipe201JSONResponse) VisitCloneRecipeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(201)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type CloneRecipe401Response struct {
@@ -2983,19 +3267,29 @@ type ListRecipeCommentsResponseObject interface {
 type ListRecipeComments200JSONResponse externalRef0.CommentPage
 
 func (response ListRecipeComments200JSONResponse) VisitListRecipeCommentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type ListRecipeComments404JSONResponse externalRef0.ApiErrorResponse
 
 func (response ListRecipeComments404JSONResponse) VisitListRecipeCommentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type CreateRecipeCommentRequestObject struct {
@@ -3010,28 +3304,43 @@ type CreateRecipeCommentResponseObject interface {
 type CreateRecipeComment201JSONResponse externalRef0.PostComment
 
 func (response CreateRecipeComment201JSONResponse) VisitCreateRecipeCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(201)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type CreateRecipeComment401JSONResponse externalRef0.ApiErrorResponse
 
 func (response CreateRecipeComment401JSONResponse) VisitCreateRecipeCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(401)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type CreateRecipeComment404JSONResponse externalRef0.ApiErrorResponse
 
 func (response CreateRecipeComment404JSONResponse) VisitCreateRecipeCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type ToggleRecipeLikeRequestObject struct {
@@ -3045,37 +3354,57 @@ type ToggleRecipeLikeResponseObject interface {
 type ToggleRecipeLike200JSONResponse externalRef0.ToggleLikeResponse
 
 func (response ToggleRecipeLike200JSONResponse) VisitToggleRecipeLikeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type ToggleRecipeLike401JSONResponse externalRef0.ApiErrorResponse
 
 func (response ToggleRecipeLike401JSONResponse) VisitToggleRecipeLikeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(401)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type ToggleRecipeLike404JSONResponse externalRef0.ApiErrorResponse
 
 func (response ToggleRecipeLike404JSONResponse) VisitToggleRecipeLikeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type ToggleRecipeLike500JSONResponse externalRef0.ApiErrorResponse
 
 func (response ToggleRecipeLike500JSONResponse) VisitToggleRecipeLikeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(500)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type UploadImageRequestObject struct {
@@ -3089,10 +3418,15 @@ type UploadImageResponseObject interface {
 type UploadImage201JSONResponse externalRef0.Image
 
 func (response UploadImage201JSONResponse) VisitUploadImageResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(201)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type UploadImage400Response struct {
@@ -3134,6 +3468,7 @@ type GetImage200ImageResponse struct {
 }
 
 func (response GetImage200ImageResponse) VisitGetImageResponse(w http.ResponseWriter) error {
+
 	w.Header().Set("Content-Type", response.ContentType)
 	if response.ContentLength != 0 {
 		w.Header().Set("Content-Length", fmt.Sprint(response.ContentLength))
@@ -3173,10 +3508,15 @@ type GetCurrentUserResponseObject interface {
 type GetCurrentUser200JSONResponse externalRef0.UserAccount
 
 func (response GetCurrentUser200JSONResponse) VisitGetCurrentUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type GetCurrentUser401Response struct {
@@ -3198,10 +3538,15 @@ type UpdateCurrentUserResponseObject interface {
 type UpdateCurrentUser200JSONResponse externalRef0.UserAccount
 
 func (response UpdateCurrentUser200JSONResponse) VisitUpdateCurrentUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type UpdateCurrentUser400Response struct {
@@ -3215,19 +3560,29 @@ func (response UpdateCurrentUser400Response) VisitUpdateCurrentUserResponse(w ht
 type UpdateCurrentUser409JSONResponse externalRef0.ApiErrorResponse
 
 func (response UpdateCurrentUser409JSONResponse) VisitUpdateCurrentUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(409)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type UpdateCurrentUser422JSONResponse externalRef0.ApiErrorResponse
 
 func (response UpdateCurrentUser422JSONResponse) VisitUpdateCurrentUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(422)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type CheckUsernameAvailabilityRequestObject struct {
@@ -3243,10 +3598,15 @@ type CheckUsernameAvailability200JSONResponse struct {
 }
 
 func (response CheckUsernameAvailability200JSONResponse) VisitCheckUsernameAvailabilityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type CheckUsernameAvailability400Response struct {
@@ -3271,19 +3631,29 @@ type ListUserLikes200JSONResponse struct {
 }
 
 func (response ListUserLikes200JSONResponse) VisitListUserLikesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.union); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response.union)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type ListUserLikes400JSONResponse externalRef0.ApiErrorResponse
 
 func (response ListUserLikes400JSONResponse) VisitListUserLikesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(400)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type ListUserLikes401Response struct {
@@ -3321,19 +3691,29 @@ type GetUserProfileResponseObject interface {
 type GetUserProfile200JSONResponse externalRef0.UserProfile
 
 func (response GetUserProfile200JSONResponse) VisitGetUserProfileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type GetUserProfile404JSONResponse externalRef0.ApiErrorResponse
 
 func (response GetUserProfile404JSONResponse) VisitGetUserProfileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
-
-	return json.NewEncoder(w).Encode(response)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type HealthCheckRequestObject struct {
@@ -3346,6 +3726,7 @@ type HealthCheckResponseObject interface {
 type HealthCheck200TextResponse string
 
 func (response HealthCheck200TextResponse) VisitHealthCheckResponse(w http.ResponseWriter) error {
+
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(200)
 
