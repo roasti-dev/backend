@@ -1,0 +1,23 @@
+{
+  "beans": [
+    {
+      "name": "Эфиопия Йиргачефф",
+      "roast_type": "filter",
+      "roaster": "Sample Roasters",
+      "country": "Эфиопия",
+      "region": "Йиргачефф",
+      "process": ["мытая"],
+      "descriptors": ["жасмин", "бергамот", "персик"],
+      "image": "ethiopia.jpg"
+    },
+    {
+      "name": "Колумбия Уила",
+      "roast_type": "filter",
+      "roaster": "Sample Roasters",
+      "country": "Колумбия",
+      "region": "Уила",
+      "process": ["мытая"],
+      "descriptors": ["карамель", "яблоко", "миндаль"]
+    }
+  ]
+}

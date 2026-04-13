@@ -26,6 +26,10 @@ coverage.out
 /.firebase-test.pid
 /.firebase.pid
 
+# Seed images (add your own, not committed)
+/scripts/seed/images/*
+!/scripts/seed/images/.gitkeep
+
 # Firebase emulator data
 /.firebase-data/
 /firebase-debug.log

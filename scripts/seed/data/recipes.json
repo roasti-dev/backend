@@ -1,0 +1,150 @@
+{
+  "recipes": [
+    {
+      "title": "Классический V60",
+      "description": "Чистая и сбалансированная чашка с яркой кислотностью. Подходит для светлой обжарки.",
+      "brew_method": "v60",
+      "difficulty": "medium",
+      "roast_level": "medium_light",
+      "public": true,
+      "steps": [
+        {"order": 1, "title": "Ополоснуть фильтр", "description": "Ополосните бумажный фильтр горячей водой, вылейте воду из дриппера.", "duration_seconds": 20},
+        {"order": 2, "title": "Блюм", "description": "Засыпьте 15г кофе, налейте 40г воды равномерно, дайте постоять.", "duration_seconds": 30},
+        {"order": 3, "title": "Основной пролив", "description": "Медленно лейте воду кругами до 250г общего веса.", "duration_seconds": 90},
+        {"order": 4, "title": "Дренаж", "description": "Дождитесь полного стекания воды.", "duration_seconds": 45}
+      ]
+    },
+    {
+      "title": "V60 Сладкий блюм",
+      "description": "Удлинённая фаза блюма подчёркивает сладость и снижает кислотность.",
+      "brew_method": "v60",
+      "difficulty": "medium",
+      "roast_level": "light",
+      "public": true,
+      "steps": [
+        {"order": 1, "title": "Ополоснуть фильтр", "description": "Ополосните фильтр и прогрейте дриппер.", "duration_seconds": 20},
+        {"order": 2, "title": "Блюм", "description": "18г кофе, 60г воды — удлинённый блюм для максимальной дегазации.", "duration_seconds": 45},
+        {"order": 3, "title": "Первый пролив", "description": "Лейте воду до 180г.", "duration_seconds": 45},
+        {"order": 4, "title": "Финальный пролив", "description": "Доведите до 280г общего веса.", "duration_seconds": 40},
+        {"order": 5, "title": "Дренаж", "description": "Дождитесь полного стекания.", "duration_seconds": 40}
+      ]
+    },
+    {
+      "title": "Аэропресс перевёрнутый",
+      "description": "Перевёрнутый метод даёт полный контроль над временем контакта. Плотная, концентрированная чашка.",
+      "brew_method": "aeropress",
+      "difficulty": "medium",
+      "roast_level": "medium",
+      "public": true,
+      "steps": [
+        {"order": 1, "title": "Подготовка", "description": "Поставьте аэропресс поршнем вниз, вставьте на 1–2 деления.", "duration_seconds": 10},
+        {"order": 2, "title": "Засыпать кофе", "description": "15г кофе среднего помола.", "duration_seconds": 10},
+        {"order": 3, "title": "Залить воду", "description": "Налейте 200г воды 80°C, перемешайте.", "duration_seconds": 20},
+        {"order": 4, "title": "Настаивание", "description": "Накройте крышкой с фильтром, подождите.", "duration_seconds": 90},
+        {"order": 5, "title": "Перевернуть и продавить", "description": "Переверните на кружку, медленно давите поршень в течение 30 секунд.", "duration_seconds": 30}
+      ]
+    },
+    {
+      "title": "Аэропресс Hot и Cold",
+      "description": "Концентрат на аэропрессе, разбавленный горячей или холодной водой. Быстро и вкусно.",
+      "brew_method": "aeropress",
+      "difficulty": "easy",
+      "roast_level": "medium",
+      "public": true,
+      "steps": [
+        {"order": 1, "title": "Засыпать кофе", "description": "20г кофе мелкого помола.", "duration_seconds": 10},
+        {"order": 2, "title": "Залить воду", "description": "60г воды 85°C, перемешать.", "duration_seconds": 15},
+        {"order": 3, "title": "Продавить", "description": "Продавите поршень за 20 секунд — получится концентрат.", "duration_seconds": 20},
+        {"order": 4, "title": "Разбавить", "description": "Добавьте 120г горячей воды для Americano или холодной воды со льдом для айс-кофе.", "duration_seconds": 10}
+      ]
+    },
+    {
+      "title": "Кемекс классический",
+      "description": "Толстый фильтр кемекса даёт исключительно чистый вкус без масел. Идеален для ароматных зёрен.",
+      "brew_method": "chemex",
+      "difficulty": "medium",
+      "roast_level": "medium_light",
+      "public": true,
+      "steps": [
+        {"order": 1, "title": "Ополоснуть фильтр", "description": "Сложите фильтр треугольником (три слоя к носику), ополосните горячей водой.", "duration_seconds": 30},
+        {"order": 2, "title": "Блюм", "description": "30г кофе, залейте 60г воды, подождите.", "duration_seconds": 45},
+        {"order": 3, "title": "Первый пролив", "description": "Медленно лейте до 240г.", "duration_seconds": 60},
+        {"order": 4, "title": "Второй пролив", "description": "Лейте до 480г общего веса.", "duration_seconds": 60},
+        {"order": 5, "title": "Дождаться дренажа", "description": "Полный дренаж займёт около 2 минут.", "duration_seconds": 120}
+      ]
+    },
+    {
+      "title": "Французский пресс",
+      "description": "Иммерсионный метод без фильтрации — плотное тело, выраженные масла. Прощает неточности в помоле.",
+      "brew_method": "french_press",
+      "difficulty": "easy",
+      "roast_level": "medium",
+      "public": true,
+      "steps": [
+        {"order": 1, "title": "Засыпать кофе", "description": "30г кофе крупного помола.", "duration_seconds": 10},
+        {"order": 2, "title": "Залить воду", "description": "500г воды 93°C, перемешайте.", "duration_seconds": 20},
+        {"order": 3, "title": "Настаивание", "description": "Накройте крышкой (поршень наверху), подождите.", "duration_seconds": 240},
+        {"order": 4, "title": "Продавить", "description": "Медленно опустите поршень, не давите слишком сильно.", "duration_seconds": 30},
+        {"order": 5, "title": "Сразу перелить", "description": "Сразу перелейте кофе в чашку — иначе продолжит экстрагироваться.", "duration_seconds": 15}
+      ]
+    },
+    {
+      "title": "Мока пот",
+      "description": "Крепкий, насыщенный кофе на плите. Не эспрессо, но близко по характеру.",
+      "brew_method": "moka_pot",
+      "difficulty": "easy",
+      "roast_level": "medium_dark",
+      "public": true,
+      "steps": [
+        {"order": 1, "title": "Залить воду", "description": "Залейте горячую воду в нижнюю камеру до клапана.", "duration_seconds": 15},
+        {"order": 2, "title": "Засыпать кофе", "description": "Заполните воронку мелким помолом, без утрамбовки, разровняйте.", "duration_seconds": 15},
+        {"order": 3, "title": "Собрать и поставить", "description": "Закрутите мока пот, поставьте на средний огонь.", "duration_seconds": 10},
+        {"order": 4, "title": "Следить за процессом", "description": "Как только кофе начнёт выходить, уменьшите огонь. Снимите до появления бурления.", "duration_seconds": 180}
+      ]
+    },
+    {
+      "title": "Колд брю концентрат",
+      "description": "Холодное заваривание 12–16 часов. Мягкий, сладкий, без кислотности. Хранится до 2 недель в холодильнике.",
+      "brew_method": "cold_brew",
+      "difficulty": "easy",
+      "roast_level": "medium",
+      "public": true,
+      "steps": [
+        {"order": 1, "title": "Подготовить кофе", "description": "100г кофе крупного помола.", "duration_seconds": 10},
+        {"order": 2, "title": "Залить холодной водой", "description": "500г холодной воды, перемешать.", "duration_seconds": 20},
+        {"order": 3, "title": "Настаивать в холодильнике", "description": "Накройте и оставьте в холодильнике на 12–16 часов.", "duration_seconds": 0},
+        {"order": 4, "title": "Отфильтровать", "description": "Процедите через бумажный фильтр или мелкое сито. Получится концентрат 1:5.", "duration_seconds": 300},
+        {"order": 5, "title": "Подавать", "description": "Разбавьте водой или молоком 1:1. Подавайте со льдом.", "duration_seconds": 10}
+      ]
+    },
+    {
+      "title": "Эспрессо базовый",
+      "description": "Классический двойной эспрессо. Отправная точка для любых молочных напитков.",
+      "brew_method": "expresso_machine",
+      "difficulty": "hard",
+      "roast_level": "medium_dark",
+      "public": true,
+      "steps": [
+        {"order": 1, "title": "Прогреть группу", "description": "Пролейте воду через группу без кофе для прогрева.", "duration_seconds": 10},
+        {"order": 2, "title": "Смолоть и дозировать", "description": "18г кофе мелкого помола в портафильтр.", "duration_seconds": 15},
+        {"order": 3, "title": "Распределить и темперовать", "description": "Выровняйте кофе, темперуйте с усилием около 15–20 кг.", "duration_seconds": 15},
+        {"order": 4, "title": "Экстракция", "description": "Вставьте портафильтр, начните экстракцию. Цель: 36–40г напитка за 25–30 секунд.", "duration_seconds": 30}
+      ]
+    },
+    {
+      "title": "V60 для кенийских зёрен",
+      "description": "Адаптированный рецепт для кенийских зёрен с агрессивной кислотностью. Высокая температура и крупный помол смягчают резкость.",
+      "brew_method": "v60",
+      "difficulty": "hard",
+      "roast_level": "light",
+      "public": true,
+      "steps": [
+        {"order": 1, "title": "Ополоснуть фильтр", "description": "Тщательно ополосните фильтр, прогрейте дриппер и кружку.", "duration_seconds": 20},
+        {"order": 2, "title": "Блюм", "description": "15г кофе, 45г воды 96°C. Долгий блюм — 45 секунд.", "duration_seconds": 45},
+        {"order": 3, "title": "Первый пролив", "description": "Лейте до 130г, равномерными кругами от центра.", "duration_seconds": 30},
+        {"order": 4, "title": "Второй пролив", "description": "Лейте до 240г.", "duration_seconds": 30},
+        {"order": 5, "title": "Дренаж", "description": "Общее время должно быть около 3:00.", "duration_seconds": 60}
+      ]
+    }
+  ]
+}
