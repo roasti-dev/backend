@@ -50,3 +50,9 @@ type RecipeCommentCreated struct {
 	ByUserID  string
 	CommentID string
 }
+
+// UserFollowed is published when a user follows another user for the first time.
+type UserFollowed struct {
+	FollowerID string
+	TargetID   string
+}

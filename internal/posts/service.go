@@ -47,9 +47,10 @@ type eventPublisher interface {
 }
 
 type ListPostsParams struct {
-	AuthorID *string
-	Limit    *int32
-	Page     *int32
+	AuthorID  *string
+	AuthorIDs []string // if set, filter to posts from these author IDs
+	Limit     *int32
+	Page      *int32
 }
 
 func (p ListPostsParams) Pagination() models.PaginationParams {

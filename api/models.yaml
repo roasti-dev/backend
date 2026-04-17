@@ -493,6 +493,10 @@ components:
       required:
         - id
         - username
+        - followers_count
+        - following_count
+        - is_following
+        - is_followed
       properties:
         id:
           type: string
@@ -509,6 +513,20 @@ components:
         avatar_id:
           type: string
           description: ID of the uploaded avatar image. Can be resolved via the image upload endpoint.
+        followers_count:
+          type: integer
+          format: int32
+          description: Number of users following this profile
+        following_count:
+          type: integer
+          format: int32
+          description: Number of users this profile follows
+        is_following:
+          type: boolean
+          description: Whether the current user follows this profile. False for anonymous users.
+        is_followed:
+          type: boolean
+          description: Whether this profile follows the current user. False for anonymous users.
 
     UserAccount:
       description: Full account representation of the authenticated user

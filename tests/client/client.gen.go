@@ -24,6 +24,21 @@ const (
 	RefreshTokenCookieScopes refreshTokenCookieContextKey = "RefreshTokenCookie.Scopes"
 )
 
+// Defines values for ListPostsParamsFilter.
+const (
+	Following ListPostsParamsFilter = "following"
+)
+
+// Valid indicates whether the value is a known member of the ListPostsParamsFilter enum.
+func (e ListPostsParamsFilter) Valid() bool {
+	switch e {
+	case Following:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ListRecipesParamsSortField.
 const (
 	CreatedAt ListRecipesParamsSortField = "created_at"
@@ -95,10 +110,17 @@ type ListNotificationsParams struct {
 
 // ListPostsParams defines parameters for ListPosts.
 type ListPostsParams struct {
-	AuthorId *string                  `form:"author_id,omitempty" json:"author_id,omitempty"`
-	Page     *externalRef0.PageParam  `form:"page,omitempty" json:"page,omitempty"`
-	Limit    *externalRef0.LimitParam `form:"limit,omitempty" json:"limit,omitempty"`
+	// AuthorId Filter by author ID
+	AuthorId *string `form:"author_id,omitempty" json:"author_id,omitempty"`
+
+	// Filter Apply a named filter. Use `following` to return posts from followed users (requires auth).
+	Filter *ListPostsParamsFilter   `form:"filter,omitempty" json:"filter,omitempty"`
+	Page   *externalRef0.PageParam  `form:"page,omitempty" json:"page,omitempty"`
+	Limit  *externalRef0.LimitParam `form:"limit,omitempty" json:"limit,omitempty"`
 }
+
+// ListPostsParamsFilter defines parameters for ListPosts.
+type ListPostsParamsFilter string
 
 // ListPostCommentsParams defines parameters for ListPostComments.
 type ListPostCommentsParams struct {
@@ -147,6 +169,18 @@ type ListUsersParams struct {
 
 // ListUsersParamsSort defines parameters for ListUsers.
 type ListUsersParamsSort string
+
+// ListFollowersParams defines parameters for ListFollowers.
+type ListFollowersParams struct {
+	Page  *externalRef0.PageParam  `form:"page,omitempty" json:"page,omitempty"`
+	Limit *externalRef0.LimitParam `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListFollowingParams defines parameters for ListFollowing.
+type ListFollowingParams struct {
+	Page  *externalRef0.PageParam  `form:"page,omitempty" json:"page,omitempty"`
+	Limit *externalRef0.LimitParam `form:"limit,omitempty" json:"limit,omitempty"`
+}
 
 // CheckUsernameAvailabilityParams defines parameters for CheckUsernameAvailability.
 type CheckUsernameAvailabilityParams struct {
@@ -437,8 +471,20 @@ type ClientInterface interface {
 
 	UpdateCurrentUser(ctx context.Context, body UpdateCurrentUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListFollowers request
+	ListFollowers(ctx context.Context, params *ListFollowersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListFollowing request
+	ListFollowing(ctx context.Context, params *ListFollowingParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// CheckUsernameAvailability request
 	CheckUsernameAvailability(ctx context.Context, params *CheckUsernameAvailabilityParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UnfollowUser request
+	UnfollowUser(ctx context.Context, userId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// FollowUser request
+	FollowUser(ctx context.Context, userId string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListUserLikes request
 	ListUserLikes(ctx context.Context, userId string, params *ListUserLikesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -1122,8 +1168,56 @@ func (c *Client) UpdateCurrentUser(ctx context.Context, body UpdateCurrentUserJS
 	return c.Client.Do(req)
 }
 
+func (c *Client) ListFollowers(ctx context.Context, params *ListFollowersParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListFollowersRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListFollowing(ctx context.Context, params *ListFollowingParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListFollowingRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) CheckUsernameAvailability(ctx context.Context, params *CheckUsernameAvailabilityParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewCheckUsernameAvailabilityRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UnfollowUser(ctx context.Context, userId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUnfollowUserRequest(c.Server, userId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) FollowUser(ctx context.Context, userId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewFollowUserRequest(c.Server, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -1989,6 +2083,18 @@ func NewListPostsRequest(server string, params *ListPostsParams) (*http.Request,
 		if params.AuthorId != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "author_id", *params.AuthorId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "filter", *params.Filter, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
 				return nil, err
 			} else {
 				for _, qp := range strings.Split(queryFrag, "&") {
@@ -3046,6 +3152,138 @@ func NewUpdateCurrentUserRequestWithBody(server string, contentType string, body
 	return req, nil
 }
 
+// NewListFollowersRequest generates requests for ListFollowers
+func NewListFollowersRequest(server string, params *ListFollowersParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/users/me/followers")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Page != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "page", *params.Page, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListFollowingRequest generates requests for ListFollowing
+func NewListFollowingRequest(server string, params *ListFollowingParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/users/me/following")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Page != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "page", *params.Page, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewCheckUsernameAvailabilityRequest generates requests for CheckUsernameAvailability
 func NewCheckUsernameAvailabilityRequest(server string, params *CheckUsernameAvailabilityParams) (*http.Request, error) {
 	var err error
@@ -3089,6 +3327,74 @@ func NewCheckUsernameAvailabilityRequest(server string, params *CheckUsernameAva
 	}
 
 	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUnfollowUserRequest generates requests for UnfollowUser
+func NewUnfollowUserRequest(server string, userId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "user_id", userId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/users/%s/follow", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewFollowUserRequest generates requests for FollowUser
+func NewFollowUserRequest(server string, userId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "user_id", userId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/users/%s/follow", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -3445,8 +3751,20 @@ type ClientWithResponsesInterface interface {
 
 	UpdateCurrentUserWithResponse(ctx context.Context, body UpdateCurrentUserJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateCurrentUserResponse, error)
 
+	// ListFollowersWithResponse request
+	ListFollowersWithResponse(ctx context.Context, params *ListFollowersParams, reqEditors ...RequestEditorFn) (*ListFollowersResponse, error)
+
+	// ListFollowingWithResponse request
+	ListFollowingWithResponse(ctx context.Context, params *ListFollowingParams, reqEditors ...RequestEditorFn) (*ListFollowingResponse, error)
+
 	// CheckUsernameAvailabilityWithResponse request
 	CheckUsernameAvailabilityWithResponse(ctx context.Context, params *CheckUsernameAvailabilityParams, reqEditors ...RequestEditorFn) (*CheckUsernameAvailabilityResponse, error)
+
+	// UnfollowUserWithResponse request
+	UnfollowUserWithResponse(ctx context.Context, userId string, reqEditors ...RequestEditorFn) (*UnfollowUserResponse, error)
+
+	// FollowUserWithResponse request
+	FollowUserWithResponse(ctx context.Context, userId string, reqEditors ...RequestEditorFn) (*FollowUserResponse, error)
 
 	// ListUserLikesWithResponse request
 	ListUserLikesWithResponse(ctx context.Context, userId string, params *ListUserLikesParams, reqEditors ...RequestEditorFn) (*ListUserLikesResponse, error)
@@ -4368,6 +4686,50 @@ func (r UpdateCurrentUserResponse) StatusCode() int {
 	return 0
 }
 
+type ListFollowersResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *externalRef0.UserPreviewPage
+}
+
+// Status returns HTTPResponse.Status
+func (r ListFollowersResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListFollowersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ListFollowingResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *externalRef0.UserPreviewPage
+}
+
+// Status returns HTTPResponse.Status
+func (r ListFollowingResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListFollowingResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type CheckUsernameAvailabilityResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -4386,6 +4748,51 @@ func (r CheckUsernameAvailabilityResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r CheckUsernameAvailabilityResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UnfollowUserResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *externalRef0.ApiErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r UnfollowUserResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UnfollowUserResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type FollowUserResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *externalRef0.ApiErrorResponse
+	JSON404      *externalRef0.ApiErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r FollowUserResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r FollowUserResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -4949,6 +5356,24 @@ func (c *ClientWithResponses) UpdateCurrentUserWithResponse(ctx context.Context,
 	return ParseUpdateCurrentUserResponse(rsp)
 }
 
+// ListFollowersWithResponse request returning *ListFollowersResponse
+func (c *ClientWithResponses) ListFollowersWithResponse(ctx context.Context, params *ListFollowersParams, reqEditors ...RequestEditorFn) (*ListFollowersResponse, error) {
+	rsp, err := c.ListFollowers(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListFollowersResponse(rsp)
+}
+
+// ListFollowingWithResponse request returning *ListFollowingResponse
+func (c *ClientWithResponses) ListFollowingWithResponse(ctx context.Context, params *ListFollowingParams, reqEditors ...RequestEditorFn) (*ListFollowingResponse, error) {
+	rsp, err := c.ListFollowing(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListFollowingResponse(rsp)
+}
+
 // CheckUsernameAvailabilityWithResponse request returning *CheckUsernameAvailabilityResponse
 func (c *ClientWithResponses) CheckUsernameAvailabilityWithResponse(ctx context.Context, params *CheckUsernameAvailabilityParams, reqEditors ...RequestEditorFn) (*CheckUsernameAvailabilityResponse, error) {
 	rsp, err := c.CheckUsernameAvailability(ctx, params, reqEditors...)
@@ -4956,6 +5381,24 @@ func (c *ClientWithResponses) CheckUsernameAvailabilityWithResponse(ctx context.
 		return nil, err
 	}
 	return ParseCheckUsernameAvailabilityResponse(rsp)
+}
+
+// UnfollowUserWithResponse request returning *UnfollowUserResponse
+func (c *ClientWithResponses) UnfollowUserWithResponse(ctx context.Context, userId string, reqEditors ...RequestEditorFn) (*UnfollowUserResponse, error) {
+	rsp, err := c.UnfollowUser(ctx, userId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUnfollowUserResponse(rsp)
+}
+
+// FollowUserWithResponse request returning *FollowUserResponse
+func (c *ClientWithResponses) FollowUserWithResponse(ctx context.Context, userId string, reqEditors ...RequestEditorFn) (*FollowUserResponse, error) {
+	rsp, err := c.FollowUser(ctx, userId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseFollowUserResponse(rsp)
 }
 
 // ListUserLikesWithResponse request returning *ListUserLikesResponse
@@ -6217,6 +6660,58 @@ func ParseUpdateCurrentUserResponse(rsp *http.Response) (*UpdateCurrentUserRespo
 	return response, nil
 }
 
+// ParseListFollowersResponse parses an HTTP response from a ListFollowersWithResponse call
+func ParseListFollowersResponse(rsp *http.Response) (*ListFollowersResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListFollowersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest externalRef0.UserPreviewPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListFollowingResponse parses an HTTP response from a ListFollowingWithResponse call
+func ParseListFollowingResponse(rsp *http.Response) (*ListFollowingResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListFollowingResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest externalRef0.UserPreviewPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseCheckUsernameAvailabilityResponse parses an HTTP response from a CheckUsernameAvailabilityWithResponse call
 func ParseCheckUsernameAvailabilityResponse(rsp *http.Response) (*CheckUsernameAvailabilityResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -6239,6 +6734,65 @@ func ParseCheckUsernameAvailabilityResponse(rsp *http.Response) (*CheckUsernameA
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUnfollowUserResponse parses an HTTP response from a UnfollowUserWithResponse call
+func ParseUnfollowUserResponse(rsp *http.Response) (*UnfollowUserResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UnfollowUserResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseFollowUserResponse parses an HTTP response from a FollowUserWithResponse call
+func ParseFollowUserResponse(rsp *http.Response) (*FollowUserResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &FollowUserResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
 
 	}
 

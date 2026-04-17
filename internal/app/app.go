@@ -25,6 +25,7 @@ import (
 	"github.com/nikpivkin/roasti-app-backend/internal/comments"
 	"github.com/nikpivkin/roasti-app-backend/internal/db"
 	"github.com/nikpivkin/roasti-app-backend/internal/events"
+	"github.com/nikpivkin/roasti-app-backend/internal/follows"
 	"github.com/nikpivkin/roasti-app-backend/internal/handlers"
 	"github.com/nikpivkin/roasti-app-backend/internal/likes"
 	"github.com/nikpivkin/roasti-app-backend/internal/log"
@@ -108,6 +109,9 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 	beanRepo := beans.NewRepository(database, runner)
 	beanService := beans.NewService(slog.Default(), beanRepo, uploader, likeEnricher, likeService, bus, commentService)
 
+	followRepo := follows.NewRepository(database)
+	followService := follows.NewService(followRepo, userRepo, bus)
+
 	revokedTokenRepo := auth.NewRevokedTokenRepository(database)
 	startRevokedTokenCleanup(ctx, revokedTokenRepo)
 
@@ -134,6 +138,7 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 		commentService,
 		notificationService,
 		beanService,
+		followService,
 	)
 	handler := handlers.NewStrictHandlerWithOptions(strictHandler, nil, handlers.StrictHTTPServerOptions{
 		ResponseErrorHandlerFunc: responseErrorHandler,
@@ -152,6 +157,7 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 					AuthenticationFunc: middleware.Authenticate(firebaseAuth),
 				},
 			}),
+			middleware.OptionalAuth(firebaseAuth),
 			middleware.ApplyForRoutes(
 				middleware.RefreshToken,
 				"/api/v1/auth/refresh",

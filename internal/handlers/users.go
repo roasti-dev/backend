@@ -38,6 +38,15 @@ func (s *ServerHandler) GetUserProfile(ctx context.Context, request GetUserProfi
 	if err != nil {
 		return nil, err
 	}
+	currentUserID := requestctx.GetUserID(ctx)
+	stats, err := s.followService.GetStats(ctx, profile.Id, currentUserID)
+	if err != nil {
+		return nil, err
+	}
+	profile.FollowersCount = int32(stats.FollowersCount)
+	profile.FollowingCount = int32(stats.FollowingCount)
+	profile.IsFollowing = stats.IsFollowing
+	profile.IsFollowed = stats.IsFollowed
 	return GetUserProfile200JSONResponse(profile), nil
 }
 

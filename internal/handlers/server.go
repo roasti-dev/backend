@@ -7,6 +7,7 @@ import (
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
 	"github.com/nikpivkin/roasti-app-backend/internal/auth"
 	"github.com/nikpivkin/roasti-app-backend/internal/beans"
+	"github.com/nikpivkin/roasti-app-backend/internal/follows"
 	"github.com/nikpivkin/roasti-app-backend/internal/likes"
 	"github.com/nikpivkin/roasti-app-backend/internal/posts"
 	"github.com/nikpivkin/roasti-app-backend/internal/recipes"
@@ -75,6 +76,7 @@ type ServerHandler struct {
 	commentService      CommentService
 	notificationService NotificationService
 	beanService         BeanService
+	followService       *follows.Service
 }
 
 func NewServerHandler(
@@ -88,6 +90,7 @@ func NewServerHandler(
 	commentService CommentService,
 	notificationService NotificationService,
 	beanService BeanService,
+	followService *follows.Service,
 ) *ServerHandler {
 	return &ServerHandler{
 		logger:              slog.Default(),
@@ -101,5 +104,6 @@ func NewServerHandler(
 		commentService:      commentService,
 		notificationService: notificationService,
 		beanService:         beanService,
+		followService:       followService,
 	}
 }

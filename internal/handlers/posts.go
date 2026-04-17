@@ -20,11 +20,22 @@ func (s *ServerHandler) ListPostComments(ctx context.Context, request ListPostCo
 
 func (s *ServerHandler) ListPosts(ctx context.Context, request ListPostsRequestObject) (ListPostsResponseObject, error) {
 	userID := requestctx.GetUserID(ctx)
-	page, err := s.postService.ListPosts(ctx, userID, posts.ListPostsParams{
+	params := posts.ListPostsParams{
 		AuthorID: request.Params.AuthorId,
 		Limit:    request.Params.Limit,
 		Page:     request.Params.Page,
-	})
+	}
+	if request.Params.Filter != nil && *request.Params.Filter == Following {
+		ids, err := s.followService.ListFollowingUserIDs(ctx, userID)
+		if err != nil {
+			return nil, err
+		}
+		if len(ids) == 0 {
+			return ListPosts200JSONResponse(models.PostPage(models.EmptyPage[models.Post]())), nil
+		}
+		params.AuthorIDs = ids
+	}
+	page, err := s.postService.ListPosts(ctx, userID, params)
 	if err != nil {
 		return nil, err
 	}

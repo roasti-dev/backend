@@ -53,9 +53,16 @@ paths:
       parameters:
         - name: author_id
           in: query
+          description: Filter by author ID
           schema:
             type: string
-            description: Filter by author
+        - name: filter
+          in: query
+          description: Apply a named filter. Use `following` to return posts from followed users (requires auth).
+          schema:
+            type: string
+            enum:
+              - following
         - name: page
           in: query
           schema:
@@ -1014,6 +1021,110 @@ paths:
             application/json:
               schema:
                 $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
+
+  /api/v1/users/me/following:
+    get:
+      summary: List followed users
+      operationId: listFollowing
+      description: Returns a paginated list of users the current user follows.
+      tags: [users, follows]
+      parameters:
+        - name: page
+          in: query
+          schema:
+            $ref: "./models.yaml#/components/schemas/PageParam"
+        - name: limit
+          in: query
+          schema:
+            $ref: "./models.yaml#/components/schemas/LimitParam"
+      responses:
+        "200":
+          description: Paginated list of followed users
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/UserPreviewPage"
+        "401":
+          description: Unauthorized
+
+  /api/v1/users/me/followers:
+    get:
+      summary: List followers
+      operationId: listFollowers
+      description: Returns a paginated list of users who follow the current user.
+      tags: [users, follows]
+      parameters:
+        - name: page
+          in: query
+          schema:
+            $ref: "./models.yaml#/components/schemas/PageParam"
+        - name: limit
+          in: query
+          schema:
+            $ref: "./models.yaml#/components/schemas/LimitParam"
+      responses:
+        "200":
+          description: Paginated list of followers
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/UserPreviewPage"
+        "401":
+          description: Unauthorized
+
+  /api/v1/users/{user_id}/follow:
+    post:
+      summary: Follow a user
+      operationId: followUser
+      description: Subscribes the current user to the specified user. Idempotent.
+      tags: [users, follows]
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: ID of the user to follow
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Now following (or was already following)
+        "400":
+          description: Cannot follow yourself
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
+        "401":
+          description: Unauthorized
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
+    delete:
+      summary: Unfollow a user
+      operationId: unfollowUser
+      description: Unsubscribes the current user from the specified user. Idempotent.
+      tags: [users, follows]
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: ID of the user to unfollow
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Unfollowed (or was not following)
+        "400":
+          description: Cannot unfollow yourself
+          content:
+            application/json:
+              schema:
+                $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
+        "401":
+          description: Unauthorized
 
   /api/v1/users/{user_id}/likes:
     get:

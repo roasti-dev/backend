@@ -18,6 +18,8 @@ type userStore interface {
 	Update(ctx context.Context, userID string, req UpdateUserFields) error
 	ExistsByUsername(ctx context.Context, username string) (bool, error)
 	ExistsByEmail(ctx context.Context, email string) (bool, error)
+	ExistsByID(ctx context.Context, userID string) (bool, error)
+	GetPreviewsByIDs(ctx context.Context, ids []string) ([]models.UserPreview, error)
 	ListRecommended(ctx context.Context, excludeUserID string, limit, offset int) ([]User, int, error)
 }
 

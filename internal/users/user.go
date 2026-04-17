@@ -29,11 +29,15 @@ func (u User) ToPreview() models.UserPreview {
 
 func (u User) ToPublicProfile() models.UserProfile {
 	return models.UserProfile{
-		Id:       u.ID,
-		Username: u.Username,
-		Name:     u.Name,
-		AvatarId: u.AvatarID,
-		Bio:      u.Bio,
+		Id:             u.ID,
+		Username:       u.Username,
+		Name:           u.Name,
+		AvatarId:       u.AvatarID,
+		Bio:            u.Bio,
+		FollowersCount: 0,
+		FollowingCount: 0,
+		IsFollowing:    false,
+		IsFollowed:     false,
 	}
 }
 

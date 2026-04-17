@@ -33,6 +33,21 @@ const (
 	RefreshTokenCookieScopes refreshTokenCookieContextKey = "RefreshTokenCookie.Scopes"
 )
 
+// Defines values for ListPostsParamsFilter.
+const (
+	Following ListPostsParamsFilter = "following"
+)
+
+// Valid indicates whether the value is a known member of the ListPostsParamsFilter enum.
+func (e ListPostsParamsFilter) Valid() bool {
+	switch e {
+	case Following:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ListRecipesParamsSortField.
 const (
 	CreatedAt ListRecipesParamsSortField = "created_at"
@@ -104,10 +119,17 @@ type ListNotificationsParams struct {
 
 // ListPostsParams defines parameters for ListPosts.
 type ListPostsParams struct {
-	AuthorId *string                  `form:"author_id,omitempty" json:"author_id,omitempty"`
-	Page     *externalRef0.PageParam  `form:"page,omitempty" json:"page,omitempty"`
-	Limit    *externalRef0.LimitParam `form:"limit,omitempty" json:"limit,omitempty"`
+	// AuthorId Filter by author ID
+	AuthorId *string `form:"author_id,omitempty" json:"author_id,omitempty"`
+
+	// Filter Apply a named filter. Use `following` to return posts from followed users (requires auth).
+	Filter *ListPostsParamsFilter   `form:"filter,omitempty" json:"filter,omitempty"`
+	Page   *externalRef0.PageParam  `form:"page,omitempty" json:"page,omitempty"`
+	Limit  *externalRef0.LimitParam `form:"limit,omitempty" json:"limit,omitempty"`
 }
+
+// ListPostsParamsFilter defines parameters for ListPosts.
+type ListPostsParamsFilter string
 
 // ListPostCommentsParams defines parameters for ListPostComments.
 type ListPostCommentsParams struct {
@@ -156,6 +178,18 @@ type ListUsersParams struct {
 
 // ListUsersParamsSort defines parameters for ListUsers.
 type ListUsersParamsSort string
+
+// ListFollowersParams defines parameters for ListFollowers.
+type ListFollowersParams struct {
+	Page  *externalRef0.PageParam  `form:"page,omitempty" json:"page,omitempty"`
+	Limit *externalRef0.LimitParam `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListFollowingParams defines parameters for ListFollowing.
+type ListFollowingParams struct {
+	Page  *externalRef0.PageParam  `form:"page,omitempty" json:"page,omitempty"`
+	Limit *externalRef0.LimitParam `form:"limit,omitempty" json:"limit,omitempty"`
+}
 
 // CheckUsernameAvailabilityParams defines parameters for CheckUsernameAvailability.
 type CheckUsernameAvailabilityParams struct {
@@ -343,9 +377,21 @@ type ServerInterface interface {
 	// Update current user profile
 	// (PATCH /api/v1/users/me)
 	UpdateCurrentUser(w http.ResponseWriter, r *http.Request)
+	// List followers
+	// (GET /api/v1/users/me/followers)
+	ListFollowers(w http.ResponseWriter, r *http.Request, params ListFollowersParams)
+	// List followed users
+	// (GET /api/v1/users/me/following)
+	ListFollowing(w http.ResponseWriter, r *http.Request, params ListFollowingParams)
 	// Check username availability
 	// (GET /api/v1/users/username-availability)
 	CheckUsernameAvailability(w http.ResponseWriter, r *http.Request, params CheckUsernameAvailabilityParams)
+	// Unfollow a user
+	// (DELETE /api/v1/users/{user_id}/follow)
+	UnfollowUser(w http.ResponseWriter, r *http.Request, userId string)
+	// Follow a user
+	// (POST /api/v1/users/{user_id}/follow)
+	FollowUser(w http.ResponseWriter, r *http.Request, userId string)
 	// List liked items
 	// (GET /api/v1/users/{user_id}/likes)
 	ListUserLikes(w http.ResponseWriter, r *http.Request, userId string, params ListUserLikesParams)
@@ -922,6 +968,14 @@ func (siw *ServerInterfaceWrapper) ListPosts(w http.ResponseWriter, r *http.Requ
 	err = runtime.BindQueryParameterWithOptions("form", true, false, "author_id", r.URL.Query(), &params.AuthorId, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "author_id", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "filter" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "filter", r.URL.Query(), &params.Filter, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "filter", Err: err})
 		return
 	}
 
@@ -1704,6 +1758,92 @@ func (siw *ServerInterfaceWrapper) UpdateCurrentUser(w http.ResponseWriter, r *h
 	handler.ServeHTTP(w, r)
 }
 
+// ListFollowers operation middleware
+func (siw *ServerInterfaceWrapper) ListFollowers(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, AccessTokenCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListFollowersParams
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "page", r.URL.Query(), &params.Page, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "page", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListFollowers(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListFollowing operation middleware
+func (siw *ServerInterfaceWrapper) ListFollowing(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, AccessTokenCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListFollowingParams
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "page", r.URL.Query(), &params.Page, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "page", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListFollowing(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // CheckUsernameAvailability operation middleware
 func (siw *ServerInterfaceWrapper) CheckUsernameAvailability(w http.ResponseWriter, r *http.Request) {
 
@@ -1729,6 +1869,72 @@ func (siw *ServerInterfaceWrapper) CheckUsernameAvailability(w http.ResponseWrit
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CheckUsernameAvailability(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UnfollowUser operation middleware
+func (siw *ServerInterfaceWrapper) UnfollowUser(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "user_id" -------------
+	var userId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", r.PathValue("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user_id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, AccessTokenCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UnfollowUser(w, r, userId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// FollowUser operation middleware
+func (siw *ServerInterfaceWrapper) FollowUser(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "user_id" -------------
+	var userId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", r.PathValue("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user_id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, AccessTokenCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.FollowUser(w, r, userId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2012,7 +2218,11 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/users", wrapper.ListUsers)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/users/me", wrapper.GetCurrentUser)
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/api/v1/users/me", wrapper.UpdateCurrentUser)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/users/me/followers", wrapper.ListFollowers)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/users/me/following", wrapper.ListFollowing)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/users/username-availability", wrapper.CheckUsernameAvailability)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/users/{user_id}/follow", wrapper.UnfollowUser)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/users/{user_id}/follow", wrapper.FollowUser)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/users/{user_id}/likes", wrapper.ListUserLikes)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/users/{username}", wrapper.GetUserProfile)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/health", wrapper.HealthCheck)
@@ -3700,6 +3910,66 @@ func (response UpdateCurrentUser422JSONResponse) VisitUpdateCurrentUserResponse(
 	return err
 }
 
+type ListFollowersRequestObject struct {
+	Params ListFollowersParams
+}
+
+type ListFollowersResponseObject interface {
+	VisitListFollowersResponse(w http.ResponseWriter) error
+}
+
+type ListFollowers200JSONResponse externalRef0.UserPreviewPage
+
+func (response ListFollowers200JSONResponse) VisitListFollowersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListFollowers401Response struct {
+}
+
+func (response ListFollowers401Response) VisitListFollowersResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
+type ListFollowingRequestObject struct {
+	Params ListFollowingParams
+}
+
+type ListFollowingResponseObject interface {
+	VisitListFollowingResponse(w http.ResponseWriter) error
+}
+
+type ListFollowing200JSONResponse externalRef0.UserPreviewPage
+
+func (response ListFollowing200JSONResponse) VisitListFollowingResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListFollowing401Response struct {
+}
+
+func (response ListFollowing401Response) VisitListFollowingResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
 type CheckUsernameAvailabilityRequestObject struct {
 	Params CheckUsernameAvailabilityParams
 }
@@ -3730,6 +4000,96 @@ type CheckUsernameAvailability400Response struct {
 func (response CheckUsernameAvailability400Response) VisitCheckUsernameAvailabilityResponse(w http.ResponseWriter) error {
 	w.WriteHeader(400)
 	return nil
+}
+
+type UnfollowUserRequestObject struct {
+	UserId string `json:"user_id"`
+}
+
+type UnfollowUserResponseObject interface {
+	VisitUnfollowUserResponse(w http.ResponseWriter) error
+}
+
+type UnfollowUser204Response struct {
+}
+
+func (response UnfollowUser204Response) VisitUnfollowUserResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type UnfollowUser400JSONResponse externalRef0.ApiErrorResponse
+
+func (response UnfollowUser400JSONResponse) VisitUnfollowUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnfollowUser401Response struct {
+}
+
+func (response UnfollowUser401Response) VisitUnfollowUserResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
+type FollowUserRequestObject struct {
+	UserId string `json:"user_id"`
+}
+
+type FollowUserResponseObject interface {
+	VisitFollowUserResponse(w http.ResponseWriter) error
+}
+
+type FollowUser200Response struct {
+}
+
+func (response FollowUser200Response) VisitFollowUserResponse(w http.ResponseWriter) error {
+	w.WriteHeader(200)
+	return nil
+}
+
+type FollowUser400JSONResponse externalRef0.ApiErrorResponse
+
+func (response FollowUser400JSONResponse) VisitFollowUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type FollowUser401Response struct {
+}
+
+func (response FollowUser401Response) VisitFollowUserResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
+type FollowUser404JSONResponse externalRef0.ApiErrorResponse
+
+func (response FollowUser404JSONResponse) VisitFollowUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type ListUserLikesRequestObject struct {
@@ -3971,9 +4331,21 @@ type StrictServerInterface interface {
 	// Update current user profile
 	// (PATCH /api/v1/users/me)
 	UpdateCurrentUser(ctx context.Context, request UpdateCurrentUserRequestObject) (UpdateCurrentUserResponseObject, error)
+	// List followers
+	// (GET /api/v1/users/me/followers)
+	ListFollowers(ctx context.Context, request ListFollowersRequestObject) (ListFollowersResponseObject, error)
+	// List followed users
+	// (GET /api/v1/users/me/following)
+	ListFollowing(ctx context.Context, request ListFollowingRequestObject) (ListFollowingResponseObject, error)
 	// Check username availability
 	// (GET /api/v1/users/username-availability)
 	CheckUsernameAvailability(ctx context.Context, request CheckUsernameAvailabilityRequestObject) (CheckUsernameAvailabilityResponseObject, error)
+	// Unfollow a user
+	// (DELETE /api/v1/users/{user_id}/follow)
+	UnfollowUser(ctx context.Context, request UnfollowUserRequestObject) (UnfollowUserResponseObject, error)
+	// Follow a user
+	// (POST /api/v1/users/{user_id}/follow)
+	FollowUser(ctx context.Context, request FollowUserRequestObject) (FollowUserResponseObject, error)
 	// List liked items
 	// (GET /api/v1/users/{user_id}/likes)
 	ListUserLikes(ctx context.Context, request ListUserLikesRequestObject) (ListUserLikesResponseObject, error)
@@ -5156,6 +5528,58 @@ func (sh *strictHandler) UpdateCurrentUser(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+// ListFollowers operation middleware
+func (sh *strictHandler) ListFollowers(w http.ResponseWriter, r *http.Request, params ListFollowersParams) {
+	var request ListFollowersRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListFollowers(ctx, request.(ListFollowersRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListFollowers")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListFollowersResponseObject); ok {
+		if err := validResponse.VisitListFollowersResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListFollowing operation middleware
+func (sh *strictHandler) ListFollowing(w http.ResponseWriter, r *http.Request, params ListFollowingParams) {
+	var request ListFollowingRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListFollowing(ctx, request.(ListFollowingRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListFollowing")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListFollowingResponseObject); ok {
+		if err := validResponse.VisitListFollowingResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // CheckUsernameAvailability operation middleware
 func (sh *strictHandler) CheckUsernameAvailability(w http.ResponseWriter, r *http.Request, params CheckUsernameAvailabilityParams) {
 	var request CheckUsernameAvailabilityRequestObject
@@ -5175,6 +5599,58 @@ func (sh *strictHandler) CheckUsernameAvailability(w http.ResponseWriter, r *htt
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(CheckUsernameAvailabilityResponseObject); ok {
 		if err := validResponse.VisitCheckUsernameAvailabilityResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UnfollowUser operation middleware
+func (sh *strictHandler) UnfollowUser(w http.ResponseWriter, r *http.Request, userId string) {
+	var request UnfollowUserRequestObject
+
+	request.UserId = userId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UnfollowUser(ctx, request.(UnfollowUserRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UnfollowUser")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UnfollowUserResponseObject); ok {
+		if err := validResponse.VisitUnfollowUserResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// FollowUser operation middleware
+func (sh *strictHandler) FollowUser(w http.ResponseWriter, r *http.Request, userId string) {
+	var request FollowUserRequestObject
+
+	request.UserId = userId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.FollowUser(ctx, request.(FollowUserRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "FollowUser")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(FollowUserResponseObject); ok {
+		if err := validResponse.VisitFollowUserResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -5262,127 +5738,133 @@ func (sh *strictHandler) HealthCheck(w http.ResponseWriter, r *http.Request) {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"qY35/wYAAP//MzUwL2vSAAA=",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

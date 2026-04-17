@@ -146,6 +146,8 @@ func (r *Repository) ListPosts(ctx context.Context, params ListPostsParams) ([]m
 		Offset(uint64(pag.Offset()))
 	if params.AuthorID != nil {
 		q = q.Where(sq.Eq{"posts.author_id": *params.AuthorID})
+	} else if len(params.AuthorIDs) > 0 {
+		q = q.Where(sq.Eq{"posts.author_id": params.AuthorIDs})
 	}
 	rows, err := q.RunWith(r.runner).QueryContext(ctx)
 	if err != nil {
@@ -181,6 +183,8 @@ func (r *Repository) ListPosts(ctx context.Context, params ListPostsParams) ([]m
 	countQ := r.psql.Select("COUNT(*)").From(postsTable)
 	if params.AuthorID != nil {
 		countQ = countQ.Where(sq.Eq{"author_id": *params.AuthorID})
+	} else if len(params.AuthorIDs) > 0 {
+		countQ = countQ.Where(sq.Eq{"author_id": params.AuthorIDs})
 	}
 	if err := countQ.RunWith(r.runner).QueryRowContext(ctx).Scan(&total); err != nil {
 		return nil, 0, err

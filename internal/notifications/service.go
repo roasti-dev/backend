@@ -65,6 +65,8 @@ func (s *Service) HandleEvent(e events.Event) {
 			return
 		}
 		n = Notification{ID: id.NewID(), UserID: ev.OwnerID, Type: TypeCommentBean, ActorID: ev.ByUserID, EntityID: ev.BeanID}
+	case events.UserFollowed:
+		n = Notification{ID: id.NewID(), UserID: ev.TargetID, Type: TypeFollow, ActorID: ev.FollowerID, EntityID: ev.FollowerID}
 	default:
 		return
 	}

@@ -233,6 +233,38 @@ func TestGetUserProfile(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 404, resp.StatusCode())
 	})
+
+	t.Run("profile contains zero follow stats by default", func(t *testing.T) {
+		c := newAuthenticatedTestClient(t, srv)
+		anon := newTestClient(t, srv)
+
+		resp, err := anon.GetUserProfileWithResponse(t.Context(), c.Username)
+		require.NoError(t, err)
+		require.Equal(t, 200, resp.StatusCode())
+		assert.Equal(t, int32(0), resp.JSON200.FollowersCount)
+		assert.Equal(t, int32(0), resp.JSON200.FollowingCount)
+		assert.False(t, resp.JSON200.IsFollowing)
+		assert.False(t, resp.JSON200.IsFollowed)
+	})
+
+	t.Run("profile reflects followers and following counts", func(t *testing.T) {
+		target := newAuthenticatedTestClient(t, srv)
+		follower1 := newAuthenticatedTestClient(t, srv)
+		follower2 := newAuthenticatedTestClient(t, srv)
+		other := newAuthenticatedTestClient(t, srv)
+
+		followUser(t, follower1, target.ID)
+		followUser(t, follower2, target.ID)
+		followUser(t, target, other.ID)
+
+		resp, err := follower1.GetUserProfileWithResponse(t.Context(), target.Username)
+		require.NoError(t, err)
+		require.Equal(t, 200, resp.StatusCode())
+		assert.Equal(t, int32(2), resp.JSON200.FollowersCount)
+		assert.Equal(t, int32(1), resp.JSON200.FollowingCount)
+		assert.True(t, resp.JSON200.IsFollowing)
+		assert.False(t, resp.JSON200.IsFollowed)
+	})
 }
 
 func TestCheckUsernameAvailability(t *testing.T) {

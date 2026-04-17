@@ -7,6 +7,8 @@ import (
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
+
+	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
 )
 
 const usersTable = "users"
@@ -160,6 +162,58 @@ LIMIT ? OFFSET ?`
 		return nil, 0, fmt.Errorf("iterate recommended users: %w", err)
 	}
 	return users, total, nil
+}
+
+func (r *UserRepository) ExistsByID(ctx context.Context, userID string) (bool, error) {
+	var count int
+	err := r.psql.Select("COUNT(1)").
+		From(usersTable).
+		Where(sq.Eq{"id": userID}).
+		QueryRowContext(ctx).
+		Scan(&count)
+	if err != nil {
+		return false, fmt.Errorf("check user exists by id: %w", err)
+	}
+	return count > 0, nil
+}
+
+func (r *UserRepository) GetPreviewsByIDs(ctx context.Context, ids []string) ([]models.UserPreview, error) {
+	if len(ids) == 0 {
+		return []models.UserPreview{}, nil
+	}
+	rows, err := r.psql.Select("id", "username", "name", "avatar_id").
+		From(usersTable).
+		Where(sq.Eq{"id": ids}).
+		QueryContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("get user previews: %w", err)
+	}
+	defer rows.Close()
+
+	index := make(map[string]models.UserPreview, len(ids))
+	for rows.Next() {
+		var p models.UserPreview
+		var name sql.NullString
+		if err := rows.Scan(&p.Id, &p.Username, &name, &p.AvatarId); err != nil {
+			return nil, fmt.Errorf("scan user preview: %w", err)
+		}
+		if name.Valid {
+			p.Name = &name.String
+		}
+		index[p.Id] = p
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate user previews: %w", err)
+	}
+
+	// preserve input order
+	previews := make([]models.UserPreview, 0, len(ids))
+	for _, id := range ids {
+		if p, ok := index[id]; ok {
+			previews = append(previews, p)
+		}
+	}
+	return previews, nil
 }
 
 func (r *UserRepository) ExistsByEmail(ctx context.Context, email string) (bool, error) {
