@@ -10,11 +10,11 @@ type Notification struct {
 }
 
 const (
-	TypeLikeRecipe    = "like_recipe"
-	TypeLikeArticle   = "like_article"
-	TypeLikeBean      = "like_bean"
-	TypeCommentRecipe = "comment_recipe"
+	TypeLikeRecipe     = "like_recipe"
+	TypeLikeArticle    = "like_article"
+	TypeLikeBean       = "like_bean"
+	TypeCommentRecipe  = "comment_recipe"
 	TypeCommentArticle = "comment_article"
-	TypeCommentBean   = "comment_bean"
-	TypeFollow        = "follow"
+	TypeCommentBean    = "comment_bean"
+	TypeFollow         = "follow"
 )
