@@ -1,4 +1,4 @@
-package posts
+package articles
 
 import (
 	"fmt"
@@ -8,10 +8,10 @@ import (
 )
 
 var (
-	ErrNotFound         = apierr.NewApiError(http.StatusNotFound, "post not found")
+	ErrNotFound         = apierr.NewApiError(http.StatusNotFound, "article not found")
 	ErrForbidden        = apierr.NewApiError(http.StatusForbidden, "not allowed")
 	ErrInvalidTitle     = apierr.NewApiError(http.StatusUnprocessableEntity, "title cannot be empty")
-	ErrTitleTooLong     = apierr.NewApiError(http.StatusUnprocessableEntity, fmt.Sprintf("title must be at most %d characters", postTitleMaxLen))
-	ErrTooManyBlocks    = apierr.NewApiError(http.StatusUnprocessableEntity, fmt.Sprintf("post must have at most %d blocks", blocksMaxCount))
+	ErrTitleTooLong     = apierr.NewApiError(http.StatusUnprocessableEntity, fmt.Sprintf("title must be at most %d characters", articleTitleMaxLen))
+	ErrTooManyBlocks    = apierr.NewApiError(http.StatusUnprocessableEntity, fmt.Sprintf("article must have at most %d blocks", blocksMaxCount))
 	ErrBlockTextTooLong = apierr.NewApiError(http.StatusUnprocessableEntity, fmt.Sprintf("block text must be at most %d characters", blockTextMaxLen))
 )

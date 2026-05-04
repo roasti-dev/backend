@@ -33,13 +33,13 @@ const (
 	RefreshTokenCookieScopes refreshTokenCookieContextKey = "RefreshTokenCookie.Scopes"
 )
 
-// Defines values for ListPostsParamsFilter.
+// Defines values for ListArticlesParamsFilter.
 const (
-	Following ListPostsParamsFilter = "following"
+	Following ListArticlesParamsFilter = "following"
 )
 
-// Valid indicates whether the value is a known member of the ListPostsParamsFilter enum.
-func (e ListPostsParamsFilter) Valid() bool {
+// Valid indicates whether the value is a known member of the ListArticlesParamsFilter enum.
+func (e ListArticlesParamsFilter) Valid() bool {
 	switch e {
 	case Following:
 		return true
@@ -90,6 +90,26 @@ type bearerAuthContextKey string
 // refreshTokenCookieContextKey is the context key for RefreshTokenCookie security scheme
 type refreshTokenCookieContextKey string
 
+// ListArticlesParams defines parameters for ListArticles.
+type ListArticlesParams struct {
+	// AuthorId Filter by author ID
+	AuthorId *string `form:"author_id,omitempty" json:"author_id,omitempty"`
+
+	// Filter Apply a named filter. Use `following` to return articles from followed users (requires auth).
+	Filter *ListArticlesParamsFilter `form:"filter,omitempty" json:"filter,omitempty"`
+	Page   *externalRef0.PageParam   `form:"page,omitempty" json:"page,omitempty"`
+	Limit  *externalRef0.LimitParam  `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListArticlesParamsFilter defines parameters for ListArticles.
+type ListArticlesParamsFilter string
+
+// ListArticleCommentsParams defines parameters for ListArticleComments.
+type ListArticleCommentsParams struct {
+	Page  *externalRef0.PageParam  `form:"page,omitempty" json:"page,omitempty"`
+	Limit *externalRef0.LimitParam `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // ListBeansParams defines parameters for ListBeans.
 type ListBeansParams struct {
 	// Q Search query matched against bean name and roaster
@@ -114,26 +134,6 @@ type ListNotificationsParams struct {
 	Page *externalRef0.PageParam `form:"page,omitempty" json:"page,omitempty"`
 
 	// Limit Number of items per page
-	Limit *externalRef0.LimitParam `form:"limit,omitempty" json:"limit,omitempty"`
-}
-
-// ListPostsParams defines parameters for ListPosts.
-type ListPostsParams struct {
-	// AuthorId Filter by author ID
-	AuthorId *string `form:"author_id,omitempty" json:"author_id,omitempty"`
-
-	// Filter Apply a named filter. Use `following` to return posts from followed users (requires auth).
-	Filter *ListPostsParamsFilter   `form:"filter,omitempty" json:"filter,omitempty"`
-	Page   *externalRef0.PageParam  `form:"page,omitempty" json:"page,omitempty"`
-	Limit  *externalRef0.LimitParam `form:"limit,omitempty" json:"limit,omitempty"`
-}
-
-// ListPostsParamsFilter defines parameters for ListPosts.
-type ListPostsParamsFilter string
-
-// ListPostCommentsParams defines parameters for ListPostComments.
-type ListPostCommentsParams struct {
-	Page  *externalRef0.PageParam  `form:"page,omitempty" json:"page,omitempty"`
 	Limit *externalRef0.LimitParam `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
@@ -204,6 +204,15 @@ type ListUserLikesParams struct {
 	Limit         *externalRef0.LimitParam    `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// CreateArticleJSONRequestBody defines body for CreateArticle for application/json ContentType.
+type CreateArticleJSONRequestBody = externalRef0.CreateArticleRequest
+
+// UpdateArticleJSONRequestBody defines body for UpdateArticle for application/json ContentType.
+type UpdateArticleJSONRequestBody = externalRef0.UpdateArticleRequest
+
+// CreateArticleCommentJSONRequestBody defines body for CreateArticleComment for application/json ContentType.
+type CreateArticleCommentJSONRequestBody = externalRef0.CreateCommentRequest
+
 // ChangePasswordJSONRequestBody defines body for ChangePassword for application/json ContentType.
 type ChangePasswordJSONRequestBody = externalRef0.ChangePasswordRequest
 
@@ -226,19 +235,10 @@ type CreateBeanJSONRequestBody = externalRef0.CreateBeanRequest
 type UpdateBeanJSONRequestBody = externalRef0.UpdateBeanRequest
 
 // CreateBeanCommentJSONRequestBody defines body for CreateBeanComment for application/json ContentType.
-type CreateBeanCommentJSONRequestBody = externalRef0.CreatePostCommentRequest
+type CreateBeanCommentJSONRequestBody = externalRef0.CreateCommentRequest
 
 // UpdateCommentJSONRequestBody defines body for UpdateComment for application/json ContentType.
-type UpdateCommentJSONRequestBody = externalRef0.UpdatePostCommentRequest
-
-// CreatePostJSONRequestBody defines body for CreatePost for application/json ContentType.
-type CreatePostJSONRequestBody = externalRef0.CreatePostRequest
-
-// UpdatePostJSONRequestBody defines body for UpdatePost for application/json ContentType.
-type UpdatePostJSONRequestBody = externalRef0.UpdatePostRequest
-
-// CreatePostCommentJSONRequestBody defines body for CreatePostComment for application/json ContentType.
-type CreatePostCommentJSONRequestBody = externalRef0.CreatePostCommentRequest
+type UpdateCommentJSONRequestBody = externalRef0.UpdateCommentRequest
 
 // CreateRecipeJSONRequestBody defines body for CreateRecipe for application/json ContentType.
 type CreateRecipeJSONRequestBody = externalRef0.CreateRecipeRequest
@@ -247,7 +247,7 @@ type CreateRecipeJSONRequestBody = externalRef0.CreateRecipeRequest
 type UpdateRecipeJSONRequestBody = externalRef0.UpdateRecipeRequest
 
 // CreateRecipeCommentJSONRequestBody defines body for CreateRecipeComment for application/json ContentType.
-type CreateRecipeCommentJSONRequestBody = externalRef0.CreatePostCommentRequest
+type CreateRecipeCommentJSONRequestBody = externalRef0.CreateCommentRequest
 
 // UploadImageMultipartRequestBody defines body for UploadImage for multipart/form-data ContentType.
 type UploadImageMultipartRequestBody UploadImageMultipartBody
@@ -257,6 +257,30 @@ type UpdateCurrentUserJSONRequestBody = externalRef0.UpdateProfileRequest
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// List articles
+	// (GET /api/v1/articles)
+	ListArticles(w http.ResponseWriter, r *http.Request, params ListArticlesParams)
+	// Create article
+	// (POST /api/v1/articles)
+	CreateArticle(w http.ResponseWriter, r *http.Request)
+	// Delete article
+	// (DELETE /api/v1/articles/{article_id})
+	DeleteArticle(w http.ResponseWriter, r *http.Request, articleId string)
+	// Get article by ID
+	// (GET /api/v1/articles/{article_id})
+	GetArticle(w http.ResponseWriter, r *http.Request, articleId string)
+	// Update article
+	// (PUT /api/v1/articles/{article_id})
+	UpdateArticle(w http.ResponseWriter, r *http.Request, articleId string)
+	// List article comments
+	// (GET /api/v1/articles/{article_id}/comments)
+	ListArticleComments(w http.ResponseWriter, r *http.Request, articleId string, params ListArticleCommentsParams)
+	// Add comment to article
+	// (POST /api/v1/articles/{article_id}/comments)
+	CreateArticleComment(w http.ResponseWriter, r *http.Request, articleId string)
+	// Toggle like on an article
+	// (POST /api/v1/articles/{article_id}/like)
+	ToggleArticleLike(w http.ResponseWriter, r *http.Request, articleId string)
 	// Change password
 	// (POST /api/v1/auth/change-password)
 	ChangePassword(w http.ResponseWriter, r *http.Request)
@@ -311,30 +335,6 @@ type ServerInterface interface {
 	// Get unread notification count
 	// (GET /api/v1/notifications/unread_count)
 	GetNotificationUnreadCount(w http.ResponseWriter, r *http.Request)
-	// List posts
-	// (GET /api/v1/posts)
-	ListPosts(w http.ResponseWriter, r *http.Request, params ListPostsParams)
-	// Create post
-	// (POST /api/v1/posts)
-	CreatePost(w http.ResponseWriter, r *http.Request)
-	// Delete post
-	// (DELETE /api/v1/posts/{post_id})
-	DeletePost(w http.ResponseWriter, r *http.Request, postId string)
-	// Get post by ID
-	// (GET /api/v1/posts/{post_id})
-	GetPost(w http.ResponseWriter, r *http.Request, postId string)
-	// Update post
-	// (PUT /api/v1/posts/{post_id})
-	UpdatePost(w http.ResponseWriter, r *http.Request, postId string)
-	// List post comments
-	// (GET /api/v1/posts/{post_id}/comments)
-	ListPostComments(w http.ResponseWriter, r *http.Request, postId string, params ListPostCommentsParams)
-	// Add comment to post
-	// (POST /api/v1/posts/{post_id}/comments)
-	CreatePostComment(w http.ResponseWriter, r *http.Request, postId string)
-	// Toggle like on a post
-	// (POST /api/v1/posts/{post_id}/like)
-	TogglePostLike(w http.ResponseWriter, r *http.Request, postId string)
 	// List recipes
 	// (GET /api/v1/recipes)
 	ListRecipes(w http.ResponseWriter, r *http.Request, params ListRecipesParams)
@@ -411,6 +411,304 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// ListArticles operation middleware
+func (siw *ServerInterfaceWrapper) ListArticles(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, AccessTokenCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListArticlesParams
+
+	// ------------- Optional query parameter "author_id" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "author_id", r.URL.Query(), &params.AuthorId, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "author_id", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "filter" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "filter", r.URL.Query(), &params.Filter, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "filter", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "page", r.URL.Query(), &params.Page, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "page", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListArticles(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateArticle operation middleware
+func (siw *ServerInterfaceWrapper) CreateArticle(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, AccessTokenCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateArticle(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteArticle operation middleware
+func (siw *ServerInterfaceWrapper) DeleteArticle(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "article_id" -------------
+	var articleId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "article_id", r.PathValue("article_id"), &articleId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "article_id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, AccessTokenCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteArticle(w, r, articleId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetArticle operation middleware
+func (siw *ServerInterfaceWrapper) GetArticle(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "article_id" -------------
+	var articleId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "article_id", r.PathValue("article_id"), &articleId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "article_id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, AccessTokenCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetArticle(w, r, articleId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateArticle operation middleware
+func (siw *ServerInterfaceWrapper) UpdateArticle(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "article_id" -------------
+	var articleId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "article_id", r.PathValue("article_id"), &articleId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "article_id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, AccessTokenCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateArticle(w, r, articleId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListArticleComments operation middleware
+func (siw *ServerInterfaceWrapper) ListArticleComments(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "article_id" -------------
+	var articleId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "article_id", r.PathValue("article_id"), &articleId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "article_id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, AccessTokenCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListArticleCommentsParams
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "page", r.URL.Query(), &params.Page, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "page", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListArticleComments(w, r, articleId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateArticleComment operation middleware
+func (siw *ServerInterfaceWrapper) CreateArticleComment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "article_id" -------------
+	var articleId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "article_id", r.PathValue("article_id"), &articleId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "article_id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, AccessTokenCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateArticleComment(w, r, articleId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ToggleArticleLike operation middleware
+func (siw *ServerInterfaceWrapper) ToggleArticleLike(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "article_id" -------------
+	var articleId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "article_id", r.PathValue("article_id"), &articleId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "article_id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, AccessTokenCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ToggleArticleLike(w, r, articleId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
 
 // ChangePassword operation middleware
 func (siw *ServerInterfaceWrapper) ChangePassword(w http.ResponseWriter, r *http.Request) {
@@ -938,304 +1236,6 @@ func (siw *ServerInterfaceWrapper) GetNotificationUnreadCount(w http.ResponseWri
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetNotificationUnreadCount(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// ListPosts operation middleware
-func (siw *ServerInterfaceWrapper) ListPosts(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
-
-	ctx = context.WithValue(ctx, AccessTokenCookieScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params ListPostsParams
-
-	// ------------- Optional query parameter "author_id" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "author_id", r.URL.Query(), &params.AuthorId, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "author_id", Err: err})
-		return
-	}
-
-	// ------------- Optional query parameter "filter" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "filter", r.URL.Query(), &params.Filter, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "filter", Err: err})
-		return
-	}
-
-	// ------------- Optional query parameter "page" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "page", r.URL.Query(), &params.Page, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "page", Err: err})
-		return
-	}
-
-	// ------------- Optional query parameter "limit" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListPosts(w, r, params)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// CreatePost operation middleware
-func (siw *ServerInterfaceWrapper) CreatePost(w http.ResponseWriter, r *http.Request) {
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
-
-	ctx = context.WithValue(ctx, AccessTokenCookieScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreatePost(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// DeletePost operation middleware
-func (siw *ServerInterfaceWrapper) DeletePost(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "post_id" -------------
-	var postId string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "post_id", r.PathValue("post_id"), &postId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "post_id", Err: err})
-		return
-	}
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
-
-	ctx = context.WithValue(ctx, AccessTokenCookieScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeletePost(w, r, postId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetPost operation middleware
-func (siw *ServerInterfaceWrapper) GetPost(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "post_id" -------------
-	var postId string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "post_id", r.PathValue("post_id"), &postId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "post_id", Err: err})
-		return
-	}
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
-
-	ctx = context.WithValue(ctx, AccessTokenCookieScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetPost(w, r, postId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// UpdatePost operation middleware
-func (siw *ServerInterfaceWrapper) UpdatePost(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "post_id" -------------
-	var postId string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "post_id", r.PathValue("post_id"), &postId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "post_id", Err: err})
-		return
-	}
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
-
-	ctx = context.WithValue(ctx, AccessTokenCookieScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdatePost(w, r, postId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// ListPostComments operation middleware
-func (siw *ServerInterfaceWrapper) ListPostComments(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "post_id" -------------
-	var postId string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "post_id", r.PathValue("post_id"), &postId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "post_id", Err: err})
-		return
-	}
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
-
-	ctx = context.WithValue(ctx, AccessTokenCookieScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params ListPostCommentsParams
-
-	// ------------- Optional query parameter "page" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "page", r.URL.Query(), &params.Page, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "page", Err: err})
-		return
-	}
-
-	// ------------- Optional query parameter "limit" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListPostComments(w, r, postId, params)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// CreatePostComment operation middleware
-func (siw *ServerInterfaceWrapper) CreatePostComment(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "post_id" -------------
-	var postId string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "post_id", r.PathValue("post_id"), &postId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "post_id", Err: err})
-		return
-	}
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
-
-	ctx = context.WithValue(ctx, AccessTokenCookieScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreatePostComment(w, r, postId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// TogglePostLike operation middleware
-func (siw *ServerInterfaceWrapper) TogglePostLike(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "post_id" -------------
-	var postId string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "post_id", r.PathValue("post_id"), &postId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "post_id", Err: err})
-		return
-	}
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
-
-	ctx = context.WithValue(ctx, AccessTokenCookieScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.TogglePostLike(w, r, postId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2178,6 +2178,14 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 		ErrorHandlerFunc:   options.ErrorHandlerFunc,
 	}
 
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/articles", wrapper.ListArticles)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/articles", wrapper.CreateArticle)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/articles/{article_id}", wrapper.DeleteArticle)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/articles/{article_id}", wrapper.GetArticle)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/v1/articles/{article_id}", wrapper.UpdateArticle)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/articles/{article_id}/comments", wrapper.ListArticleComments)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/articles/{article_id}/comments", wrapper.CreateArticleComment)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/articles/{article_id}/like", wrapper.ToggleArticleLike)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/auth/change-password", wrapper.ChangePassword)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/auth/login", wrapper.LoginUser)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/auth/logout", wrapper.LogoutUser)
@@ -2196,14 +2204,6 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/notifications", wrapper.ListNotifications)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/notifications/read_all", wrapper.MarkAllNotificationsRead)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/notifications/unread_count", wrapper.GetNotificationUnreadCount)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/posts", wrapper.ListPosts)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/posts", wrapper.CreatePost)
-	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/posts/{post_id}", wrapper.DeletePost)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/posts/{post_id}", wrapper.GetPost)
-	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/v1/posts/{post_id}", wrapper.UpdatePost)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/posts/{post_id}/comments", wrapper.ListPostComments)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/posts/{post_id}/comments", wrapper.CreatePostComment)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/posts/{post_id}/like", wrapper.TogglePostLike)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/recipes", wrapper.ListRecipes)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/recipes", wrapper.CreateRecipe)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/recipes/{recipe_id}", wrapper.DeleteRecipe)
@@ -2228,6 +2228,313 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/health", wrapper.HealthCheck)
 
 	return m
+}
+
+type ListArticlesRequestObject struct {
+	Params ListArticlesParams
+}
+
+type ListArticlesResponseObject interface {
+	VisitListArticlesResponse(w http.ResponseWriter) error
+}
+
+type ListArticles200JSONResponse externalRef0.ArticlePage
+
+func (response ListArticles200JSONResponse) VisitListArticlesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListArticles500Response struct {
+}
+
+func (response ListArticles500Response) VisitListArticlesResponse(w http.ResponseWriter) error {
+	w.WriteHeader(500)
+	return nil
+}
+
+type CreateArticleRequestObject struct {
+	Body *CreateArticleJSONRequestBody
+}
+
+type CreateArticleResponseObject interface {
+	VisitCreateArticleResponse(w http.ResponseWriter) error
+}
+
+type CreateArticle201JSONResponse externalRef0.Article
+
+func (response CreateArticle201JSONResponse) VisitCreateArticleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateArticle400JSONResponse externalRef0.ApiErrorResponse
+
+func (response CreateArticle400JSONResponse) VisitCreateArticleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteArticleRequestObject struct {
+	ArticleId string `json:"article_id"`
+}
+
+type DeleteArticleResponseObject interface {
+	VisitDeleteArticleResponse(w http.ResponseWriter) error
+}
+
+type DeleteArticle204Response struct {
+}
+
+func (response DeleteArticle204Response) VisitDeleteArticleResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type GetArticleRequestObject struct {
+	ArticleId string `json:"article_id"`
+}
+
+type GetArticleResponseObject interface {
+	VisitGetArticleResponse(w http.ResponseWriter) error
+}
+
+type GetArticle200JSONResponse externalRef0.Article
+
+func (response GetArticle200JSONResponse) VisitGetArticleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetArticle404JSONResponse externalRef0.ApiErrorResponse
+
+func (response GetArticle404JSONResponse) VisitGetArticleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateArticleRequestObject struct {
+	ArticleId string `json:"article_id"`
+	Body      *UpdateArticleJSONRequestBody
+}
+
+type UpdateArticleResponseObject interface {
+	VisitUpdateArticleResponse(w http.ResponseWriter) error
+}
+
+type UpdateArticle200JSONResponse externalRef0.Article
+
+func (response UpdateArticle200JSONResponse) VisitUpdateArticleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateArticle400JSONResponse externalRef0.ApiErrorResponse
+
+func (response UpdateArticle400JSONResponse) VisitUpdateArticleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateArticle403JSONResponse externalRef0.ApiErrorResponse
+
+func (response UpdateArticle403JSONResponse) VisitUpdateArticleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateArticle404JSONResponse externalRef0.ApiErrorResponse
+
+func (response UpdateArticle404JSONResponse) VisitUpdateArticleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListArticleCommentsRequestObject struct {
+	ArticleId string `json:"article_id"`
+	Params    ListArticleCommentsParams
+}
+
+type ListArticleCommentsResponseObject interface {
+	VisitListArticleCommentsResponse(w http.ResponseWriter) error
+}
+
+type ListArticleComments200JSONResponse externalRef0.CommentPage
+
+func (response ListArticleComments200JSONResponse) VisitListArticleCommentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListArticleComments404JSONResponse externalRef0.ApiErrorResponse
+
+func (response ListArticleComments404JSONResponse) VisitListArticleCommentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateArticleCommentRequestObject struct {
+	ArticleId string `json:"article_id"`
+	Body      *CreateArticleCommentJSONRequestBody
+}
+
+type CreateArticleCommentResponseObject interface {
+	VisitCreateArticleCommentResponse(w http.ResponseWriter) error
+}
+
+type CreateArticleComment201JSONResponse externalRef0.Comment
+
+func (response CreateArticleComment201JSONResponse) VisitCreateArticleCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateArticleComment400JSONResponse externalRef0.ApiErrorResponse
+
+func (response CreateArticleComment400JSONResponse) VisitCreateArticleCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateArticleComment404JSONResponse externalRef0.ApiErrorResponse
+
+func (response CreateArticleComment404JSONResponse) VisitCreateArticleCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ToggleArticleLikeRequestObject struct {
+	ArticleId string `json:"article_id"`
+}
+
+type ToggleArticleLikeResponseObject interface {
+	VisitToggleArticleLikeResponse(w http.ResponseWriter) error
+}
+
+type ToggleArticleLike200JSONResponse externalRef0.ToggleLikeResponse
+
+func (response ToggleArticleLike200JSONResponse) VisitToggleArticleLikeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ToggleArticleLike404JSONResponse externalRef0.ApiErrorResponse
+
+func (response ToggleArticleLike404JSONResponse) VisitToggleArticleLikeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type ChangePasswordRequestObject struct {
@@ -2741,7 +3048,7 @@ type CreateBeanCommentResponseObject interface {
 	VisitCreateBeanCommentResponse(w http.ResponseWriter) error
 }
 
-type CreateBeanComment201JSONResponse externalRef0.PostComment
+type CreateBeanComment201JSONResponse externalRef0.Comment
 
 func (response CreateBeanComment201JSONResponse) VisitCreateBeanCommentResponse(w http.ResponseWriter) error {
 
@@ -2872,7 +3179,7 @@ type UpdateCommentResponseObject interface {
 	VisitUpdateCommentResponse(w http.ResponseWriter) error
 }
 
-type UpdateComment200JSONResponse externalRef0.PostComment
+type UpdateComment200JSONResponse externalRef0.Comment
 
 func (response UpdateComment200JSONResponse) VisitUpdateCommentResponse(w http.ResponseWriter) error {
 
@@ -2994,313 +3301,6 @@ type GetNotificationUnreadCount500Response struct {
 func (response GetNotificationUnreadCount500Response) VisitGetNotificationUnreadCountResponse(w http.ResponseWriter) error {
 	w.WriteHeader(500)
 	return nil
-}
-
-type ListPostsRequestObject struct {
-	Params ListPostsParams
-}
-
-type ListPostsResponseObject interface {
-	VisitListPostsResponse(w http.ResponseWriter) error
-}
-
-type ListPosts200JSONResponse externalRef0.PostPage
-
-func (response ListPosts200JSONResponse) VisitListPostsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ListPosts500Response struct {
-}
-
-func (response ListPosts500Response) VisitListPostsResponse(w http.ResponseWriter) error {
-	w.WriteHeader(500)
-	return nil
-}
-
-type CreatePostRequestObject struct {
-	Body *CreatePostJSONRequestBody
-}
-
-type CreatePostResponseObject interface {
-	VisitCreatePostResponse(w http.ResponseWriter) error
-}
-
-type CreatePost201JSONResponse externalRef0.Post
-
-func (response CreatePost201JSONResponse) VisitCreatePostResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(201)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type CreatePost400JSONResponse externalRef0.ApiErrorResponse
-
-func (response CreatePost400JSONResponse) VisitCreatePostResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(400)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type DeletePostRequestObject struct {
-	PostId string `json:"post_id"`
-}
-
-type DeletePostResponseObject interface {
-	VisitDeletePostResponse(w http.ResponseWriter) error
-}
-
-type DeletePost204Response struct {
-}
-
-func (response DeletePost204Response) VisitDeletePostResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
-	return nil
-}
-
-type GetPostRequestObject struct {
-	PostId string `json:"post_id"`
-}
-
-type GetPostResponseObject interface {
-	VisitGetPostResponse(w http.ResponseWriter) error
-}
-
-type GetPost200JSONResponse externalRef0.Post
-
-func (response GetPost200JSONResponse) VisitGetPostResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type GetPost404JSONResponse externalRef0.ApiErrorResponse
-
-func (response GetPost404JSONResponse) VisitGetPostResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(404)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type UpdatePostRequestObject struct {
-	PostId string `json:"post_id"`
-	Body   *UpdatePostJSONRequestBody
-}
-
-type UpdatePostResponseObject interface {
-	VisitUpdatePostResponse(w http.ResponseWriter) error
-}
-
-type UpdatePost200JSONResponse externalRef0.Post
-
-func (response UpdatePost200JSONResponse) VisitUpdatePostResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type UpdatePost400JSONResponse externalRef0.ApiErrorResponse
-
-func (response UpdatePost400JSONResponse) VisitUpdatePostResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(400)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type UpdatePost403JSONResponse externalRef0.ApiErrorResponse
-
-func (response UpdatePost403JSONResponse) VisitUpdatePostResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(403)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type UpdatePost404JSONResponse externalRef0.ApiErrorResponse
-
-func (response UpdatePost404JSONResponse) VisitUpdatePostResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(404)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ListPostCommentsRequestObject struct {
-	PostId string `json:"post_id"`
-	Params ListPostCommentsParams
-}
-
-type ListPostCommentsResponseObject interface {
-	VisitListPostCommentsResponse(w http.ResponseWriter) error
-}
-
-type ListPostComments200JSONResponse externalRef0.CommentPage
-
-func (response ListPostComments200JSONResponse) VisitListPostCommentsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ListPostComments404JSONResponse externalRef0.ApiErrorResponse
-
-func (response ListPostComments404JSONResponse) VisitListPostCommentsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(404)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type CreatePostCommentRequestObject struct {
-	PostId string `json:"post_id"`
-	Body   *CreatePostCommentJSONRequestBody
-}
-
-type CreatePostCommentResponseObject interface {
-	VisitCreatePostCommentResponse(w http.ResponseWriter) error
-}
-
-type CreatePostComment201JSONResponse externalRef0.PostComment
-
-func (response CreatePostComment201JSONResponse) VisitCreatePostCommentResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(201)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type CreatePostComment400JSONResponse externalRef0.ApiErrorResponse
-
-func (response CreatePostComment400JSONResponse) VisitCreatePostCommentResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(400)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type CreatePostComment404JSONResponse externalRef0.ApiErrorResponse
-
-func (response CreatePostComment404JSONResponse) VisitCreatePostCommentResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(404)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type TogglePostLikeRequestObject struct {
-	PostId string `json:"post_id"`
-}
-
-type TogglePostLikeResponseObject interface {
-	VisitTogglePostLikeResponse(w http.ResponseWriter) error
-}
-
-type TogglePostLike200JSONResponse externalRef0.ToggleLikeResponse
-
-func (response TogglePostLike200JSONResponse) VisitTogglePostLikeResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type TogglePostLike404JSONResponse externalRef0.ApiErrorResponse
-
-func (response TogglePostLike404JSONResponse) VisitTogglePostLikeResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(404)
-	_, err := buf.WriteTo(w)
-	return err
 }
 
 type ListRecipesRequestObject struct {
@@ -3596,7 +3596,7 @@ type CreateRecipeCommentResponseObject interface {
 	VisitCreateRecipeCommentResponse(w http.ResponseWriter) error
 }
 
-type CreateRecipeComment201JSONResponse externalRef0.PostComment
+type CreateRecipeComment201JSONResponse externalRef0.Comment
 
 func (response CreateRecipeComment201JSONResponse) VisitCreateRecipeCommentResponse(w http.ResponseWriter) error {
 
@@ -4211,6 +4211,30 @@ func (response HealthCheck200TextResponse) VisitHealthCheckResponse(w http.Respo
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
+	// List articles
+	// (GET /api/v1/articles)
+	ListArticles(ctx context.Context, request ListArticlesRequestObject) (ListArticlesResponseObject, error)
+	// Create article
+	// (POST /api/v1/articles)
+	CreateArticle(ctx context.Context, request CreateArticleRequestObject) (CreateArticleResponseObject, error)
+	// Delete article
+	// (DELETE /api/v1/articles/{article_id})
+	DeleteArticle(ctx context.Context, request DeleteArticleRequestObject) (DeleteArticleResponseObject, error)
+	// Get article by ID
+	// (GET /api/v1/articles/{article_id})
+	GetArticle(ctx context.Context, request GetArticleRequestObject) (GetArticleResponseObject, error)
+	// Update article
+	// (PUT /api/v1/articles/{article_id})
+	UpdateArticle(ctx context.Context, request UpdateArticleRequestObject) (UpdateArticleResponseObject, error)
+	// List article comments
+	// (GET /api/v1/articles/{article_id}/comments)
+	ListArticleComments(ctx context.Context, request ListArticleCommentsRequestObject) (ListArticleCommentsResponseObject, error)
+	// Add comment to article
+	// (POST /api/v1/articles/{article_id}/comments)
+	CreateArticleComment(ctx context.Context, request CreateArticleCommentRequestObject) (CreateArticleCommentResponseObject, error)
+	// Toggle like on an article
+	// (POST /api/v1/articles/{article_id}/like)
+	ToggleArticleLike(ctx context.Context, request ToggleArticleLikeRequestObject) (ToggleArticleLikeResponseObject, error)
 	// Change password
 	// (POST /api/v1/auth/change-password)
 	ChangePassword(ctx context.Context, request ChangePasswordRequestObject) (ChangePasswordResponseObject, error)
@@ -4265,30 +4289,6 @@ type StrictServerInterface interface {
 	// Get unread notification count
 	// (GET /api/v1/notifications/unread_count)
 	GetNotificationUnreadCount(ctx context.Context, request GetNotificationUnreadCountRequestObject) (GetNotificationUnreadCountResponseObject, error)
-	// List posts
-	// (GET /api/v1/posts)
-	ListPosts(ctx context.Context, request ListPostsRequestObject) (ListPostsResponseObject, error)
-	// Create post
-	// (POST /api/v1/posts)
-	CreatePost(ctx context.Context, request CreatePostRequestObject) (CreatePostResponseObject, error)
-	// Delete post
-	// (DELETE /api/v1/posts/{post_id})
-	DeletePost(ctx context.Context, request DeletePostRequestObject) (DeletePostResponseObject, error)
-	// Get post by ID
-	// (GET /api/v1/posts/{post_id})
-	GetPost(ctx context.Context, request GetPostRequestObject) (GetPostResponseObject, error)
-	// Update post
-	// (PUT /api/v1/posts/{post_id})
-	UpdatePost(ctx context.Context, request UpdatePostRequestObject) (UpdatePostResponseObject, error)
-	// List post comments
-	// (GET /api/v1/posts/{post_id}/comments)
-	ListPostComments(ctx context.Context, request ListPostCommentsRequestObject) (ListPostCommentsResponseObject, error)
-	// Add comment to post
-	// (POST /api/v1/posts/{post_id}/comments)
-	CreatePostComment(ctx context.Context, request CreatePostCommentRequestObject) (CreatePostCommentResponseObject, error)
-	// Toggle like on a post
-	// (POST /api/v1/posts/{post_id}/like)
-	TogglePostLike(ctx context.Context, request TogglePostLikeRequestObject) (TogglePostLikeResponseObject, error)
 	// List recipes
 	// (GET /api/v1/recipes)
 	ListRecipes(ctx context.Context, request ListRecipesRequestObject) (ListRecipesResponseObject, error)
@@ -4384,6 +4384,234 @@ type strictHandler struct {
 	ssi         StrictServerInterface
 	middlewares []StrictMiddlewareFunc
 	options     StrictHTTPServerOptions
+}
+
+// ListArticles operation middleware
+func (sh *strictHandler) ListArticles(w http.ResponseWriter, r *http.Request, params ListArticlesParams) {
+	var request ListArticlesRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListArticles(ctx, request.(ListArticlesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListArticles")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListArticlesResponseObject); ok {
+		if err := validResponse.VisitListArticlesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateArticle operation middleware
+func (sh *strictHandler) CreateArticle(w http.ResponseWriter, r *http.Request) {
+	var request CreateArticleRequestObject
+
+	var body CreateArticleJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateArticle(ctx, request.(CreateArticleRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateArticle")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateArticleResponseObject); ok {
+		if err := validResponse.VisitCreateArticleResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteArticle operation middleware
+func (sh *strictHandler) DeleteArticle(w http.ResponseWriter, r *http.Request, articleId string) {
+	var request DeleteArticleRequestObject
+
+	request.ArticleId = articleId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteArticle(ctx, request.(DeleteArticleRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteArticle")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteArticleResponseObject); ok {
+		if err := validResponse.VisitDeleteArticleResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetArticle operation middleware
+func (sh *strictHandler) GetArticle(w http.ResponseWriter, r *http.Request, articleId string) {
+	var request GetArticleRequestObject
+
+	request.ArticleId = articleId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetArticle(ctx, request.(GetArticleRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetArticle")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetArticleResponseObject); ok {
+		if err := validResponse.VisitGetArticleResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateArticle operation middleware
+func (sh *strictHandler) UpdateArticle(w http.ResponseWriter, r *http.Request, articleId string) {
+	var request UpdateArticleRequestObject
+
+	request.ArticleId = articleId
+
+	var body UpdateArticleJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateArticle(ctx, request.(UpdateArticleRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateArticle")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateArticleResponseObject); ok {
+		if err := validResponse.VisitUpdateArticleResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListArticleComments operation middleware
+func (sh *strictHandler) ListArticleComments(w http.ResponseWriter, r *http.Request, articleId string, params ListArticleCommentsParams) {
+	var request ListArticleCommentsRequestObject
+
+	request.ArticleId = articleId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListArticleComments(ctx, request.(ListArticleCommentsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListArticleComments")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListArticleCommentsResponseObject); ok {
+		if err := validResponse.VisitListArticleCommentsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateArticleComment operation middleware
+func (sh *strictHandler) CreateArticleComment(w http.ResponseWriter, r *http.Request, articleId string) {
+	var request CreateArticleCommentRequestObject
+
+	request.ArticleId = articleId
+
+	var body CreateArticleCommentJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateArticleComment(ctx, request.(CreateArticleCommentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateArticleComment")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateArticleCommentResponseObject); ok {
+		if err := validResponse.VisitCreateArticleCommentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ToggleArticleLike operation middleware
+func (sh *strictHandler) ToggleArticleLike(w http.ResponseWriter, r *http.Request, articleId string) {
+	var request ToggleArticleLikeRequestObject
+
+	request.ArticleId = articleId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ToggleArticleLike(ctx, request.(ToggleArticleLikeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ToggleArticleLike")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ToggleArticleLikeResponseObject); ok {
+		if err := validResponse.VisitToggleArticleLikeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
 // ChangePassword operation middleware
@@ -4901,234 +5129,6 @@ func (sh *strictHandler) GetNotificationUnreadCount(w http.ResponseWriter, r *ht
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetNotificationUnreadCountResponseObject); ok {
 		if err := validResponse.VisitGetNotificationUnreadCountResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// ListPosts operation middleware
-func (sh *strictHandler) ListPosts(w http.ResponseWriter, r *http.Request, params ListPostsParams) {
-	var request ListPostsRequestObject
-
-	request.Params = params
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.ListPosts(ctx, request.(ListPostsRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "ListPosts")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(ListPostsResponseObject); ok {
-		if err := validResponse.VisitListPostsResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// CreatePost operation middleware
-func (sh *strictHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
-	var request CreatePostRequestObject
-
-	var body CreatePostJSONRequestBody
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.CreatePost(ctx, request.(CreatePostRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "CreatePost")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(CreatePostResponseObject); ok {
-		if err := validResponse.VisitCreatePostResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// DeletePost operation middleware
-func (sh *strictHandler) DeletePost(w http.ResponseWriter, r *http.Request, postId string) {
-	var request DeletePostRequestObject
-
-	request.PostId = postId
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.DeletePost(ctx, request.(DeletePostRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "DeletePost")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(DeletePostResponseObject); ok {
-		if err := validResponse.VisitDeletePostResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// GetPost operation middleware
-func (sh *strictHandler) GetPost(w http.ResponseWriter, r *http.Request, postId string) {
-	var request GetPostRequestObject
-
-	request.PostId = postId
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.GetPost(ctx, request.(GetPostRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetPost")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(GetPostResponseObject); ok {
-		if err := validResponse.VisitGetPostResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// UpdatePost operation middleware
-func (sh *strictHandler) UpdatePost(w http.ResponseWriter, r *http.Request, postId string) {
-	var request UpdatePostRequestObject
-
-	request.PostId = postId
-
-	var body UpdatePostJSONRequestBody
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.UpdatePost(ctx, request.(UpdatePostRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "UpdatePost")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(UpdatePostResponseObject); ok {
-		if err := validResponse.VisitUpdatePostResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// ListPostComments operation middleware
-func (sh *strictHandler) ListPostComments(w http.ResponseWriter, r *http.Request, postId string, params ListPostCommentsParams) {
-	var request ListPostCommentsRequestObject
-
-	request.PostId = postId
-	request.Params = params
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.ListPostComments(ctx, request.(ListPostCommentsRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "ListPostComments")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(ListPostCommentsResponseObject); ok {
-		if err := validResponse.VisitListPostCommentsResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// CreatePostComment operation middleware
-func (sh *strictHandler) CreatePostComment(w http.ResponseWriter, r *http.Request, postId string) {
-	var request CreatePostCommentRequestObject
-
-	request.PostId = postId
-
-	var body CreatePostCommentJSONRequestBody
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.CreatePostComment(ctx, request.(CreatePostCommentRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "CreatePostComment")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(CreatePostCommentResponseObject); ok {
-		if err := validResponse.VisitCreatePostCommentResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// TogglePostLike operation middleware
-func (sh *strictHandler) TogglePostLike(w http.ResponseWriter, r *http.Request, postId string) {
-	var request TogglePostLikeRequestObject
-
-	request.PostId = postId
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.TogglePostLike(ctx, request.(TogglePostLikeRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "TogglePostLike")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(TogglePostLikeResponseObject); ok {
-		if err := validResponse.VisitTogglePostLikeResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -5738,133 +5738,134 @@ func (sh *strictHandler) HealthCheck(w http.ResponseWriter, r *http.Request) {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"qf6/AQAA//9e+Bs2BeAAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

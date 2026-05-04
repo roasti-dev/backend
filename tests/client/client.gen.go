@@ -24,13 +24,13 @@ const (
 	RefreshTokenCookieScopes refreshTokenCookieContextKey = "RefreshTokenCookie.Scopes"
 )
 
-// Defines values for ListPostsParamsFilter.
+// Defines values for ListArticlesParamsFilter.
 const (
-	Following ListPostsParamsFilter = "following"
+	Following ListArticlesParamsFilter = "following"
 )
 
-// Valid indicates whether the value is a known member of the ListPostsParamsFilter enum.
-func (e ListPostsParamsFilter) Valid() bool {
+// Valid indicates whether the value is a known member of the ListArticlesParamsFilter enum.
+func (e ListArticlesParamsFilter) Valid() bool {
 	switch e {
 	case Following:
 		return true
@@ -81,6 +81,26 @@ type bearerAuthContextKey string
 // refreshTokenCookieContextKey is the context key for RefreshTokenCookie security scheme
 type refreshTokenCookieContextKey string
 
+// ListArticlesParams defines parameters for ListArticles.
+type ListArticlesParams struct {
+	// AuthorId Filter by author ID
+	AuthorId *string `form:"author_id,omitempty" json:"author_id,omitempty"`
+
+	// Filter Apply a named filter. Use `following` to return articles from followed users (requires auth).
+	Filter *ListArticlesParamsFilter `form:"filter,omitempty" json:"filter,omitempty"`
+	Page   *externalRef0.PageParam   `form:"page,omitempty" json:"page,omitempty"`
+	Limit  *externalRef0.LimitParam  `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListArticlesParamsFilter defines parameters for ListArticles.
+type ListArticlesParamsFilter string
+
+// ListArticleCommentsParams defines parameters for ListArticleComments.
+type ListArticleCommentsParams struct {
+	Page  *externalRef0.PageParam  `form:"page,omitempty" json:"page,omitempty"`
+	Limit *externalRef0.LimitParam `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // ListBeansParams defines parameters for ListBeans.
 type ListBeansParams struct {
 	// Q Search query matched against bean name and roaster
@@ -105,26 +125,6 @@ type ListNotificationsParams struct {
 	Page *externalRef0.PageParam `form:"page,omitempty" json:"page,omitempty"`
 
 	// Limit Number of items per page
-	Limit *externalRef0.LimitParam `form:"limit,omitempty" json:"limit,omitempty"`
-}
-
-// ListPostsParams defines parameters for ListPosts.
-type ListPostsParams struct {
-	// AuthorId Filter by author ID
-	AuthorId *string `form:"author_id,omitempty" json:"author_id,omitempty"`
-
-	// Filter Apply a named filter. Use `following` to return posts from followed users (requires auth).
-	Filter *ListPostsParamsFilter   `form:"filter,omitempty" json:"filter,omitempty"`
-	Page   *externalRef0.PageParam  `form:"page,omitempty" json:"page,omitempty"`
-	Limit  *externalRef0.LimitParam `form:"limit,omitempty" json:"limit,omitempty"`
-}
-
-// ListPostsParamsFilter defines parameters for ListPosts.
-type ListPostsParamsFilter string
-
-// ListPostCommentsParams defines parameters for ListPostComments.
-type ListPostCommentsParams struct {
-	Page  *externalRef0.PageParam  `form:"page,omitempty" json:"page,omitempty"`
 	Limit *externalRef0.LimitParam `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
@@ -195,6 +195,15 @@ type ListUserLikesParams struct {
 	Limit         *externalRef0.LimitParam    `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// CreateArticleJSONRequestBody defines body for CreateArticle for application/json ContentType.
+type CreateArticleJSONRequestBody = externalRef0.CreateArticleRequest
+
+// UpdateArticleJSONRequestBody defines body for UpdateArticle for application/json ContentType.
+type UpdateArticleJSONRequestBody = externalRef0.UpdateArticleRequest
+
+// CreateArticleCommentJSONRequestBody defines body for CreateArticleComment for application/json ContentType.
+type CreateArticleCommentJSONRequestBody = externalRef0.CreateCommentRequest
+
 // ChangePasswordJSONRequestBody defines body for ChangePassword for application/json ContentType.
 type ChangePasswordJSONRequestBody = externalRef0.ChangePasswordRequest
 
@@ -217,19 +226,10 @@ type CreateBeanJSONRequestBody = externalRef0.CreateBeanRequest
 type UpdateBeanJSONRequestBody = externalRef0.UpdateBeanRequest
 
 // CreateBeanCommentJSONRequestBody defines body for CreateBeanComment for application/json ContentType.
-type CreateBeanCommentJSONRequestBody = externalRef0.CreatePostCommentRequest
+type CreateBeanCommentJSONRequestBody = externalRef0.CreateCommentRequest
 
 // UpdateCommentJSONRequestBody defines body for UpdateComment for application/json ContentType.
-type UpdateCommentJSONRequestBody = externalRef0.UpdatePostCommentRequest
-
-// CreatePostJSONRequestBody defines body for CreatePost for application/json ContentType.
-type CreatePostJSONRequestBody = externalRef0.CreatePostRequest
-
-// UpdatePostJSONRequestBody defines body for UpdatePost for application/json ContentType.
-type UpdatePostJSONRequestBody = externalRef0.UpdatePostRequest
-
-// CreatePostCommentJSONRequestBody defines body for CreatePostComment for application/json ContentType.
-type CreatePostCommentJSONRequestBody = externalRef0.CreatePostCommentRequest
+type UpdateCommentJSONRequestBody = externalRef0.UpdateCommentRequest
 
 // CreateRecipeJSONRequestBody defines body for CreateRecipe for application/json ContentType.
 type CreateRecipeJSONRequestBody = externalRef0.CreateRecipeRequest
@@ -238,7 +238,7 @@ type CreateRecipeJSONRequestBody = externalRef0.CreateRecipeRequest
 type UpdateRecipeJSONRequestBody = externalRef0.UpdateRecipeRequest
 
 // CreateRecipeCommentJSONRequestBody defines body for CreateRecipeComment for application/json ContentType.
-type CreateRecipeCommentJSONRequestBody = externalRef0.CreatePostCommentRequest
+type CreateRecipeCommentJSONRequestBody = externalRef0.CreateCommentRequest
 
 // UploadImageMultipartRequestBody defines body for UploadImage for multipart/form-data ContentType.
 type UploadImageMultipartRequestBody UploadImageMultipartBody
@@ -319,6 +319,36 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
+	// ListArticles request
+	ListArticles(ctx context.Context, params *ListArticlesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateArticleWithBody request with any body
+	CreateArticleWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateArticle(ctx context.Context, body CreateArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteArticle request
+	DeleteArticle(ctx context.Context, articleId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetArticle request
+	GetArticle(ctx context.Context, articleId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateArticleWithBody request with any body
+	UpdateArticleWithBody(ctx context.Context, articleId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateArticle(ctx context.Context, articleId string, body UpdateArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListArticleComments request
+	ListArticleComments(ctx context.Context, articleId string, params *ListArticleCommentsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateArticleCommentWithBody request with any body
+	CreateArticleCommentWithBody(ctx context.Context, articleId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateArticleComment(ctx context.Context, articleId string, body CreateArticleCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ToggleArticleLike request
+	ToggleArticleLike(ctx context.Context, articleId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ChangePasswordWithBody request with any body
 	ChangePasswordWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -390,36 +420,6 @@ type ClientInterface interface {
 
 	// GetNotificationUnreadCount request
 	GetNotificationUnreadCount(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// ListPosts request
-	ListPosts(ctx context.Context, params *ListPostsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// CreatePostWithBody request with any body
-	CreatePostWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	CreatePost(ctx context.Context, body CreatePostJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// DeletePost request
-	DeletePost(ctx context.Context, postId string, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetPost request
-	GetPost(ctx context.Context, postId string, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// UpdatePostWithBody request with any body
-	UpdatePostWithBody(ctx context.Context, postId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	UpdatePost(ctx context.Context, postId string, body UpdatePostJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// ListPostComments request
-	ListPostComments(ctx context.Context, postId string, params *ListPostCommentsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// CreatePostCommentWithBody request with any body
-	CreatePostCommentWithBody(ctx context.Context, postId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	CreatePostComment(ctx context.Context, postId string, body CreatePostCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// TogglePostLike request
-	TogglePostLike(ctx context.Context, postId string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListRecipes request
 	ListRecipes(ctx context.Context, params *ListRecipesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -494,6 +494,138 @@ type ClientInterface interface {
 
 	// HealthCheck request
 	HealthCheck(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+func (c *Client) ListArticles(ctx context.Context, params *ListArticlesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListArticlesRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateArticleWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateArticleRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateArticle(ctx context.Context, body CreateArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateArticleRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteArticle(ctx context.Context, articleId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteArticleRequest(c.Server, articleId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetArticle(ctx context.Context, articleId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetArticleRequest(c.Server, articleId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateArticleWithBody(ctx context.Context, articleId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateArticleRequestWithBody(c.Server, articleId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateArticle(ctx context.Context, articleId string, body UpdateArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateArticleRequest(c.Server, articleId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListArticleComments(ctx context.Context, articleId string, params *ListArticleCommentsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListArticleCommentsRequest(c.Server, articleId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateArticleCommentWithBody(ctx context.Context, articleId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateArticleCommentRequestWithBody(c.Server, articleId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateArticleComment(ctx context.Context, articleId string, body CreateArticleCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateArticleCommentRequest(c.Server, articleId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ToggleArticleLike(ctx context.Context, articleId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewToggleArticleLikeRequest(c.Server, articleId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
 func (c *Client) ChangePasswordWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -820,138 +952,6 @@ func (c *Client) GetNotificationUnreadCount(ctx context.Context, reqEditors ...R
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListPosts(ctx context.Context, params *ListPostsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListPostsRequest(c.Server, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) CreatePostWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreatePostRequestWithBody(c.Server, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) CreatePost(ctx context.Context, body CreatePostJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreatePostRequest(c.Server, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) DeletePost(ctx context.Context, postId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeletePostRequest(c.Server, postId)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) GetPost(ctx context.Context, postId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetPostRequest(c.Server, postId)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) UpdatePostWithBody(ctx context.Context, postId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdatePostRequestWithBody(c.Server, postId, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) UpdatePost(ctx context.Context, postId string, body UpdatePostJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdatePostRequest(c.Server, postId, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) ListPostComments(ctx context.Context, postId string, params *ListPostCommentsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListPostCommentsRequest(c.Server, postId, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) CreatePostCommentWithBody(ctx context.Context, postId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreatePostCommentRequestWithBody(c.Server, postId, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) CreatePostComment(ctx context.Context, postId string, body CreatePostCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreatePostCommentRequest(c.Server, postId, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) TogglePostLike(ctx context.Context, postId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewTogglePostLikeRequest(c.Server, postId)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
 func (c *Client) ListRecipes(ctx context.Context, params *ListRecipesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListRecipesRequest(c.Server, params)
 	if err != nil {
@@ -1262,6 +1262,405 @@ func (c *Client) HealthCheck(ctx context.Context, reqEditors ...RequestEditorFn)
 		return nil, err
 	}
 	return c.Client.Do(req)
+}
+
+// NewListArticlesRequest generates requests for ListArticles
+func NewListArticlesRequest(server string, params *ListArticlesParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/articles")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.AuthorId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "author_id", *params.AuthorId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "filter", *params.Filter, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Page != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "page", *params.Page, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateArticleRequest calls the generic CreateArticle builder with application/json body
+func NewCreateArticleRequest(server string, body CreateArticleJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateArticleRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewCreateArticleRequestWithBody generates requests for CreateArticle with any type of body
+func NewCreateArticleRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/articles")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteArticleRequest generates requests for DeleteArticle
+func NewDeleteArticleRequest(server string, articleId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "article_id", articleId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/articles/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetArticleRequest generates requests for GetArticle
+func NewGetArticleRequest(server string, articleId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "article_id", articleId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/articles/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateArticleRequest calls the generic UpdateArticle builder with application/json body
+func NewUpdateArticleRequest(server string, articleId string, body UpdateArticleJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateArticleRequestWithBody(server, articleId, "application/json", bodyReader)
+}
+
+// NewUpdateArticleRequestWithBody generates requests for UpdateArticle with any type of body
+func NewUpdateArticleRequestWithBody(server string, articleId string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "article_id", articleId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/articles/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewListArticleCommentsRequest generates requests for ListArticleComments
+func NewListArticleCommentsRequest(server string, articleId string, params *ListArticleCommentsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "article_id", articleId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/articles/%s/comments", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Page != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "page", *params.Page, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateArticleCommentRequest calls the generic CreateArticleComment builder with application/json body
+func NewCreateArticleCommentRequest(server string, articleId string, body CreateArticleCommentJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateArticleCommentRequestWithBody(server, articleId, "application/json", bodyReader)
+}
+
+// NewCreateArticleCommentRequestWithBody generates requests for CreateArticleComment with any type of body
+func NewCreateArticleCommentRequestWithBody(server string, articleId string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "article_id", articleId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/articles/%s/comments", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewToggleArticleLikeRequest generates requests for ToggleArticleLike
+func NewToggleArticleLikeRequest(server string, articleId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "article_id", articleId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/articles/%s/like", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
 }
 
 // NewChangePasswordRequest calls the generic ChangePassword builder with application/json body
@@ -2045,405 +2444,6 @@ func NewGetNotificationUnreadCountRequest(server string) (*http.Request, error) 
 	}
 
 	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewListPostsRequest generates requests for ListPosts
-func NewListPostsRequest(server string, params *ListPostsParams) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api/v1/posts")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	if params != nil {
-		// queryValues collects non-styled parameters (passthrough, JSON)
-		// that are safe to round-trip through url.Values.Encode().
-		queryValues := queryURL.Query()
-		// rawQueryFragments collects pre-encoded query fragments from
-		// styled parameters, preserving literal commas as delimiters
-		// per the OpenAPI spec (e.g. "color=blue,black,brown").
-		var rawQueryFragments []string
-
-		if params.AuthorId != nil {
-
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "author_id", *params.AuthorId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
-				}
-			}
-
-		}
-
-		if params.Filter != nil {
-
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "filter", *params.Filter, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
-				}
-			}
-
-		}
-
-		if params.Page != nil {
-
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "page", *params.Page, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
-				}
-			}
-
-		}
-
-		if params.Limit != nil {
-
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
-				}
-			}
-
-		}
-
-		if encoded := queryValues.Encode(); encoded != "" {
-			rawQueryFragments = append(rawQueryFragments, encoded)
-		}
-		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
-	}
-
-	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewCreatePostRequest calls the generic CreatePost builder with application/json body
-func NewCreatePostRequest(server string, body CreatePostJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewCreatePostRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewCreatePostRequestWithBody generates requests for CreatePost with any type of body
-func NewCreatePostRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api/v1/posts")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewDeletePostRequest generates requests for DeletePost
-func NewDeletePostRequest(server string, postId string) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "post_id", postId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api/v1/posts/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewGetPostRequest generates requests for GetPost
-func NewGetPostRequest(server string, postId string) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "post_id", postId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api/v1/posts/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewUpdatePostRequest calls the generic UpdatePost builder with application/json body
-func NewUpdatePostRequest(server string, postId string, body UpdatePostJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewUpdatePostRequestWithBody(server, postId, "application/json", bodyReader)
-}
-
-// NewUpdatePostRequestWithBody generates requests for UpdatePost with any type of body
-func NewUpdatePostRequestWithBody(server string, postId string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "post_id", postId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api/v1/posts/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewListPostCommentsRequest generates requests for ListPostComments
-func NewListPostCommentsRequest(server string, postId string, params *ListPostCommentsParams) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "post_id", postId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api/v1/posts/%s/comments", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	if params != nil {
-		// queryValues collects non-styled parameters (passthrough, JSON)
-		// that are safe to round-trip through url.Values.Encode().
-		queryValues := queryURL.Query()
-		// rawQueryFragments collects pre-encoded query fragments from
-		// styled parameters, preserving literal commas as delimiters
-		// per the OpenAPI spec (e.g. "color=blue,black,brown").
-		var rawQueryFragments []string
-
-		if params.Page != nil {
-
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "page", *params.Page, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
-				}
-			}
-
-		}
-
-		if params.Limit != nil {
-
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
-				}
-			}
-
-		}
-
-		if encoded := queryValues.Encode(); encoded != "" {
-			rawQueryFragments = append(rawQueryFragments, encoded)
-		}
-		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
-	}
-
-	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewCreatePostCommentRequest calls the generic CreatePostComment builder with application/json body
-func NewCreatePostCommentRequest(server string, postId string, body CreatePostCommentJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewCreatePostCommentRequestWithBody(server, postId, "application/json", bodyReader)
-}
-
-// NewCreatePostCommentRequestWithBody generates requests for CreatePostComment with any type of body
-func NewCreatePostCommentRequestWithBody(server string, postId string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "post_id", postId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api/v1/posts/%s/comments", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewTogglePostLikeRequest generates requests for TogglePostLike
-func NewTogglePostLikeRequest(server string, postId string) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "post_id", postId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api/v1/posts/%s/like", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -3599,6 +3599,36 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
+	// ListArticlesWithResponse request
+	ListArticlesWithResponse(ctx context.Context, params *ListArticlesParams, reqEditors ...RequestEditorFn) (*ListArticlesResponse, error)
+
+	// CreateArticleWithBodyWithResponse request with any body
+	CreateArticleWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateArticleResponse, error)
+
+	CreateArticleWithResponse(ctx context.Context, body CreateArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateArticleResponse, error)
+
+	// DeleteArticleWithResponse request
+	DeleteArticleWithResponse(ctx context.Context, articleId string, reqEditors ...RequestEditorFn) (*DeleteArticleResponse, error)
+
+	// GetArticleWithResponse request
+	GetArticleWithResponse(ctx context.Context, articleId string, reqEditors ...RequestEditorFn) (*GetArticleResponse, error)
+
+	// UpdateArticleWithBodyWithResponse request with any body
+	UpdateArticleWithBodyWithResponse(ctx context.Context, articleId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateArticleResponse, error)
+
+	UpdateArticleWithResponse(ctx context.Context, articleId string, body UpdateArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateArticleResponse, error)
+
+	// ListArticleCommentsWithResponse request
+	ListArticleCommentsWithResponse(ctx context.Context, articleId string, params *ListArticleCommentsParams, reqEditors ...RequestEditorFn) (*ListArticleCommentsResponse, error)
+
+	// CreateArticleCommentWithBodyWithResponse request with any body
+	CreateArticleCommentWithBodyWithResponse(ctx context.Context, articleId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateArticleCommentResponse, error)
+
+	CreateArticleCommentWithResponse(ctx context.Context, articleId string, body CreateArticleCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateArticleCommentResponse, error)
+
+	// ToggleArticleLikeWithResponse request
+	ToggleArticleLikeWithResponse(ctx context.Context, articleId string, reqEditors ...RequestEditorFn) (*ToggleArticleLikeResponse, error)
+
 	// ChangePasswordWithBodyWithResponse request with any body
 	ChangePasswordWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ChangePasswordResponse, error)
 
@@ -3670,36 +3700,6 @@ type ClientWithResponsesInterface interface {
 
 	// GetNotificationUnreadCountWithResponse request
 	GetNotificationUnreadCountWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetNotificationUnreadCountResponse, error)
-
-	// ListPostsWithResponse request
-	ListPostsWithResponse(ctx context.Context, params *ListPostsParams, reqEditors ...RequestEditorFn) (*ListPostsResponse, error)
-
-	// CreatePostWithBodyWithResponse request with any body
-	CreatePostWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreatePostResponse, error)
-
-	CreatePostWithResponse(ctx context.Context, body CreatePostJSONRequestBody, reqEditors ...RequestEditorFn) (*CreatePostResponse, error)
-
-	// DeletePostWithResponse request
-	DeletePostWithResponse(ctx context.Context, postId string, reqEditors ...RequestEditorFn) (*DeletePostResponse, error)
-
-	// GetPostWithResponse request
-	GetPostWithResponse(ctx context.Context, postId string, reqEditors ...RequestEditorFn) (*GetPostResponse, error)
-
-	// UpdatePostWithBodyWithResponse request with any body
-	UpdatePostWithBodyWithResponse(ctx context.Context, postId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatePostResponse, error)
-
-	UpdatePostWithResponse(ctx context.Context, postId string, body UpdatePostJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdatePostResponse, error)
-
-	// ListPostCommentsWithResponse request
-	ListPostCommentsWithResponse(ctx context.Context, postId string, params *ListPostCommentsParams, reqEditors ...RequestEditorFn) (*ListPostCommentsResponse, error)
-
-	// CreatePostCommentWithBodyWithResponse request with any body
-	CreatePostCommentWithBodyWithResponse(ctx context.Context, postId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreatePostCommentResponse, error)
-
-	CreatePostCommentWithResponse(ctx context.Context, postId string, body CreatePostCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*CreatePostCommentResponse, error)
-
-	// TogglePostLikeWithResponse request
-	TogglePostLikeWithResponse(ctx context.Context, postId string, reqEditors ...RequestEditorFn) (*TogglePostLikeResponse, error)
 
 	// ListRecipesWithResponse request
 	ListRecipesWithResponse(ctx context.Context, params *ListRecipesParams, reqEditors ...RequestEditorFn) (*ListRecipesResponse, error)
@@ -3774,6 +3774,190 @@ type ClientWithResponsesInterface interface {
 
 	// HealthCheckWithResponse request
 	HealthCheckWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*HealthCheckResponse, error)
+}
+
+type ListArticlesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *externalRef0.ArticlePage
+}
+
+// Status returns HTTPResponse.Status
+func (r ListArticlesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListArticlesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateArticleResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *externalRef0.Article
+	JSON400      *externalRef0.ApiErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateArticleResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateArticleResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteArticleResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteArticleResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteArticleResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetArticleResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *externalRef0.Article
+	JSON404      *externalRef0.ApiErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetArticleResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetArticleResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateArticleResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *externalRef0.Article
+	JSON400      *externalRef0.ApiErrorResponse
+	JSON403      *externalRef0.ApiErrorResponse
+	JSON404      *externalRef0.ApiErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateArticleResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateArticleResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ListArticleCommentsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *externalRef0.CommentPage
+	JSON404      *externalRef0.ApiErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r ListArticleCommentsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListArticleCommentsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateArticleCommentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *externalRef0.Comment
+	JSON400      *externalRef0.ApiErrorResponse
+	JSON404      *externalRef0.ApiErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateArticleCommentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateArticleCommentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ToggleArticleLikeResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *externalRef0.ToggleLikeResponse
+	JSON404      *externalRef0.ApiErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r ToggleArticleLikeResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ToggleArticleLikeResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
 }
 
 type ChangePasswordResponse struct {
@@ -4028,7 +4212,7 @@ func (r ListBeanCommentsResponse) StatusCode() int {
 type CreateBeanCommentResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON201      *externalRef0.PostComment
+	JSON201      *externalRef0.Comment
 	JSON401      *externalRef0.ApiErrorResponse
 	JSON404      *externalRef0.ApiErrorResponse
 }
@@ -4098,7 +4282,7 @@ func (r DeleteCommentResponse) StatusCode() int {
 type UpdateCommentResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *externalRef0.PostComment
+	JSON200      *externalRef0.Comment
 	JSON403      *externalRef0.ApiErrorResponse
 	JSON404      *externalRef0.ApiErrorResponse
 }
@@ -4178,190 +4362,6 @@ func (r GetNotificationUnreadCountResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetNotificationUnreadCountResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type ListPostsResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *externalRef0.PostPage
-}
-
-// Status returns HTTPResponse.Status
-func (r ListPostsResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r ListPostsResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type CreatePostResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON201      *externalRef0.Post
-	JSON400      *externalRef0.ApiErrorResponse
-}
-
-// Status returns HTTPResponse.Status
-func (r CreatePostResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r CreatePostResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type DeletePostResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r DeletePostResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r DeletePostResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetPostResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *externalRef0.Post
-	JSON404      *externalRef0.ApiErrorResponse
-}
-
-// Status returns HTTPResponse.Status
-func (r GetPostResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetPostResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type UpdatePostResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *externalRef0.Post
-	JSON400      *externalRef0.ApiErrorResponse
-	JSON403      *externalRef0.ApiErrorResponse
-	JSON404      *externalRef0.ApiErrorResponse
-}
-
-// Status returns HTTPResponse.Status
-func (r UpdatePostResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r UpdatePostResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type ListPostCommentsResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *externalRef0.CommentPage
-	JSON404      *externalRef0.ApiErrorResponse
-}
-
-// Status returns HTTPResponse.Status
-func (r ListPostCommentsResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r ListPostCommentsResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type CreatePostCommentResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON201      *externalRef0.PostComment
-	JSON400      *externalRef0.ApiErrorResponse
-	JSON404      *externalRef0.ApiErrorResponse
-}
-
-// Status returns HTTPResponse.Status
-func (r CreatePostCommentResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r CreatePostCommentResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type TogglePostLikeResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *externalRef0.ToggleLikeResponse
-	JSON404      *externalRef0.ApiErrorResponse
-}
-
-// Status returns HTTPResponse.Status
-func (r TogglePostLikeResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r TogglePostLikeResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -4529,7 +4529,7 @@ func (r ListRecipeCommentsResponse) StatusCode() int {
 type CreateRecipeCommentResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON201      *externalRef0.PostComment
+	JSON201      *externalRef0.Comment
 	JSON401      *externalRef0.ApiErrorResponse
 	JSON404      *externalRef0.ApiErrorResponse
 }
@@ -4868,6 +4868,102 @@ func (r HealthCheckResponse) StatusCode() int {
 	return 0
 }
 
+// ListArticlesWithResponse request returning *ListArticlesResponse
+func (c *ClientWithResponses) ListArticlesWithResponse(ctx context.Context, params *ListArticlesParams, reqEditors ...RequestEditorFn) (*ListArticlesResponse, error) {
+	rsp, err := c.ListArticles(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListArticlesResponse(rsp)
+}
+
+// CreateArticleWithBodyWithResponse request with arbitrary body returning *CreateArticleResponse
+func (c *ClientWithResponses) CreateArticleWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateArticleResponse, error) {
+	rsp, err := c.CreateArticleWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateArticleResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateArticleWithResponse(ctx context.Context, body CreateArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateArticleResponse, error) {
+	rsp, err := c.CreateArticle(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateArticleResponse(rsp)
+}
+
+// DeleteArticleWithResponse request returning *DeleteArticleResponse
+func (c *ClientWithResponses) DeleteArticleWithResponse(ctx context.Context, articleId string, reqEditors ...RequestEditorFn) (*DeleteArticleResponse, error) {
+	rsp, err := c.DeleteArticle(ctx, articleId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteArticleResponse(rsp)
+}
+
+// GetArticleWithResponse request returning *GetArticleResponse
+func (c *ClientWithResponses) GetArticleWithResponse(ctx context.Context, articleId string, reqEditors ...RequestEditorFn) (*GetArticleResponse, error) {
+	rsp, err := c.GetArticle(ctx, articleId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetArticleResponse(rsp)
+}
+
+// UpdateArticleWithBodyWithResponse request with arbitrary body returning *UpdateArticleResponse
+func (c *ClientWithResponses) UpdateArticleWithBodyWithResponse(ctx context.Context, articleId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateArticleResponse, error) {
+	rsp, err := c.UpdateArticleWithBody(ctx, articleId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateArticleResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateArticleWithResponse(ctx context.Context, articleId string, body UpdateArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateArticleResponse, error) {
+	rsp, err := c.UpdateArticle(ctx, articleId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateArticleResponse(rsp)
+}
+
+// ListArticleCommentsWithResponse request returning *ListArticleCommentsResponse
+func (c *ClientWithResponses) ListArticleCommentsWithResponse(ctx context.Context, articleId string, params *ListArticleCommentsParams, reqEditors ...RequestEditorFn) (*ListArticleCommentsResponse, error) {
+	rsp, err := c.ListArticleComments(ctx, articleId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListArticleCommentsResponse(rsp)
+}
+
+// CreateArticleCommentWithBodyWithResponse request with arbitrary body returning *CreateArticleCommentResponse
+func (c *ClientWithResponses) CreateArticleCommentWithBodyWithResponse(ctx context.Context, articleId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateArticleCommentResponse, error) {
+	rsp, err := c.CreateArticleCommentWithBody(ctx, articleId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateArticleCommentResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateArticleCommentWithResponse(ctx context.Context, articleId string, body CreateArticleCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateArticleCommentResponse, error) {
+	rsp, err := c.CreateArticleComment(ctx, articleId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateArticleCommentResponse(rsp)
+}
+
+// ToggleArticleLikeWithResponse request returning *ToggleArticleLikeResponse
+func (c *ClientWithResponses) ToggleArticleLikeWithResponse(ctx context.Context, articleId string, reqEditors ...RequestEditorFn) (*ToggleArticleLikeResponse, error) {
+	rsp, err := c.ToggleArticleLike(ctx, articleId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseToggleArticleLikeResponse(rsp)
+}
+
 // ChangePasswordWithBodyWithResponse request with arbitrary body returning *ChangePasswordResponse
 func (c *ClientWithResponses) ChangePasswordWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ChangePasswordResponse, error) {
 	rsp, err := c.ChangePasswordWithBody(ctx, contentType, body, reqEditors...)
@@ -5102,102 +5198,6 @@ func (c *ClientWithResponses) GetNotificationUnreadCountWithResponse(ctx context
 	return ParseGetNotificationUnreadCountResponse(rsp)
 }
 
-// ListPostsWithResponse request returning *ListPostsResponse
-func (c *ClientWithResponses) ListPostsWithResponse(ctx context.Context, params *ListPostsParams, reqEditors ...RequestEditorFn) (*ListPostsResponse, error) {
-	rsp, err := c.ListPosts(ctx, params, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseListPostsResponse(rsp)
-}
-
-// CreatePostWithBodyWithResponse request with arbitrary body returning *CreatePostResponse
-func (c *ClientWithResponses) CreatePostWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreatePostResponse, error) {
-	rsp, err := c.CreatePostWithBody(ctx, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseCreatePostResponse(rsp)
-}
-
-func (c *ClientWithResponses) CreatePostWithResponse(ctx context.Context, body CreatePostJSONRequestBody, reqEditors ...RequestEditorFn) (*CreatePostResponse, error) {
-	rsp, err := c.CreatePost(ctx, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseCreatePostResponse(rsp)
-}
-
-// DeletePostWithResponse request returning *DeletePostResponse
-func (c *ClientWithResponses) DeletePostWithResponse(ctx context.Context, postId string, reqEditors ...RequestEditorFn) (*DeletePostResponse, error) {
-	rsp, err := c.DeletePost(ctx, postId, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseDeletePostResponse(rsp)
-}
-
-// GetPostWithResponse request returning *GetPostResponse
-func (c *ClientWithResponses) GetPostWithResponse(ctx context.Context, postId string, reqEditors ...RequestEditorFn) (*GetPostResponse, error) {
-	rsp, err := c.GetPost(ctx, postId, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetPostResponse(rsp)
-}
-
-// UpdatePostWithBodyWithResponse request with arbitrary body returning *UpdatePostResponse
-func (c *ClientWithResponses) UpdatePostWithBodyWithResponse(ctx context.Context, postId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatePostResponse, error) {
-	rsp, err := c.UpdatePostWithBody(ctx, postId, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseUpdatePostResponse(rsp)
-}
-
-func (c *ClientWithResponses) UpdatePostWithResponse(ctx context.Context, postId string, body UpdatePostJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdatePostResponse, error) {
-	rsp, err := c.UpdatePost(ctx, postId, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseUpdatePostResponse(rsp)
-}
-
-// ListPostCommentsWithResponse request returning *ListPostCommentsResponse
-func (c *ClientWithResponses) ListPostCommentsWithResponse(ctx context.Context, postId string, params *ListPostCommentsParams, reqEditors ...RequestEditorFn) (*ListPostCommentsResponse, error) {
-	rsp, err := c.ListPostComments(ctx, postId, params, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseListPostCommentsResponse(rsp)
-}
-
-// CreatePostCommentWithBodyWithResponse request with arbitrary body returning *CreatePostCommentResponse
-func (c *ClientWithResponses) CreatePostCommentWithBodyWithResponse(ctx context.Context, postId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreatePostCommentResponse, error) {
-	rsp, err := c.CreatePostCommentWithBody(ctx, postId, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseCreatePostCommentResponse(rsp)
-}
-
-func (c *ClientWithResponses) CreatePostCommentWithResponse(ctx context.Context, postId string, body CreatePostCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*CreatePostCommentResponse, error) {
-	rsp, err := c.CreatePostComment(ctx, postId, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseCreatePostCommentResponse(rsp)
-}
-
-// TogglePostLikeWithResponse request returning *TogglePostLikeResponse
-func (c *ClientWithResponses) TogglePostLikeWithResponse(ctx context.Context, postId string, reqEditors ...RequestEditorFn) (*TogglePostLikeResponse, error) {
-	rsp, err := c.TogglePostLike(ctx, postId, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseTogglePostLikeResponse(rsp)
-}
-
 // ListRecipesWithResponse request returning *ListRecipesResponse
 func (c *ClientWithResponses) ListRecipesWithResponse(ctx context.Context, params *ListRecipesParams, reqEditors ...RequestEditorFn) (*ListRecipesResponse, error) {
 	rsp, err := c.ListRecipes(ctx, params, reqEditors...)
@@ -5426,6 +5426,267 @@ func (c *ClientWithResponses) HealthCheckWithResponse(ctx context.Context, reqEd
 		return nil, err
 	}
 	return ParseHealthCheckResponse(rsp)
+}
+
+// ParseListArticlesResponse parses an HTTP response from a ListArticlesWithResponse call
+func ParseListArticlesResponse(rsp *http.Response) (*ListArticlesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListArticlesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest externalRef0.ArticlePage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateArticleResponse parses an HTTP response from a CreateArticleWithResponse call
+func ParseCreateArticleResponse(rsp *http.Response) (*CreateArticleResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateArticleResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest externalRef0.Article
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteArticleResponse parses an HTTP response from a DeleteArticleWithResponse call
+func ParseDeleteArticleResponse(rsp *http.Response) (*DeleteArticleResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteArticleResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseGetArticleResponse parses an HTTP response from a GetArticleWithResponse call
+func ParseGetArticleResponse(rsp *http.Response) (*GetArticleResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetArticleResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest externalRef0.Article
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateArticleResponse parses an HTTP response from a UpdateArticleWithResponse call
+func ParseUpdateArticleResponse(rsp *http.Response) (*UpdateArticleResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateArticleResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest externalRef0.Article
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListArticleCommentsResponse parses an HTTP response from a ListArticleCommentsWithResponse call
+func ParseListArticleCommentsResponse(rsp *http.Response) (*ListArticleCommentsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListArticleCommentsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest externalRef0.CommentPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateArticleCommentResponse parses an HTTP response from a CreateArticleCommentWithResponse call
+func ParseCreateArticleCommentResponse(rsp *http.Response) (*CreateArticleCommentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateArticleCommentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest externalRef0.Comment
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseToggleArticleLikeResponse parses an HTTP response from a ToggleArticleLikeWithResponse call
+func ParseToggleArticleLikeResponse(rsp *http.Response) (*ToggleArticleLikeResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ToggleArticleLikeResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest externalRef0.ToggleLikeResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest externalRef0.ApiErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
 }
 
 // ParseChangePasswordResponse parses an HTTP response from a ChangePasswordWithResponse call
@@ -5772,7 +6033,7 @@ func ParseCreateBeanCommentResponse(rsp *http.Response) (*CreateBeanCommentRespo
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
-		var dest externalRef0.PostComment
+		var dest externalRef0.Comment
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -5878,7 +6139,7 @@ func ParseUpdateCommentResponse(rsp *http.Response) (*UpdateCommentResponse, err
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest externalRef0.PostComment
+		var dest externalRef0.Comment
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -5965,267 +6226,6 @@ func ParseGetNotificationUnreadCountResponse(rsp *http.Response) (*GetNotificati
 			return nil, err
 		}
 		response.JSON200 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseListPostsResponse parses an HTTP response from a ListPostsWithResponse call
-func ParseListPostsResponse(rsp *http.Response) (*ListPostsResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &ListPostsResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest externalRef0.PostPage
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseCreatePostResponse parses an HTTP response from a CreatePostWithResponse call
-func ParseCreatePostResponse(rsp *http.Response) (*CreatePostResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &CreatePostResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
-		var dest externalRef0.Post
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON201 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
-		var dest externalRef0.ApiErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON400 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseDeletePostResponse parses an HTTP response from a DeletePostWithResponse call
-func ParseDeletePostResponse(rsp *http.Response) (*DeletePostResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &DeletePostResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	return response, nil
-}
-
-// ParseGetPostResponse parses an HTTP response from a GetPostWithResponse call
-func ParseGetPostResponse(rsp *http.Response) (*GetPostResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetPostResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest externalRef0.Post
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest externalRef0.ApiErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON404 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseUpdatePostResponse parses an HTTP response from a UpdatePostWithResponse call
-func ParseUpdatePostResponse(rsp *http.Response) (*UpdatePostResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &UpdatePostResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest externalRef0.Post
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
-		var dest externalRef0.ApiErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON400 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest externalRef0.ApiErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON403 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest externalRef0.ApiErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON404 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseListPostCommentsResponse parses an HTTP response from a ListPostCommentsWithResponse call
-func ParseListPostCommentsResponse(rsp *http.Response) (*ListPostCommentsResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &ListPostCommentsResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest externalRef0.CommentPage
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest externalRef0.ApiErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON404 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseCreatePostCommentResponse parses an HTTP response from a CreatePostCommentWithResponse call
-func ParseCreatePostCommentResponse(rsp *http.Response) (*CreatePostCommentResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &CreatePostCommentResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
-		var dest externalRef0.PostComment
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON201 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
-		var dest externalRef0.ApiErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON400 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest externalRef0.ApiErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON404 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseTogglePostLikeResponse parses an HTTP response from a TogglePostLikeWithResponse call
-func ParseTogglePostLikeResponse(rsp *http.Response) (*TogglePostLikeResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &TogglePostLikeResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest externalRef0.ToggleLikeResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest externalRef0.ApiErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON404 = &dest
 
 	}
 
@@ -6454,7 +6454,7 @@ func ParseCreateRecipeCommentResponse(rsp *http.Response) (*CreateRecipeCommentR
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
-		var dest externalRef0.PostComment
+		var dest externalRef0.Comment
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

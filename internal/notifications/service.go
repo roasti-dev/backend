@@ -40,11 +40,11 @@ func (s *Service) HandleEvent(e events.Event) {
 			return
 		}
 		n = Notification{ID: id.NewID(), UserID: ev.OwnerID, Type: TypeLikeRecipe, ActorID: ev.ByUserID, EntityID: ev.RecipeID}
-	case events.PostLikeToggled:
+	case events.ArticleLikeToggled:
 		if !ev.Liked || ev.OwnerID == ev.ByUserID {
 			return
 		}
-		n = Notification{ID: id.NewID(), UserID: ev.OwnerID, Type: TypeLikePost, ActorID: ev.ByUserID, EntityID: ev.PostID}
+		n = Notification{ID: id.NewID(), UserID: ev.OwnerID, Type: TypeLikeArticle, ActorID: ev.ByUserID, EntityID: ev.ArticleID}
 	case events.BeanLikeToggled:
 		if !ev.Liked || ev.OwnerID == ev.ByUserID {
 			return
@@ -55,11 +55,11 @@ func (s *Service) HandleEvent(e events.Event) {
 			return
 		}
 		n = Notification{ID: id.NewID(), UserID: ev.OwnerID, Type: TypeCommentRecipe, ActorID: ev.ByUserID, EntityID: ev.RecipeID}
-	case events.PostCommentCreated:
+	case events.ArticleCommentCreated:
 		if ev.OwnerID == ev.ByUserID {
 			return
 		}
-		n = Notification{ID: id.NewID(), UserID: ev.OwnerID, Type: TypeCommentPost, ActorID: ev.ByUserID, EntityID: ev.PostID}
+		n = Notification{ID: id.NewID(), UserID: ev.OwnerID, Type: TypeCommentArticle, ActorID: ev.ByUserID, EntityID: ev.ArticleID}
 	case events.BeanCommentCreated:
 		if ev.OwnerID == ev.ByUserID {
 			return

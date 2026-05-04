@@ -17,6 +17,45 @@ import (
 	"github.com/oapi-codegen/nullable"
 )
 
+// Defines values for ArticleBlockType.
+const (
+	ArticleBlockTypeImages ArticleBlockType = "images"
+	ArticleBlockTypeRecipe ArticleBlockType = "recipe"
+	ArticleBlockTypeText   ArticleBlockType = "text"
+)
+
+// Valid indicates whether the value is a known member of the ArticleBlockType enum.
+func (e ArticleBlockType) Valid() bool {
+	switch e {
+	case ArticleBlockTypeImages:
+		return true
+	case ArticleBlockTypeRecipe:
+		return true
+	case ArticleBlockTypeText:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ArticleRecipeRefStatus.
+const (
+	ArticleRecipeRefStatusAvailable   ArticleRecipeRefStatus = "available"
+	ArticleRecipeRefStatusUnavailable ArticleRecipeRefStatus = "unavailable"
+)
+
+// Valid indicates whether the value is a known member of the ArticleRecipeRefStatus enum.
+func (e ArticleRecipeRefStatus) Valid() bool {
+	switch e {
+	case ArticleRecipeRefStatusAvailable:
+		return true
+	case ArticleRecipeRefStatusUnavailable:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for BeanRefStatus.
 const (
 	BeanRefStatusAvailable   BeanRefStatus = "available"
@@ -109,17 +148,17 @@ func (e Difficulty) Valid() bool {
 
 // Defines values for LikeTargetType.
 const (
-	LikeTargetTypeBean   LikeTargetType = "bean"
-	LikeTargetTypePost   LikeTargetType = "post"
-	LikeTargetTypeRecipe LikeTargetType = "recipe"
+	LikeTargetTypeArticle LikeTargetType = "article"
+	LikeTargetTypeBean    LikeTargetType = "bean"
+	LikeTargetTypeRecipe  LikeTargetType = "recipe"
 )
 
 // Valid indicates whether the value is a known member of the LikeTargetType enum.
 func (e LikeTargetType) Valid() bool {
 	switch e {
-	case LikeTargetTypeBean:
+	case LikeTargetTypeArticle:
 		return true
-	case LikeTargetTypePost:
+	case LikeTargetTypeBean:
 		return true
 	case LikeTargetTypeRecipe:
 		return true
@@ -148,67 +187,28 @@ func (e ListRecipesParamsSortField) Valid() bool {
 
 // Defines values for NotificationType.
 const (
-	CommentBean   NotificationType = "comment_bean"
-	CommentPost   NotificationType = "comment_post"
-	CommentRecipe NotificationType = "comment_recipe"
-	LikeBean      NotificationType = "like_bean"
-	LikePost      NotificationType = "like_post"
-	LikeRecipe    NotificationType = "like_recipe"
+	CommentArticle NotificationType = "comment_article"
+	CommentBean    NotificationType = "comment_bean"
+	CommentRecipe  NotificationType = "comment_recipe"
+	LikeArticle    NotificationType = "like_article"
+	LikeBean       NotificationType = "like_bean"
+	LikeRecipe     NotificationType = "like_recipe"
 )
 
 // Valid indicates whether the value is a known member of the NotificationType enum.
 func (e NotificationType) Valid() bool {
 	switch e {
-	case CommentBean:
+	case CommentArticle:
 		return true
-	case CommentPost:
+	case CommentBean:
 		return true
 	case CommentRecipe:
 		return true
+	case LikeArticle:
+		return true
 	case LikeBean:
 		return true
-	case LikePost:
-		return true
 	case LikeRecipe:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for PostBlockType.
-const (
-	PostBlockTypeImages PostBlockType = "images"
-	PostBlockTypeRecipe PostBlockType = "recipe"
-	PostBlockTypeText   PostBlockType = "text"
-)
-
-// Valid indicates whether the value is a known member of the PostBlockType enum.
-func (e PostBlockType) Valid() bool {
-	switch e {
-	case PostBlockTypeImages:
-		return true
-	case PostBlockTypeRecipe:
-		return true
-	case PostBlockTypeText:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for PostRecipeRefStatus.
-const (
-	PostRecipeRefStatusAvailable   PostRecipeRefStatus = "available"
-	PostRecipeRefStatusUnavailable PostRecipeRefStatus = "unavailable"
-)
-
-// Valid indicates whether the value is a known member of the PostRecipeRefStatus enum.
-func (e PostRecipeRefStatus) Valid() bool {
-	switch e {
-	case PostRecipeRefStatusAvailable:
-		return true
-	case PostRecipeRefStatusUnavailable:
 		return true
 	default:
 		return false
@@ -265,6 +265,96 @@ type ApiErrorResponse struct {
 	// Error Human-readable error message
 	Error string `json:"error"`
 }
+
+// Article A user article in the feed
+type Article struct {
+	// Author Brief user information embedded in resource responses
+	Author UserPreview `json:"author"`
+
+	// Blocks Ordered list of content blocks
+	Blocks []ArticleBlock `json:"blocks"`
+
+	// Comments Comments on this article
+	Comments []Comment `json:"comments"`
+
+	// CreatedAt Timestamp when the article was created
+	CreatedAt time.Time `json:"created_at"`
+
+	// Id Unique article identifier
+	Id string `json:"id"`
+
+	// IsLiked Whether the current user has liked this article
+	IsLiked bool `json:"is_liked"`
+
+	// LikesCount Total number of likes
+	LikesCount int32 `json:"likes_count"`
+
+	// Title article title
+	Title string `json:"title"`
+
+	// UpdatedAt Timestamp when the article was last updated
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// ArticleBlock A single content block within a article. The active field is determined by `type`; other fields are omitted.
+type ArticleBlock struct {
+	// Images Ordered list of image IDs (populated when type=images)
+	Images *[]string `json:"images,omitempty"`
+
+	// Recipe Reference to a recipe embedded in a article block
+	Recipe *ArticleRecipeRef `json:"recipe,omitempty"`
+
+	// Text Text content (populated when type=text)
+	Text *string `json:"text,omitempty"`
+
+	// Type Type of a article content block
+	Type ArticleBlockType `json:"type"`
+}
+
+// ArticleBlockPayload Content block for article create/update requests
+type ArticleBlockPayload struct {
+	// Images Ordered list of image IDs (required when type=images)
+	Images *[]string `json:"images,omitempty"`
+
+	// RecipeId Recipe ID reference (required when type=recipe)
+	RecipeId *string `json:"recipe_id,omitempty"`
+
+	// Text Text content (required when type=text)
+	Text *string `json:"text,omitempty"`
+
+	// Type Type of a article content block
+	Type ArticleBlockType `json:"type"`
+}
+
+// ArticleBlockType Type of a article content block
+type ArticleBlockType string
+
+// ArticlePage defines model for ArticlePage.
+type ArticlePage struct {
+	Items      []Article      `json:"items"`
+	Pagination PaginationMeta `json:"pagination"`
+}
+
+// ArticlePayload defines model for ArticlePayload.
+type ArticlePayload struct {
+	// Blocks Ordered list of content blocks
+	Blocks []ArticleBlockPayload `json:"blocks"`
+
+	// Title Article title
+	Title string `json:"title"`
+}
+
+// ArticleRecipeRef Reference to a recipe embedded in a article block
+type ArticleRecipeRef struct {
+	// Id Recipe ID
+	Id string `json:"id"`
+
+	// Status Whether the recipe is currently accessible
+	Status ArticleRecipeRefStatus `json:"status"`
+}
+
+// ArticleRecipeRefStatus Whether the recipe is currently accessible
+type ArticleRecipeRefStatus string
 
 // AuthResponse defines model for AuthResponse.
 type AuthResponse struct {
@@ -446,6 +536,30 @@ type ChangePasswordRequest struct {
 	NewPassword string `json:"new_password"`
 }
 
+// Comment A comment on a resource
+type Comment struct {
+	// Author Brief user information embedded in resource responses
+	Author *UserPreview `json:"author,omitempty"`
+
+	// CreatedAt Timestamp when the comment was published
+	CreatedAt time.Time `json:"created_at"`
+
+	// Id Unique comment identifier
+	Id string `json:"id"`
+
+	// IsDeleted Whether the comment has been deleted. When true, author and text are omitted.
+	IsDeleted bool `json:"is_deleted"`
+
+	// ParentId ID of the parent comment. Null for top-level comments.
+	ParentId *string `json:"parent_id,omitempty"`
+
+	// Text Comment text. Empty string when is_deleted is true.
+	Text string `json:"text"`
+
+	// UpdatedAt Timestamp of the last edit
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
 // CommentPage defines model for CommentPage.
 type CommentPage struct {
 	Items      []CommentThread `json:"items"`
@@ -470,7 +584,7 @@ type CommentThread struct {
 	ParentId *string `json:"parent_id,omitempty"`
 
 	// Replies Direct replies to this comment
-	Replies []PostComment `json:"replies"`
+	Replies []Comment `json:"replies"`
 
 	// Text Comment text. Empty string when is_deleted is true.
 	Text string `json:"text"`
@@ -479,20 +593,20 @@ type CommentThread struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+// CreateArticleRequest defines model for CreateArticleRequest.
+type CreateArticleRequest = ArticlePayload
+
 // CreateBeanRequest Fields for creating or updating a bean
 type CreateBeanRequest = BeanPayload
 
-// CreatePostCommentRequest defines model for CreatePostCommentRequest.
-type CreatePostCommentRequest struct {
+// CreateCommentRequest defines model for CreateCommentRequest.
+type CreateCommentRequest struct {
 	// ParentId ID of the parent comment. Omit for top-level comments.
 	ParentId *string `json:"parent_id,omitempty"`
 
 	// Text Comment text
 	Text string `json:"text"`
 }
-
-// CreatePostRequest defines model for CreatePostRequest.
-type CreatePostRequest = PostPayload
 
 // CreateRecipeRequest defines model for CreateRecipeRequest.
 type CreateRecipeRequest = RecipePayload
@@ -509,18 +623,18 @@ type Image struct {
 // LikeTargetType Type of likeable resource
 type LikeTargetType string
 
-// LikedPost defines model for LikedPost.
-type LikedPost struct {
-	// LikedAt Timestamp when the post was liked
-	LikedAt time.Time `json:"liked_at"`
+// LikedArticle defines model for LikedArticle.
+type LikedArticle struct {
+	// Article A user article in the feed
+	Article Article `json:"article"`
 
-	// Post A user post in the feed
-	Post Post `json:"post"`
+	// LikedAt Timestamp when the article was liked
+	LikedAt time.Time `json:"liked_at"`
 }
 
-// LikedPostPage defines model for LikedPostPage.
-type LikedPostPage struct {
-	Items      []LikedPost    `json:"items"`
+// LikedArticlePage defines model for LikedArticlePage.
+type LikedArticlePage struct {
+	Items      []LikedArticle `json:"items"`
 	Pagination PaginationMeta `json:"pagination"`
 }
 
@@ -611,7 +725,7 @@ type Notification struct {
 	// CreatedAt When the notification was created
 	CreatedAt time.Time `json:"created_at"`
 
-	// EntityId ID of the recipe or post this notification relates to
+	// EntityId ID of the recipe or article this notification relates to
 	EntityId string `json:"entity_id"`
 
 	// Id Unique notification identifier
@@ -672,120 +786,6 @@ type PaginationParams struct {
 	// Page Page number
 	Page *PageParam `json:"page,omitempty"`
 }
-
-// Post A user post in the feed
-type Post struct {
-	// Author Brief user information embedded in resource responses
-	Author UserPreview `json:"author"`
-
-	// Blocks Ordered list of content blocks
-	Blocks []PostBlock `json:"blocks"`
-
-	// Comments Comments on this post
-	Comments []PostComment `json:"comments"`
-
-	// CreatedAt Timestamp when the post was created
-	CreatedAt time.Time `json:"created_at"`
-
-	// Id Unique post identifier
-	Id string `json:"id"`
-
-	// IsLiked Whether the current user has liked this post
-	IsLiked bool `json:"is_liked"`
-
-	// LikesCount Total number of likes
-	LikesCount int32 `json:"likes_count"`
-
-	// Title Post title
-	Title string `json:"title"`
-
-	// UpdatedAt Timestamp when the post was last updated
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
-// PostBlock A single content block within a post. The active field is determined by `type`; other fields are omitted.
-type PostBlock struct {
-	// Images Ordered list of image IDs (populated when type=images)
-	Images *[]string `json:"images,omitempty"`
-
-	// Recipe Reference to a recipe embedded in a post block
-	Recipe *PostRecipeRef `json:"recipe,omitempty"`
-
-	// Text Text content (populated when type=text)
-	Text *string `json:"text,omitempty"`
-
-	// Type Type of a post content block
-	Type PostBlockType `json:"type"`
-}
-
-// PostBlockPayload Content block for post create/update requests
-type PostBlockPayload struct {
-	// Images Ordered list of image IDs (required when type=images)
-	Images *[]string `json:"images,omitempty"`
-
-	// RecipeId Recipe ID reference (required when type=recipe)
-	RecipeId *string `json:"recipe_id,omitempty"`
-
-	// Text Text content (required when type=text)
-	Text *string `json:"text,omitempty"`
-
-	// Type Type of a post content block
-	Type PostBlockType `json:"type"`
-}
-
-// PostBlockType Type of a post content block
-type PostBlockType string
-
-// PostComment A comment on a post
-type PostComment struct {
-	// Author Brief user information embedded in resource responses
-	Author *UserPreview `json:"author,omitempty"`
-
-	// CreatedAt Timestamp when the comment was published
-	CreatedAt time.Time `json:"created_at"`
-
-	// Id Unique comment identifier
-	Id string `json:"id"`
-
-	// IsDeleted Whether the comment has been deleted. When true, author and text are omitted.
-	IsDeleted bool `json:"is_deleted"`
-
-	// ParentId ID of the parent comment. Null for top-level comments.
-	ParentId *string `json:"parent_id,omitempty"`
-
-	// Text Comment text. Empty string when is_deleted is true.
-	Text string `json:"text"`
-
-	// UpdatedAt Timestamp of the last edit
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
-// PostPage defines model for PostPage.
-type PostPage struct {
-	Items      []Post         `json:"items"`
-	Pagination PaginationMeta `json:"pagination"`
-}
-
-// PostPayload defines model for PostPayload.
-type PostPayload struct {
-	// Blocks Ordered list of content blocks
-	Blocks []PostBlockPayload `json:"blocks"`
-
-	// Title Post title
-	Title string `json:"title"`
-}
-
-// PostRecipeRef Reference to a recipe embedded in a post block
-type PostRecipeRef struct {
-	// Id Recipe ID
-	Id string `json:"id"`
-
-	// Status Whether the recipe is currently accessible
-	Status PostRecipeRefStatus `json:"status"`
-}
-
-// PostRecipeRefStatus Whether the recipe is currently accessible
-type PostRecipeRefStatus string
 
 // Recipe Coffee brewing recipe
 type Recipe struct {
@@ -1012,17 +1012,17 @@ type TokensResponse struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
+// UpdateArticleRequest defines model for UpdateArticleRequest.
+type UpdateArticleRequest = ArticlePayload
+
 // UpdateBeanRequest Fields for creating or updating a bean
 type UpdateBeanRequest = BeanPayload
 
-// UpdatePostCommentRequest defines model for UpdatePostCommentRequest.
-type UpdatePostCommentRequest struct {
+// UpdateCommentRequest defines model for UpdateCommentRequest.
+type UpdateCommentRequest struct {
 	// Text New comment text
 	Text string `json:"text"`
 }
-
-// UpdatePostRequest defines model for UpdatePostRequest.
-type UpdatePostRequest = PostPayload
 
 // UpdateProfileRequest defines model for UpdateProfileRequest.
 type UpdateProfileRequest struct {
@@ -1130,75 +1130,75 @@ type UserProfile struct {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"Jd8HmQxzAAA=",
+	"H4sIAAAAAAAC/+w9627cOHevQqgFNgHkiZPtBoWL/nDiTTeAk3gdB4tiEcxypDMj1hKpkNSMpwsDfYe+",
+	"4fckH3iRREmURnNJnMv82fVI1OHhufHcyPwdRCzLGQUqRXD2dyCiBDKs/zzPya+cM34NImdUgHqWc5YD",
+	"lwT0CFCv1R8xiIiTXBJGg7PgtyLD9IQDjvEsBaRHoQyEwAsIwkCucwjOAiE5oYvg/j4MOHwqCIc4OPvT",
+	"wvxYDWOz/4FIBvdhcM4liVLozneOCgEcYfMeEYpkAmgOEAdhC2NcyMSg/K8c5sFZ8C9P6vU/sYt/8kEA",
+	"v+KwJLBSE89SFt2K7rzveAwcYpQSIRGbo4hRCVQiOz4MiIRMbJrMLuuF+kjNZteNOcdr9TtiWVZypzn/",
+	"S/sGMbViIkoKjJ3Zfu+dlAOWEE+x7E57QzIQEmc5WiVgaF2SfoUFsp8GYTBnPFMAghhLOJEk83A/DEjc",
+	"neIDJZ+KGiyJgUoyJ8C9AMQ0JbfgAfNHAjIBrlGMCs4Vc7SoJFgg/U2bbhb4jLEUMFXQ1TAxjVhBfaRg",
+	"EqeIFtkMuJIAPdhdOaHy52c1XEIlLIBrihPpk+Vyyea1Z7VFHu/KmRQLiez3I9nTUk6ivitRq8TcKpUj",
+	"qg0BauDssKtJ2wGNN6rhUXtB6CKFpt6hFZEJoQiXS5+gG0WHSJIloDmBNEZEoBgk8IxQiNFsjf5SU//1",
+	"H4hpcdGDlFQAYhmREuJJx5CQDC9ghE3Q49DrC4Ee5SwvUkUHy511Dv9pwDx2NbbD8bZucohIDiPNyrUe",
+	"fA1zDQnufFIDd7KioRdL9d1jnzCaB+Pt240a3xYqDWQT+6/wOmVY6ziOY6JQx+mVw5I5TgWEHQvpSsac",
+	"1ZuEkc8nRjKRQgeEFty92Vwu7SBcnvqso+Epen2BOMyBA43AO60B4WfcCEnwQPwKBOHGztTCfJ2D4gOu",
+	"GeyyPggDoEWmTZjhqCVBpU0fPYuy014pt0XJXZq+mwdnfw6vUo++D9uuUsX4bXyCrlzcd6jz0UV0nI40",
+	"Mfty3k2Jn0fae3bD8+HdsC0/zY1pQJJqq+hRrlKlJEMYGfFAkM0gjiFG7s5SyVaL1UMq61MeIbEsxLD7",
+	"YvEgonRk0jXCUQRCkJledCnfeIlJis2zgta/Po7a2y0qXtIVMukPBQwuU8lugXZX8j5hXJ6kZKk8LjXE",
+	"2OJCJsqxi7AkdOEa4Q6JOMw5iKQP/o2GWQgNHrGZxJpPFFaWSGZWrz8lYFQ8cB4ZP6VNtiZmYZMQFryP",
+	"nC+Uf+nxaSI2nwOgGWBaRjKLlM1wiiIsccoWh4lp9GL42hdU6BdK4xknC+Il2lB48EfpeuolKL8Ta82R",
+	"zPjh1SrGhQclcMY9GvIqxUvGkTtmmz12jnnmAYp5hhhHEVNUxtpvpHjr4MVwcDhyUXuRd4t/faEYoOhV",
+	"5MpmKjdVw8u8MfQhgiAFf/sI6G0z9qlCUQttRCCkSduBq9Sjl+o5Z0rJul9dmRfKmmQgExYL9Agmi4kS",
+	"wwTiEFEsC47TECWMwno7j+zTVESMe3D9/WTBcawm1QMMDQC9f3mORIRTQI9O//F////09PSxS5F5ynQ8",
+	"lOE7kinb/fT0NAwyQs2v0woBE14aK7jQM3Z3F/W8jHw0o60Wm9X/N+ELHCUwn0OIfitIir1OHGdYyOkY",
+	"V05x51qNNn6c/RQ8uaC3OINSlMtBPivM0+63l4TelmZDydNPAuXKzcZyGJxvY7Oi5CyxRtqNYN2w1RV8",
+	"R8P6rPkD+IkvrIqOcRINirtEUa9MPKy2bE0fJemMm0yC+huX2t5cyn5bzFdu9w9nuT+v/fveLdwPZMeG",
+	"TFifTRoT4mjxxFKqHSJ2o55Rkc14b2cHQX9ATo4JysyiGyFZGW+Vvnvt7h4mQBvexwbCtyaBumZLBffK",
+	"WGlgOtujDX65TGcBIHIOQjCl6iRtSp9FPQzuTtTwkyXmCmOhvmtg8GsNpPH8lYWoMOaweqOtmG8LMVES",
+	"h1Vt7Bwcl89PFXpKypOpnknt8sBZ+bcSG7jTOes0nio46us7g9Q0w1FCqKJtxm7xNGfSmyBSGL6XkHsC",
+	"XpOZFhLyUtZKXEvj3VauBoA2vAuQmKQ6/yAkLyL1WFQMUtN499BCbWOMTgVEjMa+JE9ufABUDi2x1ZgT",
+	"isovfZ77gDkwn7vmwI0Env+bH942m6oePEEvMUUzQBwES5cQoyXBepxJyJrRCGicM0LlxEckxmOfmdDp",
+	"rzY16kzMNjUdnf0wOSwX4DjH1aBXwvZqtpXC3Zy7H0NSj5LVkKzNQvUywXQBV1iIFePxtUnNbZlZttvi",
+	"NLdQPGbc5iOwSa6haqRjL5xnXZcCVgPQ38KqgjhBbwohFUP//eTnZyhKMMeRBC4m4+ZqEbCztBYuXpLa",
+	"crs36adfKb8aa4kreAQHSvRtV8kvMVlhgfJilhKRHKaWXwLeWMuPIQW5MZFloSVYoBkARfarCTLpR15A",
+	"iAy9EKYxknAn2wXdbqYrx5qpw3bCDCoxmKC3RZoa+8bykxSWkJbvxGR86c0Kh0Z0gn7NcrlG5hvDm5ow",
+	"yuFU65vs3h1gV6L7ASAmco9mAIdhVUmtr/Y/oBQPkDuxM98kHHw1KX8SpfnRaITrTps2zhzy1LetBheE",
+	"QySRfW/CRxVqWEj7tvh0qhgGjS6LPoYda8UZk7WhIDJBRAoUNxDWvNVyUJXcdtlCfqjipKGXCdvHEeuY",
+	"pzvm6Y55um88T2fU3lrq3czkTo7Lu4zIwzoum42gGtRPg7ItY6edAjDdQACt35LZXGe1pZqwy9KDcSRA",
+	"qndU+XWSoRjUaC9FVKA8zaoU1aAE18ms+3BkBO08rkS6FSI6dpjM5yQqUrnehMpFPfLBQmNCFxxi4u9r",
+	"bm/uZe9L/Q16lOE79Mvp47E7vZGs1xUEZ7fP8N1rA+KX066ppUyCz36TJZaA1Fu0JLoHBzGarkvzYVGu",
+	"6ordrUHFVpGBPMdFKnv29Nc0JhGWIFQY4OkGMnDSdYmFN64xpkir+EZCqaGXeqROgkM+gkFlwsgMH8mS",
+	"dtpqvONlm6m287tcEE3NbehOuWafkbpoqFjbXS/fIWNK2wpbZc+xULNkEJMiC8IgwY10QS0hrzMbE7XC",
+	"6YYublOiMdo5FH93AzwfGS7JLdxgvgA53IuZklvQpRAnoVFSoSJL3XqvfVMfIdR8sXP4o5UUqV+M7KjU",
+	"Vfyd+udt2/oOsXI1Z73iPtLGD9d22qD0yIhYf3NdtaQ3p3dJPS6DNK653c43QOVOW2+LyAbCQ9G4xH8s",
+	"iTMirzDHWWO/eHYa9jZjaVRQDlx7sOMasS6JkAYxoScTHmXT+5nXWzCFOzRbD2x6u/tLOzo3qaLcZo5U",
+	"5NU5wMVG8VOCUH3wqQBf8PweMI8Sa/+FootN03PU3Ip6wqJddmvG5dSkYaxjOfTte8blRTW4/FyfffFx",
+	"F1LdG6AGodnaMeWNbF+7oOCYQ48eCvlBAFca0StxX4KDe9JtTADb2jNHn3y4ZAtCd40J++oiiuibSi0Z",
+	"oZdAFzIJzp72dE37EyLW2agGbADVIoSDQQWhhy6scIPldla11S4+PGtzuG++t0z5TBH2R2znFBF6gvNc",
+	"BQTVuKro6Xbddos6kTxoTadqv26gssvBTOUnyvWG0NBGIs7JKh1TNybnkOoIRrIta0YNKMOFIw54W3qo",
+	"TybofCZ0WWqOCqqfjKbPGL135car+aSqNYZWFFzCN1i9SS4fwJlpqMVIb6ZDkt4AwuWYs+EoL29aBRD6",
+	"Vx1F6J82zW2zWfXY8kE9vHzSG3y42H7QAvLS3wivHyusjRg1kO+2UJhBm5vqfcD67ErHxfNkcCt3ryWG",
+	"DXx8gnblDUb/CyhwEiknk1B9aJSXJ4TCPsFq51ztAUrtsJanB6zTWn7jSQ3YGUfs11fVyDcgcVcB9RwN",
+	"gH3r77rgT9seuBpmz4MPcuSpzwFvYdrZ1eqmAx8vyl6KfB8UNDU2i6XDrVoM+yKNITEMg1Q5u/4VXWKx",
+	"53Io3PUBfwt3ewH3iVF1VqDBKRcNd709YmZF4OEcYp+vXgf4g32YPX3DOzWuDMSaTmZaubKrhJXOzYYk",
+	"+cweuttYazLn5XeOV7dsurFO1C5O2tdUSeh35Mp89eFOw30tlYhdCxC+dPf+Z/jaTP0C95h8rgKJ7TgY",
+	"RdZ3ZmyrrLJPGWXy7dVRDlZA2fqOGcd8HeiKmdr2O2fztq7kNNW0JKoVkaErarY4+NfR676jADUy5g6B",
+	"vq0y82vo7wXWUWFpCB1wj5htjQ6RPu35zLR3dHo2/PmaGvXeNpaCEuk17VpoM8Ci4KDCqBDNOYBptjQn",
+	"T7M0RIsQsf99PK5tYgyJ9+pz/wJs+A6J/64yxgMnyRQ9jNXGaWkT9K6k/ZqUUYjRnLPsMO7hwP04tbvQ",
+	"QmcjGWqgld3pJ8oD5Fu2qxuVaO50K8yxnebYTnNspzm203y+dhprnqxJ92QGF4lcgfpvySAOOQcBVNb1",
+	"FUUzoY94RJjH4itOPXwDuYQfK/D/FqPt3aLinQ3WISzG5oBuwHr0RGIb62LXpqK7W+V8w2VjFra9yMxc",
+	"Nqbci0Kf1krZglDl93BYECE59rd5bF2BvtbggO+2JLzEEvOxOmZGH07VZoT1nV3VejUjbMFxnnhPCUCG",
+	"SdrTxKDfIRzH9lT/yEMbF0TkKV73n9sY1zqx75nSLdoo6qmenzx97kwVohSk+cMYFLMZFjQGrs+ACO1I",
+	"TTbfu63JHI7uwHAMRV9VwFwlYcyOW75dJLLqgJ02f9bPY8xvlTVQ//MVZpttOF3pUsJV9/Q412+IyLov",
+	"XrA3bLFI4ZLcgnvX4Raa1rOn3PACEDG2vr4UL0QahnrBIWNLiLffTT6YzBWSelcxt7CVBnPjjuJroBxx",
+	"MbO+b1F8d7dBtqjRuspxs402rDgeeBx74NHQ63jg8Xjg8Xjg8Qc68GjUfq8Dj/6ziG9hVZ1L3+88okHx",
+	"irM52dWSf1GXmxapuUXsTF99sZ8LvhHYKK96I5R+51fx8fN6vj0MPx5APWbMjxnzY8b8K82Yu/fQjy48",
+	"mty23sg89cc9siveBMKIC2ReKbtW3vjVSulbfXdiQYhNf7Ndfm+54AUnMDd7GaHG01MA3X+4oTyHWjUp",
+	"e8oFYzZto1Q/icamveXRBoPoDvelnpeTxxuSWP3bawXCOaQzIoc7mA5yeHPYuri/XVyTLzfzjVb4VpVn",
+	"TAndVZ6uEdamD+XmvfnnZxRiYWWRJUOwBL5mFILvKCU7Z2nKVsBHdIorYCpCVx8oC23a+y1FR5U8qm/H",
+	"TuZOYWceWV3ZT1+JmFrCDNaUush1Ck0T9EqnBXVajDK6zlhhtFX4GxOrqRUq4+tZ9fw1UlvPvVuKfZsD",
+	"hNvYpq5wdiWoRa8m57rG7V67i3OtL9YhCN6wGFITYARhsAQuDPKnk9PJU12oy4HinARnwc+T08mpTqzL",
+	"RARnyqu//2cAAAD//62phwF2cwAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

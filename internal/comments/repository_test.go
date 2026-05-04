@@ -25,34 +25,34 @@ func TestCommentRepository_Create(t *testing.T) {
 		repo, _ := setupCommentRepo(t)
 
 		author := models.UserPreview{Id: "user-2"}
-		comment := models.PostComment{
+		comment := models.Comment{
 			Id:     "comment-1",
 			Author: &author,
-			Text:   "Great post!",
+			Text:   "Great article!",
 		}
-		require.NoError(t, repo.Create(t.Context(), comment, "post-1", "post"))
+		require.NoError(t, repo.Create(t.Context(), comment, "article-1", "article"))
 
 		got, err := repo.GetByID(t.Context(), "comment-1")
 		require.NoError(t, err)
 		assert.Equal(t, "comment-1", got.Id)
-		assert.Equal(t, "Great post!", got.Text)
+		assert.Equal(t, "Great article!", got.Text)
 		assert.Equal(t, "user-2", got.Author.Id)
 		assert.Equal(t, "user-2", got.Author.Username)
 	})
 
 	t.Run("reply has parent_id set", func(t *testing.T) {
 		repo, db := setupCommentRepo(t)
-		testutil.CreateTestComment(t, db, "comment-1", "post-1", "user-1", "root")
+		testutil.CreateTestComment(t, db, "comment-1", "article-1", "user-1", "root")
 
 		parentID := "comment-1"
 		author := models.UserPreview{Id: "user-2"}
-		reply := models.PostComment{
+		reply := models.Comment{
 			Id:       "comment-2",
 			Author:   &author,
 			Text:     "reply!",
 			ParentId: &parentID,
 		}
-		require.NoError(t, repo.Create(t.Context(), reply, "post-1", "post"))
+		require.NoError(t, repo.Create(t.Context(), reply, "article-1", "article"))
 
 		got, err := repo.GetByID(t.Context(), "comment-2")
 		require.NoError(t, err)
@@ -64,7 +64,7 @@ func TestCommentRepository_Create(t *testing.T) {
 func TestCommentRepository_Delete(t *testing.T) {
 	t.Run("soft deletes existing comment", func(t *testing.T) {
 		repo, db := setupCommentRepo(t)
-		testutil.CreateTestComment(t, db, "comment-1", "post-1", "user-2", "hello")
+		testutil.CreateTestComment(t, db, "comment-1", "article-1", "user-2", "hello")
 
 		require.NoError(t, repo.Delete(t.Context(), "comment-1"))
 
@@ -74,7 +74,7 @@ func TestCommentRepository_Delete(t *testing.T) {
 
 	t.Run("already deleted returns ErrNotFound", func(t *testing.T) {
 		repo, db := setupCommentRepo(t)
-		testutil.CreateTestComment(t, db, "comment-1", "post-1", "user-2", "hello")
+		testutil.CreateTestComment(t, db, "comment-1", "article-1", "user-2", "hello")
 
 		require.NoError(t, repo.Delete(t.Context(), "comment-1"))
 		err := repo.Delete(t.Context(), "comment-1")
@@ -92,7 +92,7 @@ func TestCommentRepository_Delete(t *testing.T) {
 func TestCommentRepository_GetAuthorID(t *testing.T) {
 	t.Run("returns author id", func(t *testing.T) {
 		repo, db := setupCommentRepo(t)
-		testutil.CreateTestComment(t, db, "comment-1", "post-1", "user-2", "hello")
+		testutil.CreateTestComment(t, db, "comment-1", "article-1", "user-2", "hello")
 
 		authorID, err := repo.GetAuthorID(t.Context(), "comment-1")
 		require.NoError(t, err)
@@ -108,7 +108,7 @@ func TestCommentRepository_GetAuthorID(t *testing.T) {
 
 	t.Run("soft-deleted returns sql.ErrNoRows", func(t *testing.T) {
 		repo, db := setupCommentRepo(t)
-		testutil.CreateTestComment(t, db, "comment-1", "post-1", "user-2", "hello")
+		testutil.CreateTestComment(t, db, "comment-1", "article-1", "user-2", "hello")
 		require.NoError(t, repo.Delete(t.Context(), "comment-1"))
 
 		_, err := repo.GetAuthorID(t.Context(), "comment-1")
@@ -123,10 +123,10 @@ func defaultPag() models.PaginationParams {
 func TestCommentRepository_ListForTarget(t *testing.T) {
 	t.Run("returns root comment with reply", func(t *testing.T) {
 		repo, db := setupCommentRepo(t)
-		testutil.CreateTestComment(t, db, "c1", "post-1", "user-1", "root text")
-		testutil.CreateTestCommentReply(t, db, "c2", "post-1", "user-2", "reply text", "c1")
+		testutil.CreateTestComment(t, db, "c1", "article-1", "user-1", "root text")
+		testutil.CreateTestCommentReply(t, db, "c2", "article-1", "user-2", "reply text", "c1")
 
-		threads, total, err := repo.ListForTarget(t.Context(), "post-1", defaultPag())
+		threads, total, err := repo.ListForTarget(t.Context(), "article-1", defaultPag())
 		require.NoError(t, err)
 		assert.Equal(t, 1, total)
 		require.Len(t, threads, 1)
@@ -140,10 +140,10 @@ func TestCommentRepository_ListForTarget(t *testing.T) {
 
 	t.Run("deleted root comment returned as tombstone", func(t *testing.T) {
 		repo, db := setupCommentRepo(t)
-		testutil.CreateTestComment(t, db, "c1", "post-1", "user-1", "root text")
+		testutil.CreateTestComment(t, db, "c1", "article-1", "user-1", "root text")
 		require.NoError(t, repo.Delete(t.Context(), "c1"))
 
-		threads, total, err := repo.ListForTarget(t.Context(), "post-1", defaultPag())
+		threads, total, err := repo.ListForTarget(t.Context(), "article-1", defaultPag())
 		require.NoError(t, err)
 		assert.Equal(t, 1, total)
 		require.Len(t, threads, 1)
@@ -154,11 +154,11 @@ func TestCommentRepository_ListForTarget(t *testing.T) {
 
 	t.Run("deleted root with replies: root is tombstone, replies preserved", func(t *testing.T) {
 		repo, db := setupCommentRepo(t)
-		testutil.CreateTestComment(t, db, "c1", "post-1", "user-1", "root text")
-		testutil.CreateTestCommentReply(t, db, "c2", "post-1", "user-2", "reply text", "c1")
+		testutil.CreateTestComment(t, db, "c1", "article-1", "user-1", "root text")
+		testutil.CreateTestCommentReply(t, db, "c2", "article-1", "user-2", "reply text", "c1")
 		require.NoError(t, repo.Delete(t.Context(), "c1"))
 
-		threads, total, err := repo.ListForTarget(t.Context(), "post-1", defaultPag())
+		threads, total, err := repo.ListForTarget(t.Context(), "article-1", defaultPag())
 		require.NoError(t, err)
 		assert.Equal(t, 1, total)
 		require.Len(t, threads, 1)
@@ -172,11 +172,11 @@ func TestCommentRepository_ListForTarget(t *testing.T) {
 
 	t.Run("deleted reply returned as tombstone", func(t *testing.T) {
 		repo, db := setupCommentRepo(t)
-		testutil.CreateTestComment(t, db, "c1", "post-1", "user-1", "root text")
-		testutil.CreateTestCommentReply(t, db, "c2", "post-1", "user-2", "reply text", "c1")
+		testutil.CreateTestComment(t, db, "c1", "article-1", "user-1", "root text")
+		testutil.CreateTestCommentReply(t, db, "c2", "article-1", "user-2", "reply text", "c1")
 		require.NoError(t, repo.Delete(t.Context(), "c2"))
 
-		threads, total, err := repo.ListForTarget(t.Context(), "post-1", defaultPag())
+		threads, total, err := repo.ListForTarget(t.Context(), "article-1", defaultPag())
 		require.NoError(t, err)
 		assert.Equal(t, 1, total)
 		require.Len(t, threads[0].Replies, 1)
@@ -187,11 +187,11 @@ func TestCommentRepository_ListForTarget(t *testing.T) {
 
 	t.Run("reply to reply appears under same root", func(t *testing.T) {
 		repo, db := setupCommentRepo(t)
-		testutil.CreateTestComment(t, db, "c1", "post-1", "user-1", "root")
-		testutil.CreateTestCommentReply(t, db, "c2", "post-1", "user-2", "reply", "c1")
-		testutil.CreateTestCommentReply(t, db, "c3", "post-1", "user-1", "reply to reply", "c2")
+		testutil.CreateTestComment(t, db, "c1", "article-1", "user-1", "root")
+		testutil.CreateTestCommentReply(t, db, "c2", "article-1", "user-2", "reply", "c1")
+		testutil.CreateTestCommentReply(t, db, "c3", "article-1", "user-1", "reply to reply", "c2")
 
-		threads, total, err := repo.ListForTarget(t.Context(), "post-1", defaultPag())
+		threads, total, err := repo.ListForTarget(t.Context(), "article-1", defaultPag())
 		require.NoError(t, err)
 		assert.Equal(t, 1, total)
 		require.Len(t, threads, 1)
@@ -203,12 +203,12 @@ func TestCommentRepository_ListForTarget(t *testing.T) {
 
 	t.Run("reply to reply on deleted middle comment preserved", func(t *testing.T) {
 		repo, db := setupCommentRepo(t)
-		testutil.CreateTestComment(t, db, "c1", "post-1", "user-1", "root")
-		testutil.CreateTestCommentReply(t, db, "c2", "post-1", "user-2", "reply", "c1")
-		testutil.CreateTestCommentReply(t, db, "c3", "post-1", "user-1", "reply to reply", "c2")
+		testutil.CreateTestComment(t, db, "c1", "article-1", "user-1", "root")
+		testutil.CreateTestCommentReply(t, db, "c2", "article-1", "user-2", "reply", "c1")
+		testutil.CreateTestCommentReply(t, db, "c3", "article-1", "user-1", "reply to reply", "c2")
 		require.NoError(t, repo.Delete(t.Context(), "c2"))
 
-		threads, _, err := repo.ListForTarget(t.Context(), "post-1", defaultPag())
+		threads, _, err := repo.ListForTarget(t.Context(), "article-1", defaultPag())
 		require.NoError(t, err)
 		require.Len(t, threads[0].Replies, 2)
 		assert.True(t, threads[0].Replies[0].IsDeleted)
@@ -219,7 +219,7 @@ func TestCommentRepository_ListForTarget(t *testing.T) {
 	t.Run("empty target returns empty list", func(t *testing.T) {
 		repo, _ := setupCommentRepo(t)
 
-		threads, total, err := repo.ListForTarget(t.Context(), "post-1", defaultPag())
+		threads, total, err := repo.ListForTarget(t.Context(), "article-1", defaultPag())
 		require.NoError(t, err)
 		assert.Equal(t, 0, total)
 		assert.Empty(t, threads)
@@ -229,28 +229,28 @@ func TestCommentRepository_ListForTarget(t *testing.T) {
 func TestCommentRepository_ExistsInTarget(t *testing.T) {
 	t.Run("returns true for existing comment in target", func(t *testing.T) {
 		repo, db := setupCommentRepo(t)
-		testutil.CreateTestComment(t, db, "comment-1", "post-1", "user-1", "hello")
+		testutil.CreateTestComment(t, db, "comment-1", "article-1", "user-1", "hello")
 
-		exists, err := repo.ExistsInTarget(t.Context(), "comment-1", "post-1")
+		exists, err := repo.ExistsInTarget(t.Context(), "comment-1", "article-1")
 		require.NoError(t, err)
 		assert.True(t, exists)
 	})
 
 	t.Run("returns false for comment in different target", func(t *testing.T) {
 		repo, db := setupCommentRepo(t)
-		testutil.CreateTestComment(t, db, "comment-1", "post-1", "user-1", "hello")
+		testutil.CreateTestComment(t, db, "comment-1", "article-1", "user-1", "hello")
 
-		exists, err := repo.ExistsInTarget(t.Context(), "comment-1", "post-2")
+		exists, err := repo.ExistsInTarget(t.Context(), "comment-1", "article-2")
 		require.NoError(t, err)
 		assert.False(t, exists)
 	})
 
 	t.Run("returns false for soft-deleted comment", func(t *testing.T) {
 		repo, db := setupCommentRepo(t)
-		testutil.CreateTestComment(t, db, "comment-1", "post-1", "user-1", "hello")
+		testutil.CreateTestComment(t, db, "comment-1", "article-1", "user-1", "hello")
 		require.NoError(t, repo.Delete(t.Context(), "comment-1"))
 
-		exists, err := repo.ExistsInTarget(t.Context(), "comment-1", "post-1")
+		exists, err := repo.ExistsInTarget(t.Context(), "comment-1", "article-1")
 		require.NoError(t, err)
 		assert.False(t, exists)
 	})

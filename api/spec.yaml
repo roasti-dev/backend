@@ -17,10 +17,10 @@ tags:
     description: User registration, authentication and token management
   - name: users
     description: User account and profile management, including private and public data
-  - name: posts
-    description: User posts feed
+  - name: articles
+    description: User articles feed
   - name: likes
-    description: Like and unlike actions on recipes and posts
+    description: Like and unlike actions on recipes and articles
   - name: public
     description: Endpoints that do not require authentication
   - name: notifications
@@ -44,12 +44,12 @@ paths:
               schema:
                 type: string
                 example: "OK"
-  /api/v1/posts:
+  /api/v1/articles:
     get:
-      summary: List posts
-      operationId: listPosts
-      description: Returns a paginated list of posts sorted by date (newest first).
-      tags: [posts]
+      summary: List articles
+      operationId: listArticles
+      description: Returns a paginated list of articles sorted by date (newest first).
+      tags: [articles]
       parameters:
         - name: author_id
           in: query
@@ -58,7 +58,7 @@ paths:
             type: string
         - name: filter
           in: query
-          description: Apply a named filter. Use `following` to return posts from followed users (requires auth).
+          description: Apply a named filter. Use `following` to return articles from followed users (requires auth).
           schema:
             type: string
             enum:
@@ -73,32 +73,32 @@ paths:
             $ref: "./models.yaml#/components/schemas/LimitParam"
       responses:
         "200":
-          description: Paginated list of posts
+          description: Paginated list of articles
           content:
             application/json:
               schema:
-                $ref: "./models.yaml#/components/schemas/PostPage"
+                $ref: "./models.yaml#/components/schemas/ArticlePage"
         "500":
           description: Internal server error
 
     post:
-      summary: Create post
-      operationId: createPost
-      description: Creates a new post on behalf of the authenticated user.
-      tags: [posts]
+      summary: Create article
+      operationId: createArticle
+      description: Creates a new article on behalf of the authenticated user.
+      tags: [articles]
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "./models.yaml#/components/schemas/CreatePostRequest"
+              $ref: "./models.yaml#/components/schemas/CreateArticleRequest"
       responses:
         "201":
-          description: Post created
+          description: Article created
           content:
             application/json:
               schema:
-                $ref: "./models.yaml#/components/schemas/Post"
+                $ref: "./models.yaml#/components/schemas/Article"
         "400":
           description: Bad request
           content:
@@ -106,58 +106,58 @@ paths:
               schema:
                 $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
 
-  /api/v1/posts/{post_id}:
+  /api/v1/articles/{article_id}:
     get:
-      summary: Get post by ID
-      operationId: getPost
-      description: Returns a single post by its ID.
-      tags: [posts]
+      summary: Get article by ID
+      operationId: getArticle
+      description: Returns a single article by its ID.
+      tags: [articles]
       parameters:
-        - name: post_id
+        - name: article_id
           in: path
           required: true
           schema:
             type: string
-          description: Unique post identifier
+          description: Unique article identifier
       responses:
         "200":
-          description: Post
+          description: Article
           content:
             application/json:
               schema:
-                $ref: "./models.yaml#/components/schemas/Post"
+                $ref: "./models.yaml#/components/schemas/Article"
         "404":
-          description: Post not found
+          description: Article not found
           content:
             application/json:
               schema:
                 $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
 
     put:
-      summary: Update post
-      operationId: updatePost
-      description: Updates an existing post. Only the author can update their own post.
-      tags: [posts]
+      summary: Update article
+      operationId: updateArticle
+      description: Updates an existing article. Only the author can update their own article.
+      tags: [articles]
       parameters:
-        - name: post_id
+        - name: article_id
           in: path
           required: true
           schema:
             type: string
-          description: Unique post identifier
+          description: Unique article identifier
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "./models.yaml#/components/schemas/UpdatePostRequest"
+              $ref: "./models.yaml#/components/schemas/UpdateArticleRequest"
       responses:
         "200":
-          description: Post updated
+          description: Article updated
           content:
             application/json:
               schema:
-                $ref: "./models.yaml#/components/schemas/Post"
+                $ref: "./models.yaml#/components/schemas/Article"
         "400":
           description: Bad request
           content:
@@ -171,41 +171,41 @@ paths:
               schema:
                 $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
         "404":
-          description: Post not found
+          description: Article not found
           content:
             application/json:
               schema:
                 $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
 
     delete:
-      summary: Delete post
-      operationId: deletePost
-      description: Permanently deletes a post. Only the author can delete their own post.
-      tags: [posts]
+      summary: Delete article
+      operationId: deleteArticle
+      description: Permanently deletes an article. Only the author can delete their own article.
+      tags: [articles]
       parameters:
-        - name: post_id
+        - name: article_id
           in: path
           required: true
           schema:
             type: string
-          description: Unique post identifier
+          description: Unique article identifier
       responses:
         "204":
           description: Deleted
 
-  /api/v1/posts/{post_id}/like:
+  /api/v1/articles/{article_id}/like:
     post:
-      summary: Toggle like on a post
-      operationId: togglePostLike
+      summary: Toggle like on an article
+      operationId: toggleArticleLike
       description: Adds a like if not liked, removes if already liked.
       tags: [likes]
       parameters:
-        - name: post_id
+        - name: article_id
           in: path
           required: true
           schema:
             type: string
-          description: Unique post identifier
+          description: Unique article identifier
       responses:
         "200":
           description: Like toggled
@@ -214,25 +214,25 @@ paths:
               schema:
                 $ref: "./models.yaml#/components/schemas/ToggleLikeResponse"
         "404":
-          description: Post not found
+          description: Article not found
           content:
             application/json:
               schema:
                 $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
 
-  /api/v1/posts/{post_id}/comments:
+  /api/v1/articles/{article_id}/comments:
     get:
-      summary: List post comments
-      operationId: listPostComments
+      summary: List article comments
+      operationId: listArticleComments
       description: Returns a paginated list of root comments with their replies.
-      tags: [posts]
+      tags: [articles]
       parameters:
-        - name: post_id
+        - name: article_id
           in: path
           required: true
           schema:
             type: string
-          description: Unique post identifier
+          description: Unique article identifier
         - name: page
           in: query
           schema:
@@ -249,36 +249,36 @@ paths:
               schema:
                 $ref: "./models.yaml#/components/schemas/CommentPage"
         "404":
-          description: Post not found
+          description: Article not found
           content:
             application/json:
               schema:
                 $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
     post:
-      summary: Add comment to post
-      operationId: createPostComment
-      description: Adds a comment to a post on behalf of the authenticated user.
-      tags: [posts]
+      summary: Add comment to article
+      operationId: createArticleComment
+      description: Adds a comment to an article on behalf of the authenticated user.
+      tags: [articles]
       parameters:
-        - name: post_id
+        - name: article_id
           in: path
           required: true
           schema:
             type: string
-          description: Unique post identifier
+          description: Unique article identifier
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "./models.yaml#/components/schemas/CreatePostCommentRequest"
+              $ref: "./models.yaml#/components/schemas/CreateCommentRequest"
       responses:
         "201":
           description: Comment created
           content:
             application/json:
               schema:
-                $ref: "./models.yaml#/components/schemas/PostComment"
+                $ref: "./models.yaml#/components/schemas/Comment"
         "400":
           description: Bad request
           content:
@@ -286,7 +286,7 @@ paths:
               schema:
                 $ref: "./models.yaml#/components/schemas/ApiErrorResponse"
         "404":
-          description: Post not found
+          description: Article not found
           content:
             application/json:
               schema:
@@ -310,14 +310,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "./models.yaml#/components/schemas/UpdatePostCommentRequest"
+              $ref: "./models.yaml#/components/schemas/UpdateCommentRequest"
       responses:
         "200":
           description: Comment updated
           content:
             application/json:
               schema:
-                $ref: "./models.yaml#/components/schemas/PostComment"
+                $ref: "./models.yaml#/components/schemas/Comment"
         "403":
           description: Not the comment author
           content:
@@ -614,14 +614,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "./models.yaml#/components/schemas/CreatePostCommentRequest"
+              $ref: "./models.yaml#/components/schemas/CreateCommentRequest"
       responses:
         "201":
           description: Comment created
           content:
             application/json:
               schema:
-                $ref: "./models.yaml#/components/schemas/PostComment"
+                $ref: "./models.yaml#/components/schemas/Comment"
         "401":
           description: Unauthorized
           content:
@@ -1130,7 +1130,7 @@ paths:
     get:
       summary: List liked items
       operationId: listUserLikes
-      description: Returns a paginated list of items liked by the specified user. Response schema depends on `type` — `LikedRecipePage` for recipes, `LikedPostPage` for posts.
+      description: Returns a paginated list of items liked by the specified user. Response schema depends on `type` — `LikedRecipePage` for recipes, `LikedArticlePage` for articles.
       tags: [users, likes]
       parameters:
         - name: user_id
@@ -1164,7 +1164,7 @@ paths:
               schema:
                 oneOf:
                   - $ref: "./models.yaml#/components/schemas/LikedRecipePage"
-                  - $ref: "./models.yaml#/components/schemas/LikedPostPage"
+                  - $ref: "./models.yaml#/components/schemas/LikedArticlePage"
         "400":
           description: Bad request
           content:
@@ -1365,14 +1365,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "./models.yaml#/components/schemas/CreatePostCommentRequest"
+              $ref: "./models.yaml#/components/schemas/CreateCommentRequest"
       responses:
         "201":
           description: Comment created
           content:
             application/json:
               schema:
-                $ref: "./models.yaml#/components/schemas/PostComment"
+                $ref: "./models.yaml#/components/schemas/Comment"
         "401":
           description: Unauthorized
           content:

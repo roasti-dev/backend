@@ -10,8 +10,8 @@ import (
 	firebaseAdminAuth "firebase.google.com/go/v4/auth"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
+	"github.com/nikpivkin/roasti-app-backend/internal/articles"
 	"github.com/nikpivkin/roasti-app-backend/internal/likes"
-	"github.com/nikpivkin/roasti-app-backend/internal/posts"
 	"github.com/nikpivkin/roasti-app-backend/internal/recipes"
 	"github.com/nikpivkin/roasti-app-backend/internal/users"
 )
@@ -37,31 +37,31 @@ type userStore interface {
 }
 
 type userLibrary struct {
-	users   userStore
-	likes   *likes.Service
-	recipes *recipes.Service
-	posts   *posts.Service
+	users    userStore
+	likes    *likes.Service
+	recipes  *recipes.Service
+	articles *articles.Service
 }
 
-// TODO: ListLikedPosts and ListLikedRecipes share identical pagination/like-fetching logic.
+// TODO: ListLikedArticles and ListLikedRecipes share identical pagination/like-fetching logic.
 // Consider extracting a generic helper if more likeable types are added.
-func (f *userLibrary) ListLikedPosts(ctx context.Context, currentUserID, targetUserID string, params models.ListUserLikesParams) (models.GenericPage[models.LikedPost], error) {
+func (f *userLibrary) ListLikedArticles(ctx context.Context, currentUserID, targetUserID string, params models.ListUserLikesParams) (models.GenericPage[models.LikedArticle], error) {
 	if _, err := f.users.GetByID(ctx, targetUserID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return models.GenericPage[models.LikedPost]{}, users.ErrNotFound
+			return models.GenericPage[models.LikedArticle]{}, users.ErrNotFound
 		}
-		return models.GenericPage[models.LikedPost]{}, err
+		return models.GenericPage[models.LikedArticle]{}, err
 	}
 
 	pag := params.Pagination()
 
-	likedList, total, err := f.likes.ListByUser(ctx, targetUserID, models.LikeTargetTypePost, int(pag.GetLimit()), int(pag.Offset()))
+	likedList, total, err := f.likes.ListByUser(ctx, targetUserID, models.LikeTargetTypeArticle, int(pag.GetLimit()), int(pag.Offset()))
 	if err != nil {
-		return models.GenericPage[models.LikedPost]{}, fmt.Errorf("list liked posts: %w", err)
+		return models.GenericPage[models.LikedArticle]{}, fmt.Errorf("list liked articles: %w", err)
 	}
 
 	if total == 0 {
-		return models.NewPage([]models.LikedPost{}, pag, 0), nil
+		return models.NewPage([]models.LikedArticle{}, pag, 0), nil
 	}
 
 	ids := make([]string, len(likedList))
@@ -71,16 +71,15 @@ func (f *userLibrary) ListLikedPosts(ctx context.Context, currentUserID, targetU
 		likedAtMap[l.TargetID] = l.CreatedAt
 	}
 
-	postList, err := f.posts.GetPostsByIDs(ctx, currentUserID, ids)
+	articleList, err := f.articles.GetArticlesByIDs(ctx, currentUserID, ids)
 	if err != nil {
-		return models.GenericPage[models.LikedPost]{}, fmt.Errorf("get posts: %w", err)
+		return models.GenericPage[models.LikedArticle]{}, fmt.Errorf("get articles: %w", err)
 	}
 
-	result := make([]models.LikedPost, len(postList))
-	for i, p := range postList {
-		result[i] = models.LikedPost{LikedAt: likedAtMap[p.Id], Post: p}
+	result := make([]models.LikedArticle, len(articleList))
+	for i, p := range articleList {
+		result[i] = models.LikedArticle{LikedAt: likedAtMap[p.Id], Article: p}
 	}
-
 	return models.NewPage(result, pag, total), nil
 }
 

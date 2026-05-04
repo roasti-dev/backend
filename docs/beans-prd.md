@@ -217,9 +217,9 @@
 ### Integration
 
 - **Recipes**: поле `bean_id` (nullable FK) добавляется в таблицу `recipes`, ответ рецепта включает `BeanPreview`
-- **Soft delete**: рецепты отдают `bean` с `is_available: false`, если зерно удалено — аналогично существующему паттерну `recipe_status: unavailable` в post blocks
+- **Soft delete**: рецепты отдают `bean` с `is_available: false`, если зерно удалено — аналогично существующему паттерну `recipe_status: unavailable` в article blocks
 - **SQLite**: новая таблица `beans` с `deleted_at` для soft delete
-- **Likes**: полиморфная система (`target_id` + `target_type = "bean"`) — тот же паттерн, что у рецептов и постов
+- **Likes**: полиморфная система (`target_id` + `target_type = "bean"`) — тот же паттерн, что у рецептов и статей
 - **Comments**: кросс-ресурсные комментарии (`target_id` + `target_type = "bean"`) — тот же паттерн, что у рецептов
 
 ### Technology Stack
@@ -269,7 +269,7 @@
 **Dependencies:**
 - Таблица `recipes` расширяется полем `bean_id` (nullable)
 - Модель `Recipe` в API получает опциональное поле `bean` типа `BeanPreview`
-- Паттерн soft delete с `is_available` флагом уже есть в проекте (post blocks)
+- Паттерн soft delete с `is_available` флагом уже есть в проекте (article blocks)
 - Полиморфная система лайков уже реализована (переиспользуется с `target_type = "bean"`)
 - Кросс-ресурсная система комментариев уже реализована (переиспользуется с `target_type = "bean"`)
 

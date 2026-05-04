@@ -17,7 +17,7 @@ Roasti поддерживает комментарии с возможность
 
 ## Problem Statement
 
-**Текущая ситуация:** API возвращает только прямые дочерние комментарии рутового комментария (`WHERE parent_id IN (rootIDs)`). Если пользователь отвечает на reply, его сообщение сохраняется в БД, но не попадает в ответ эндпоинта `GET /posts/{id}/comments`. Визуально сообщение исчезает.
+**Текущая ситуация:** API возвращает только прямые дочерние комментарии рутового комментария (`WHERE parent_id IN (rootIDs)`). Если пользователь отвечает на reply, его сообщение сохраняется в БД, но не попадает в ответ эндпоинта `GET /articles/{id}/comments`. Визуально сообщение исчезает.
 
 **Предлагаемое решение:** Заменить плоский запрос прямых потомков на рекурсивный обход дерева (SQLite recursive CTE). Возвращать всех потомков рутового комментария плоским списком с сохранением `parent_id`.
 
@@ -34,8 +34,8 @@ Roasti поддерживает комментарии с возможность
 **So that** мой ответ виден остальным участникам в контексте
 
 **Acceptance Criteria:**
-- [ ] `POST /posts/{id}/comments` с `parent_id`, указывающим на reply (не рутовый комментарий), создаёт комментарий без ошибок
-- [ ] Созданный комментарий возвращается в `GET /posts/{id}/comments` в списке replies рутового комментария
+- [ ] `POST /articles/{id}/comments` с `parent_id`, указывающим на reply (не рутовый комментарий), создаёт комментарий без ошибок
+- [ ] Созданный комментарий возвращается в `GET /articles/{id}/comments` в списке replies рутового комментария
 - [ ] `parent_id` в ответе указывает на непосредственного родителя (не на рут)
 - [ ] Порядок replies — хронологический (created_at ASC)
 
@@ -73,8 +73,8 @@ Roasti поддерживает комментарии с возможность
 CommentThread {
   id, text, author, created_at, updated_at, is_deleted
   replies: [
-    PostComment { id, text, author, parent_id, created_at, updated_at, is_deleted },
-    PostComment { id, text, author, parent_id, created_at, updated_at, is_deleted },
+    Comment { id, text, author, parent_id, created_at, updated_at, is_deleted },
+    Comment { id, text, author, parent_id, created_at, updated_at, is_deleted },
     ...
   ]
 }

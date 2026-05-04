@@ -8,7 +8,7 @@ Notifications feature PRD is at `docs/notifications-prd.md`.
 
 Key design decisions:
 - In-app only (Phase 1), push notifications for mobile (Phase 2)
-- Types: like_recipe, like_post, comment_recipe, comment_post
+- Types: like_recipe, like_article, comment_recipe, comment_article
 - Only content author notified (not thread participants)
 - No self-notifications
 - Client formats display text (not backend)

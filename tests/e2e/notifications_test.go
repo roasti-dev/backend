@@ -56,12 +56,12 @@ func TestListNotifications(t *testing.T) {
 		assert.Nil(t, n.ReadAt)
 	})
 
-	t.Run("post like creates notification for author", func(t *testing.T) {
+	t.Run("article like creates notification for author", func(t *testing.T) {
 		author := newAuthenticatedTestClient(t, srv)
 		liker := newAuthenticatedTestClient(t, srv)
-		post := createPost(t, author, defaultPostPayload)
+		article := createArticle(t, author, defaultArticlePayload)
 
-		_, err := liker.TogglePostLikeWithResponse(t.Context(), post.Id)
+		_, err := liker.ToggleArticleLike(t.Context(), article.Id)
 		require.NoError(t, err)
 
 		waitForUnreadCount(t, author, 1)
@@ -71,8 +71,8 @@ func TestListNotifications(t *testing.T) {
 		require.Len(t, resp.JSON200.Items, 1)
 
 		n := resp.JSON200.Items[0]
-		assert.Equal(t, models.LikePost, n.Type)
-		assert.Equal(t, post.Id, n.EntityId)
+		assert.Equal(t, models.LikeArticle, n.Type)
+		assert.Equal(t, article.Id, n.EntityId)
 		assert.Equal(t, liker.Username, n.Actor.Username)
 	})
 
@@ -81,7 +81,7 @@ func TestListNotifications(t *testing.T) {
 		commenter := newAuthenticatedTestClient(t, srv)
 		recipe := createRecipe(t, author, defaultPayload)
 
-		_, err := commenter.CreateRecipeCommentWithResponse(t.Context(), recipe.Id, models.CreatePostCommentRequest{Text: "great recipe!"})
+		_, err := commenter.CreateRecipeCommentWithResponse(t.Context(), recipe.Id, models.CreateCommentRequest{Text: "great recipe!"})
 		require.NoError(t, err)
 
 		waitForUnreadCount(t, author, 1)
@@ -96,12 +96,12 @@ func TestListNotifications(t *testing.T) {
 		assert.Equal(t, commenter.Username, n.Actor.Username)
 	})
 
-	t.Run("post comment creates notification for author", func(t *testing.T) {
+	t.Run("article comment creates notification for author", func(t *testing.T) {
 		author := newAuthenticatedTestClient(t, srv)
 		commenter := newAuthenticatedTestClient(t, srv)
-		post := createPost(t, author, defaultPostPayload)
+		article := createArticle(t, author, defaultArticlePayload)
 
-		_, err := commenter.CreatePostCommentWithResponse(t.Context(), post.Id, models.CreatePostCommentRequest{Text: "nice post!"})
+		_, err := commenter.CreateArticleCommentWithResponse(t.Context(), article.Id, models.CreateCommentRequest{Text: "nice article!"})
 		require.NoError(t, err)
 
 		waitForUnreadCount(t, author, 1)
@@ -111,8 +111,8 @@ func TestListNotifications(t *testing.T) {
 		require.Len(t, resp.JSON200.Items, 1)
 
 		n := resp.JSON200.Items[0]
-		assert.Equal(t, models.CommentPost, n.Type)
-		assert.Equal(t, post.Id, n.EntityId)
+		assert.Equal(t, models.CommentArticle, n.Type)
+		assert.Equal(t, article.Id, n.EntityId)
 		assert.Equal(t, commenter.Username, n.Actor.Username)
 	})
 
@@ -134,7 +134,7 @@ func TestListNotifications(t *testing.T) {
 		c := newAuthenticatedTestClient(t, srv)
 		recipe := createRecipe(t, c, defaultPayload)
 
-		_, err := c.CreateRecipeCommentWithResponse(t.Context(), recipe.Id, models.CreatePostCommentRequest{Text: "my own comment"})
+		_, err := c.CreateRecipeCommentWithResponse(t.Context(), recipe.Id, models.CreateCommentRequest{Text: "my own comment"})
 		require.NoError(t, err)
 
 		time.Sleep(100 * time.Millisecond)

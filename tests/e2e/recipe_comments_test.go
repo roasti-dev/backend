@@ -18,7 +18,7 @@ func TestCreateRecipeComment(t *testing.T) {
 		c := newAuthenticatedTestClient(t, srv)
 		recipe := createRecipe(t, c, defaultPayload)
 
-		resp, err := c.CreateRecipeCommentWithResponse(t.Context(), recipe.Id, models.CreatePostCommentRequest{Text: "nice recipe"})
+		resp, err := c.CreateRecipeCommentWithResponse(t.Context(), recipe.Id, models.CreateCommentRequest{Text: "nice recipe"})
 		require.NoError(t, err)
 		assert.Equal(t, 201, resp.StatusCode())
 		assert.Equal(t, "nice recipe", resp.JSON201.Text)
@@ -31,7 +31,7 @@ func TestCreateRecipeComment(t *testing.T) {
 		c2 := newAuthenticatedTestClient(t, srv)
 		recipe := createRecipe(t, c1, defaultPayload)
 
-		resp, err := c2.CreateRecipeCommentWithResponse(t.Context(), recipe.Id, models.CreatePostCommentRequest{Text: "great!"})
+		resp, err := c2.CreateRecipeCommentWithResponse(t.Context(), recipe.Id, models.CreateCommentRequest{Text: "great!"})
 		require.NoError(t, err)
 		assert.Equal(t, 201, resp.StatusCode())
 		assert.Equal(t, c2.Username, resp.JSON201.Author.Username)
@@ -45,7 +45,7 @@ func TestCreateRecipeComment(t *testing.T) {
 		privatePayload.Public = new(false)
 		recipe := createRecipe(t, c1, privatePayload)
 
-		resp, err := c2.CreateRecipeCommentWithResponse(t.Context(), recipe.Id, models.CreatePostCommentRequest{Text: "hi"})
+		resp, err := c2.CreateRecipeCommentWithResponse(t.Context(), recipe.Id, models.CreateCommentRequest{Text: "hi"})
 		require.NoError(t, err)
 		assert.Equal(t, 404, resp.StatusCode())
 	})
@@ -54,12 +54,12 @@ func TestCreateRecipeComment(t *testing.T) {
 		c := newAuthenticatedTestClient(t, srv)
 		recipe := createRecipe(t, c, defaultPayload)
 
-		parentResp, err := c.CreateRecipeCommentWithResponse(t.Context(), recipe.Id, models.CreatePostCommentRequest{Text: "root comment"})
+		parentResp, err := c.CreateRecipeCommentWithResponse(t.Context(), recipe.Id, models.CreateCommentRequest{Text: "root comment"})
 		require.NoError(t, err)
 		require.Equal(t, 201, parentResp.StatusCode())
 
 		parentID := parentResp.JSON201.Id
-		replyResp, err := c.CreateRecipeCommentWithResponse(t.Context(), recipe.Id, models.CreatePostCommentRequest{
+		replyResp, err := c.CreateRecipeCommentWithResponse(t.Context(), recipe.Id, models.CreateCommentRequest{
 			Text:     "reply",
 			ParentId: &parentID,
 		})
@@ -74,7 +74,7 @@ func TestCreateRecipeComment(t *testing.T) {
 		recipe := createRecipe(t, c, defaultPayload)
 
 		nonExistent := "non-existent-comment"
-		resp, err := c.CreateRecipeCommentWithResponse(t.Context(), recipe.Id, models.CreatePostCommentRequest{
+		resp, err := c.CreateRecipeCommentWithResponse(t.Context(), recipe.Id, models.CreateCommentRequest{
 			Text:     "reply",
 			ParentId: &nonExistent,
 		})
@@ -85,7 +85,7 @@ func TestCreateRecipeComment(t *testing.T) {
 	t.Run("non-existent recipe returns 404", func(t *testing.T) {
 		c := newAuthenticatedTestClient(t, srv)
 
-		resp, err := c.CreateRecipeCommentWithResponse(t.Context(), "non-existent-id", models.CreatePostCommentRequest{Text: "hi"})
+		resp, err := c.CreateRecipeCommentWithResponse(t.Context(), "non-existent-id", models.CreateCommentRequest{Text: "hi"})
 		require.NoError(t, err)
 		assert.Equal(t, 404, resp.StatusCode())
 	})
@@ -95,7 +95,7 @@ func TestCreateRecipeComment(t *testing.T) {
 		recipe := createRecipe(t, c, defaultPayload)
 
 		unauth := newTestClient(t, srv)
-		resp, err := unauth.CreateRecipeCommentWithResponse(t.Context(), recipe.Id, models.CreatePostCommentRequest{Text: "hi"})
+		resp, err := unauth.CreateRecipeCommentWithResponse(t.Context(), recipe.Id, models.CreateCommentRequest{Text: "hi"})
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode())
 	})
@@ -119,11 +119,11 @@ func TestListRecipeComments(t *testing.T) {
 		c := newAuthenticatedTestClient(t, srv)
 		recipe := createRecipe(t, c, defaultPayload)
 
-		rootResp, err := c.CreateRecipeCommentWithResponse(t.Context(), recipe.Id, models.CreatePostCommentRequest{Text: "root"})
+		rootResp, err := c.CreateRecipeCommentWithResponse(t.Context(), recipe.Id, models.CreateCommentRequest{Text: "root"})
 		require.NoError(t, err)
 		require.Equal(t, 201, rootResp.StatusCode())
 
-		_, err = c.CreateRecipeCommentWithResponse(t.Context(), recipe.Id, models.CreatePostCommentRequest{
+		_, err = c.CreateRecipeCommentWithResponse(t.Context(), recipe.Id, models.CreateCommentRequest{
 			Text:     "reply",
 			ParentId: &rootResp.JSON201.Id,
 		})
@@ -142,10 +142,10 @@ func TestListRecipeComments(t *testing.T) {
 		c := newAuthenticatedTestClient(t, srv)
 		recipe := createRecipe(t, c, defaultPayload)
 
-		rootResp, err := c.CreateRecipeCommentWithResponse(t.Context(), recipe.Id, models.CreatePostCommentRequest{Text: "root"})
+		rootResp, err := c.CreateRecipeCommentWithResponse(t.Context(), recipe.Id, models.CreateCommentRequest{Text: "root"})
 		require.NoError(t, err)
 
-		_, err = c.CreateRecipeCommentWithResponse(t.Context(), recipe.Id, models.CreatePostCommentRequest{
+		_, err = c.CreateRecipeCommentWithResponse(t.Context(), recipe.Id, models.CreateCommentRequest{
 			Text:     "reply",
 			ParentId: &rootResp.JSON201.Id,
 		})
@@ -161,7 +161,7 @@ func TestListRecipeComments(t *testing.T) {
 		recipe := createRecipe(t, c, defaultPayload)
 
 		for i := range 3 {
-			_, err := c.CreateRecipeCommentWithResponse(t.Context(), recipe.Id, models.CreatePostCommentRequest{
+			_, err := c.CreateRecipeCommentWithResponse(t.Context(), recipe.Id, models.CreateCommentRequest{
 				Text: fmt.Sprintf("comment %d", i),
 			})
 			require.NoError(t, err)
@@ -192,7 +192,7 @@ func TestListRecipeComments(t *testing.T) {
 		c := newAuthenticatedTestClient(t, srv)
 		recipe := createRecipe(t, c, defaultPayload)
 
-		commentResp, err := c.CreateRecipeCommentWithResponse(t.Context(), recipe.Id, models.CreatePostCommentRequest{Text: "hello"})
+		commentResp, err := c.CreateRecipeCommentWithResponse(t.Context(), recipe.Id, models.CreateCommentRequest{Text: "hello"})
 		require.NoError(t, err)
 
 		_, err = c.DeleteCommentWithResponse(t.Context(), commentResp.JSON201.Id)

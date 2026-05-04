@@ -1,4 +1,4 @@
-package posts
+package articles
 
 import (
 	"context"
@@ -14,33 +14,33 @@ import (
 )
 
 const (
-	postsTable  = "posts"
-	blocksTable = "post_blocks"
-	// commentsTable and commentTargetType are used by getCommentsByPostIDs.
+	articlesTable = "articles"
+	blocksTable   = "article_blocks"
+	// commentsTable and commentTargetType are used by getCommentsByArticleIDs.
 	commentsTable     = "comments"
-	commentTargetType = "post"
+	commentTargetType = "article"
 )
 
-var postSelectColumns = []string{
-	"posts.id",
-	"posts.author_id",
-	"posts.title",
-	"posts.created_at",
-	"posts.updated_at",
+var articleselectColumns = []string{
+	"articles.id",
+	"articles.author_id",
+	"articles.title",
+	"articles.created_at",
+	"articles.updated_at",
 	"users.username",
 	"users.name",
 	"users.avatar_id",
 }
 
 var blockSelectColumns = []string{
-	"post_blocks.id",
-	"post_blocks.post_id",
-	"post_blocks.block_order",
-	"post_blocks.type",
-	"post_blocks.images",
-	"post_blocks.text",
-	"post_blocks.recipe_id",
-	"CASE WHEN post_blocks.recipe_id IS NULL THEN NULL WHEN recipes.id IS NOT NULL THEN 'available' ELSE 'unavailable' END",
+	"article_blocks.id",
+	"article_blocks.article_id",
+	"article_blocks.block_order",
+	"article_blocks.type",
+	"article_blocks.images",
+	"article_blocks.text",
+	"article_blocks.recipe_id",
+	"CASE WHEN article_blocks.recipe_id IS NULL THEN NULL WHEN recipes.id IS NOT NULL THEN 'available' ELSE 'unavailable' END",
 }
 
 var commentColumns = []string{
@@ -71,26 +71,26 @@ func NewRepository(db *sql.DB, runner sq.StdSqlCtx) *Repository {
 	}
 }
 
-func (r *Repository) Create(ctx context.Context, post models.Post) error {
+func (r *Repository) Create(ctx context.Context, article models.Article) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback() //nolint:errcheck
 
-	_, err = r.psql.Insert(postsTable).
+	_, err = r.psql.Insert(articlesTable).
 		Columns("id", "author_id", "title", "created_at", "updated_at").
-		Values(post.Id, post.Author.Id, post.Title, post.CreatedAt, post.UpdatedAt).
+		Values(article.Id, article.Author.Id, article.Title, article.CreatedAt, article.UpdatedAt).
 		RunWith(tx).
 		ExecContext(ctx)
 	if err != nil {
-		return fmt.Errorf("insert post: %w", err)
+		return fmt.Errorf("insert article: %w", err)
 	}
 
-	if len(post.Blocks) > 0 {
+	if len(article.Blocks) > 0 {
 		q := r.psql.Insert(blocksTable).
-			Columns("id", "post_id", "block_order", "type", "images", "text", "recipe_id")
-		for i, block := range post.Blocks {
+			Columns("id", "article_id", "block_order", "type", "images", "text", "recipe_id")
+		for i, block := range article.Blocks {
 			var imagesJSON *string
 			if block.Images != nil && len(*block.Images) > 0 {
 				b, err := json.Marshal(*block.Images)
@@ -104,7 +104,7 @@ func (r *Repository) Create(ctx context.Context, post models.Post) error {
 			if block.Recipe != nil {
 				recipeID = &block.Recipe.Id
 			}
-			q = q.Values(id.NewID(), post.Id, i, block.Type, imagesJSON, block.Text, recipeID)
+			q = q.Values(id.NewID(), article.Id, i, block.Type, imagesJSON, block.Text, recipeID)
 		}
 		if _, err := q.RunWith(tx).ExecContext(ctx); err != nil {
 			return fmt.Errorf("insert blocks: %w", err)
@@ -114,40 +114,40 @@ func (r *Repository) Create(ctx context.Context, post models.Post) error {
 	return tx.Commit()
 }
 
-func (r *Repository) GetPostByID(ctx context.Context, postID string) (models.Post, error) {
+func (r *Repository) GetArticleByID(ctx context.Context, articleID string) (models.Article, error) {
 	row := r.psql.
-		Select(postSelectColumns...).
-		From(postsTable).
-		Join("users ON users.id = posts.author_id").
-		Where(sq.Eq{"posts.id": postID}).
+		Select(articleselectColumns...).
+		From(articlesTable).
+		Join("users ON users.id = articles.author_id").
+		Where(sq.Eq{"articles.id": articleID}).
 		Limit(1).
 		RunWith(r.runner).
 		QueryRowContext(ctx)
 
-	post, err := scanPost(row)
+	article, err := scanArticle(row)
 	if err != nil {
-		return models.Post{}, err
+		return models.Article{}, err
 	}
 
-	if err := r.enrichPosts(ctx, []*models.Post{&post}); err != nil {
-		return models.Post{}, err
+	if err := r.enrichArticles(ctx, []*models.Article{&article}); err != nil {
+		return models.Article{}, err
 	}
-	return post, nil
+	return article, nil
 }
 
-func (r *Repository) ListPosts(ctx context.Context, params ListPostsParams) ([]models.Post, int, error) {
+func (r *Repository) ListArticles(ctx context.Context, params ListArticlesParams) ([]models.Article, int, error) {
 	pag := params.Pagination()
 	q := r.psql.
-		Select(postSelectColumns...).
-		From(postsTable).
-		Join("users ON users.id = posts.author_id").
-		OrderBy("posts.created_at DESC, posts.id DESC").
+		Select(articleselectColumns...).
+		From(articlesTable).
+		Join("users ON users.id = articles.author_id").
+		OrderBy("articles.created_at DESC, articles.id DESC").
 		Limit(uint64(pag.GetLimit())).
 		Offset(uint64(pag.Offset()))
 	if params.AuthorID != nil {
-		q = q.Where(sq.Eq{"posts.author_id": *params.AuthorID})
+		q = q.Where(sq.Eq{"articles.author_id": *params.AuthorID})
 	} else if len(params.AuthorIDs) > 0 {
-		q = q.Where(sq.Eq{"posts.author_id": params.AuthorIDs})
+		q = q.Where(sq.Eq{"articles.author_id": params.AuthorIDs})
 	}
 	rows, err := q.RunWith(r.runner).QueryContext(ctx)
 	if err != nil {
@@ -155,32 +155,32 @@ func (r *Repository) ListPosts(ctx context.Context, params ListPostsParams) ([]m
 	}
 	defer rows.Close()
 
-	var posts []models.Post
+	var articles []models.Article
 	for rows.Next() {
-		p, err := scanPost(rows)
+		p, err := scanArticle(rows)
 		if err != nil {
 			return nil, 0, err
 		}
-		posts = append(posts, p)
+		articles = append(articles, p)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, 0, err
 	}
 
-	if len(posts) == 0 {
-		return posts, 0, nil
+	if len(articles) == 0 {
+		return articles, 0, nil
 	}
 
-	ptrs := make([]*models.Post, len(posts))
-	for i := range posts {
-		ptrs[i] = &posts[i]
+	ptrs := make([]*models.Article, len(articles))
+	for i := range articles {
+		ptrs[i] = &articles[i]
 	}
-	if err := r.enrichPosts(ctx, ptrs); err != nil {
+	if err := r.enrichArticles(ctx, ptrs); err != nil {
 		return nil, 0, err
 	}
 
 	var total int
-	countQ := r.psql.Select("COUNT(*)").From(postsTable)
+	countQ := r.psql.Select("COUNT(*)").From(articlesTable)
 	if params.AuthorID != nil {
 		countQ = countQ.Where(sq.Eq{"author_id": *params.AuthorID})
 	} else if len(params.AuthorIDs) > 0 {
@@ -190,28 +190,28 @@ func (r *Repository) ListPosts(ctx context.Context, params ListPostsParams) ([]m
 		return nil, 0, err
 	}
 
-	return posts, total, nil
+	return articles, total, nil
 }
 
-func (r *Repository) UpdatePost(ctx context.Context, postID, title string, blocks []models.PostBlock) error {
+func (r *Repository) UpdateArticle(ctx context.Context, articleID, title string, blocks []models.ArticleBlock) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback() //nolint:errcheck
 
-	_, err = r.psql.Update(postsTable).
+	_, err = r.psql.Update(articlesTable).
 		Set("title", title).
 		Set("updated_at", sq.Expr("datetime('now')")).
-		Where(sq.Eq{"id": postID}).
+		Where(sq.Eq{"id": articleID}).
 		RunWith(tx).
 		ExecContext(ctx)
 	if err != nil {
-		return fmt.Errorf("update post: %w", err)
+		return fmt.Errorf("update article: %w", err)
 	}
 
 	if _, err := r.psql.Delete(blocksTable).
-		Where(sq.Eq{"post_id": postID}).
+		Where(sq.Eq{"article_id": articleID}).
 		RunWith(tx).
 		ExecContext(ctx); err != nil {
 		return fmt.Errorf("delete blocks: %w", err)
@@ -219,7 +219,7 @@ func (r *Repository) UpdatePost(ctx context.Context, postID, title string, block
 
 	if len(blocks) > 0 {
 		q := r.psql.Insert(blocksTable).
-			Columns("id", "post_id", "block_order", "type", "images", "text", "recipe_id")
+			Columns("id", "article_id", "block_order", "type", "images", "text", "recipe_id")
 		for i, block := range blocks {
 			var imagesJSON *string
 			if block.Images != nil && len(*block.Images) > 0 {
@@ -234,7 +234,7 @@ func (r *Repository) UpdatePost(ctx context.Context, postID, title string, block
 			if block.Recipe != nil {
 				recipeID = &block.Recipe.Id
 			}
-			q = q.Values(id.NewID(), postID, i, block.Type, imagesJSON, block.Text, recipeID)
+			q = q.Values(id.NewID(), articleID, i, block.Type, imagesJSON, block.Text, recipeID)
 		}
 		if _, err := q.RunWith(tx).ExecContext(ctx); err != nil {
 			return fmt.Errorf("insert blocks: %w", err)
@@ -244,21 +244,21 @@ func (r *Repository) UpdatePost(ctx context.Context, postID, title string, block
 	return tx.Commit()
 }
 
-func (r *Repository) DeletePost(ctx context.Context, postID string) error {
-	_, err := r.psql.Delete(postsTable).
-		Where(sq.Eq{"id": postID}).
+func (r *Repository) DeleteArticle(ctx context.Context, articleID string) error {
+	_, err := r.psql.Delete(articlesTable).
+		Where(sq.Eq{"id": articleID}).
 		RunWith(r.runner).
 		ExecContext(ctx)
 	return err
 }
 
-func (r *Repository) GetPostsByIDs(ctx context.Context, ids []string) ([]models.Post, error) {
+func (r *Repository) GetArticlesByIDs(ctx context.Context, ids []string) ([]models.Article, error) {
 	rows, err := r.psql.
-		Select(postSelectColumns...).
-		From(postsTable).
-		Join("users ON users.id = posts.author_id").
-		Where(sq.Eq{"posts.id": ids}).
-		OrderBy("posts.created_at DESC, posts.id DESC").
+		Select(articleselectColumns...).
+		From(articlesTable).
+		Join("users ON users.id = articles.author_id").
+		Where(sq.Eq{"articles.id": ids}).
+		OrderBy("articles.created_at DESC, articles.id DESC").
 		RunWith(r.runner).
 		QueryContext(ctx)
 	if err != nil {
@@ -266,69 +266,69 @@ func (r *Repository) GetPostsByIDs(ctx context.Context, ids []string) ([]models.
 	}
 	defer rows.Close()
 
-	var postList []models.Post
+	var articleList []models.Article
 	for rows.Next() {
-		p, err := scanPost(rows)
+		p, err := scanArticle(rows)
 		if err != nil {
 			return nil, err
 		}
-		postList = append(postList, p)
+		articleList = append(articleList, p)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	if len(postList) == 0 {
-		return postList, nil
+	if len(articleList) == 0 {
+		return articleList, nil
 	}
 
-	ptrs := make([]*models.Post, len(postList))
-	for i := range postList {
-		ptrs[i] = &postList[i]
+	ptrs := make([]*models.Article, len(articleList))
+	for i := range articleList {
+		ptrs[i] = &articleList[i]
 	}
-	if err := r.enrichPosts(ctx, ptrs); err != nil {
+	if err := r.enrichArticles(ctx, ptrs); err != nil {
 		return nil, err
 	}
-	return postList, nil
+	return articleList, nil
 }
 
-func (r *Repository) enrichPosts(ctx context.Context, posts []*models.Post) error {
-	ids := make([]string, len(posts))
-	index := make(map[string]*models.Post, len(posts))
-	for i, p := range posts {
+func (r *Repository) enrichArticles(ctx context.Context, articles []*models.Article) error {
+	ids := make([]string, len(articles))
+	index := make(map[string]*models.Article, len(articles))
+	for i, p := range articles {
 		ids[i] = p.Id
 		index[p.Id] = p
 	}
 
-	blocksMap, err := r.getBlocksByPostIDs(ctx, ids)
+	blocksMap, err := r.getBlocksByArticleIDs(ctx, ids)
 	if err != nil {
 		return err
 	}
 
-	commentsMap, err := r.getCommentsByPostIDs(ctx, ids)
+	commentsMap, err := r.getCommentsByArticleIDs(ctx, ids)
 	if err != nil {
 		return err
 	}
 
-	for _, p := range posts {
+	for _, p := range articles {
 		p.Blocks = blocksMap[p.Id]
 		if p.Blocks == nil {
-			p.Blocks = []models.PostBlock{}
+			p.Blocks = []models.ArticleBlock{}
 		}
 		p.Comments = commentsMap[p.Id]
 		if p.Comments == nil {
-			p.Comments = []models.PostComment{}
+			p.Comments = []models.Comment{}
 		}
 	}
 	return nil
 }
 
-func (r *Repository) getBlocksByPostIDs(ctx context.Context, postIDs []string) (map[string][]models.PostBlock, error) {
+func (r *Repository) getBlocksByArticleIDs(ctx context.Context, articleIDs []string) (map[string][]models.ArticleBlock, error) {
 	rows, err := r.psql.
 		Select(blockSelectColumns...).
 		From(blocksTable).
-		LeftJoin("recipes ON recipes.id = post_blocks.recipe_id AND recipes.public = 1").
-		Where(sq.Eq{"post_blocks.post_id": postIDs}).
-		OrderBy("post_blocks.block_order ASC").
+		LeftJoin("recipes ON recipes.id = article_blocks.recipe_id AND recipes.public = 1").
+		Where(sq.Eq{"article_blocks.article_id": articleIDs}).
+		OrderBy("article_blocks.block_order ASC").
 		RunWith(r.runner).
 		QueryContext(ctx)
 	if err != nil {
@@ -336,18 +336,18 @@ func (r *Repository) getBlocksByPostIDs(ctx context.Context, postIDs []string) (
 	}
 	defer rows.Close()
 
-	blocksMap := make(map[string][]models.PostBlock)
+	blocksMap := make(map[string][]models.ArticleBlock)
 	for rows.Next() {
 		var (
-			blockID, postID string
-			blockOrder      int
-			block           models.PostBlock
-			imagesJSON      sql.NullString
-			recipeID        sql.NullString
-			recipeStatus    sql.NullString
+			blockID, articleID string
+			blockOrder         int
+			block              models.ArticleBlock
+			imagesJSON         sql.NullString
+			recipeID           sql.NullString
+			recipeStatus       sql.NullString
 		)
 		if err := rows.Scan(
-			&blockID, &postID, &blockOrder,
+			&blockID, &articleID, &blockOrder,
 			&block.Type, &imagesJSON, &block.Text, &recipeID, &recipeStatus,
 		); err != nil {
 			return nil, err
@@ -358,22 +358,22 @@ func (r *Repository) getBlocksByPostIDs(ctx context.Context, postIDs []string) (
 			}
 		}
 		if recipeID.Valid {
-			block.Recipe = &models.PostRecipeRef{
+			block.Recipe = &models.ArticleRecipeRef{
 				Id:     recipeID.String,
-				Status: models.PostRecipeRefStatus(recipeStatus.String),
+				Status: models.ArticleRecipeRefStatus(recipeStatus.String),
 			}
 		}
-		blocksMap[postID] = append(blocksMap[postID], block)
+		blocksMap[articleID] = append(blocksMap[articleID], block)
 	}
 	return blocksMap, rows.Err()
 }
 
-func (r *Repository) getCommentsByPostIDs(ctx context.Context, postIDs []string) (map[string][]models.PostComment, error) {
+func (r *Repository) getCommentsByArticleIDs(ctx context.Context, articleIDs []string) (map[string][]models.Comment, error) {
 	rows, err := r.psql.
 		Select(commentColumns...).
 		From(commentsTable).
 		LeftJoin("users ON users.id = comments.author_id").
-		Where(sq.Eq{"target_id": postIDs, "target_type": commentTargetType}).
+		Where(sq.Eq{"target_id": articleIDs, "target_type": commentTargetType}).
 		OrderBy("comments.created_at ASC").
 		RunWith(r.runner).
 		QueryContext(ctx)
@@ -382,11 +382,11 @@ func (r *Repository) getCommentsByPostIDs(ctx context.Context, postIDs []string)
 	}
 	defer rows.Close()
 
-	commentsMap := make(map[string][]models.PostComment)
+	commentsMap := make(map[string][]models.Comment)
 	for rows.Next() {
 		var (
 			targetID                           string
-			comment                            models.PostComment
+			comment                            models.Comment
 			parentID, deletedAt                sql.NullString
 			authorID, username, name, avatarID sql.NullString
 		)
@@ -416,17 +416,17 @@ type scanner interface {
 	Scan(dest ...any) error
 }
 
-func scanPost(s scanner) (models.Post, error) {
+func scanArticle(s scanner) (models.Article, error) {
 	var (
-		post           models.Post
+		article        models.Article
 		authorUsername string
 		name, avatarID sql.NullString
 	)
 	err := s.Scan(
-		&post.Id, &post.Author.Id, &post.Title,
-		&post.CreatedAt, &post.UpdatedAt,
+		&article.Id, &article.Author.Id, &article.Title,
+		&article.CreatedAt, &article.UpdatedAt,
 		&authorUsername, &name, &avatarID,
 	)
-	post.Author = sqlutil.BuildUserPreview(post.Author.Id, authorUsername, name, avatarID)
-	return post, err
+	article.Author = sqlutil.BuildUserPreview(article.Author.Id, authorUsername, name, avatarID)
+	return article, err
 }

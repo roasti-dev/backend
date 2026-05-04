@@ -1,18 +1,18 @@
-package posts
+package articles
 
 import "github.com/nikpivkin/roasti-app-backend/internal/api/models"
 
 const (
-	postTitleMaxLen = 200
-	blocksMaxCount  = 30
-	blockTextMaxLen = 5000
+	articleTitleMaxLen = 200
+	blocksMaxCount     = 30
+	blockTextMaxLen    = 5000
 )
 
-func validatePostPayload(req models.PostPayload) error {
+func validateArticlePayload(req models.ArticlePayload) error {
 	if req.Title == "" {
 		return ErrInvalidTitle
 	}
-	if len(req.Title) > postTitleMaxLen {
+	if len(req.Title) > articleTitleMaxLen {
 		return ErrTitleTooLong
 	}
 	if len(req.Blocks) > blocksMaxCount {

@@ -145,14 +145,14 @@ if [[ -f "$RECIPES_FILE" ]]; then
   done
 fi
 
-# ── posts ─────────────────────────────────────────────────────────────────────
+# ── articles ─────────────────────────────────────────────────────────────────────
 
-POSTS_FILE="$DATA_DIR/posts.json"
-if [[ -f "$POSTS_FILE" ]]; then
-  log "Seeding posts..."
-  count=$(jq '.posts | length' "$POSTS_FILE")
+ARTICLES_FILE="$DATA_DIR/articles.json"
+if [[ -f "$ARTICLES_FILE" ]]; then
+  log "Seeding articles..."
+  count=$(jq '.articles | length' "$ARTICLES_FILE")
   for i in $(seq 0 $((count - 1))); do
-    item=$(jq ".posts[$i]" "$POSTS_FILE")
+    item=$(jq ".articles[$i]" "$ARTICLES_FILE")
     # resolve image references inside blocks
     block_count=$(echo "$item" | jq '.blocks | length')
     for b in $(seq 0 $((block_count - 1))); do
@@ -168,8 +168,8 @@ if [[ -f "$POSTS_FILE" ]]; then
     done
     payload="$item"
     title=$(echo "$item" | jq -r '.title')
-    api POST /api/v1/posts -d "$payload" > /dev/null
-    log "  post: $title"
+    api POST /api/v1/articles -d "$payload" > /dev/null
+    log "  article: $title"
   done
 fi
 

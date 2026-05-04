@@ -8,9 +8,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nikpivkin/roasti-app-backend/internal/api/models"
+	"github.com/nikpivkin/roasti-app-backend/internal/articles"
 	"github.com/nikpivkin/roasti-app-backend/internal/beans"
 	"github.com/nikpivkin/roasti-app-backend/internal/likes"
-	"github.com/nikpivkin/roasti-app-backend/internal/posts"
 	"github.com/nikpivkin/roasti-app-backend/internal/recipes"
 	"github.com/nikpivkin/roasti-app-backend/internal/users"
 )
@@ -44,12 +44,12 @@ func CreateTestRecipe(t *testing.T, repo *recipes.Repository, recipeID, authorID
 	return r
 }
 
-func CreateTestPost(t *testing.T, repo *posts.Repository, postID, authorID string) models.Post {
+func CreateTestArticle(t *testing.T, repo *articles.Repository, articleID, authorID string) models.Article {
 	t.Helper()
-	p := models.Post{
-		Id:        postID,
-		Title:     "Test Post",
-		Blocks:    []models.PostBlock{},
+	p := models.Article{
+		Id:        articleID,
+		Title:     "Test Article",
+		Blocks:    []models.ArticleBlock{},
 		Author:    models.UserPreview{Id: authorID},
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),
@@ -58,22 +58,22 @@ func CreateTestPost(t *testing.T, repo *posts.Repository, postID, authorID strin
 	return p
 }
 
-func CreateTestComment(t *testing.T, db *sql.DB, commentID, postID, authorID, text string) {
+func CreateTestComment(t *testing.T, db *sql.DB, commentID, articleID, authorID, text string) {
 	t.Helper()
 	now := time.Now().UTC()
 	_, err := db.ExecContext(t.Context(),
-		`INSERT INTO comments (id, target_id, target_type, author_id, text, created_at, updated_at) VALUES (?, ?, 'post', ?, ?, ?, ?)`,
-		commentID, postID, authorID, text, now, now,
+		`INSERT INTO comments (id, target_id, target_type, author_id, text, created_at, updated_at) VALUES (?, ?, 'article', ?, ?, ?, ?)`,
+		commentID, articleID, authorID, text, now, now,
 	)
 	require.NoError(t, err)
 }
 
-func CreateTestCommentReply(t *testing.T, db *sql.DB, commentID, postID, authorID, text, parentID string) {
+func CreateTestCommentReply(t *testing.T, db *sql.DB, commentID, articleID, authorID, text, parentID string) {
 	t.Helper()
 	now := time.Now().UTC()
 	_, err := db.ExecContext(t.Context(),
-		`INSERT INTO comments (id, target_id, target_type, author_id, text, parent_id, created_at, updated_at) VALUES (?, ?, 'post', ?, ?, ?, ?, ?)`,
-		commentID, postID, authorID, text, parentID, now, now,
+		`INSERT INTO comments (id, target_id, target_type, author_id, text, parent_id, created_at, updated_at) VALUES (?, ?, 'article', ?, ?, ?, ?, ?)`,
+		commentID, articleID, authorID, text, parentID, now, now,
 	)
 	require.NoError(t, err)
 }

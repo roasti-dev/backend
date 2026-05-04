@@ -20,6 +20,7 @@ import (
 	"github.com/nikpivkin/roasti-app-backend/assets"
 	"github.com/nikpivkin/roasti-app-backend/internal/api/apierr"
 	"github.com/nikpivkin/roasti-app-backend/internal/app/middleware"
+	"github.com/nikpivkin/roasti-app-backend/internal/articles"
 	"github.com/nikpivkin/roasti-app-backend/internal/auth"
 	"github.com/nikpivkin/roasti-app-backend/internal/beans"
 	"github.com/nikpivkin/roasti-app-backend/internal/comments"
@@ -30,7 +31,6 @@ import (
 	"github.com/nikpivkin/roasti-app-backend/internal/likes"
 	"github.com/nikpivkin/roasti-app-backend/internal/log"
 	"github.com/nikpivkin/roasti-app-backend/internal/notifications"
-	"github.com/nikpivkin/roasti-app-backend/internal/posts"
 	"github.com/nikpivkin/roasti-app-backend/internal/recipes"
 	"github.com/nikpivkin/roasti-app-backend/internal/uploads"
 	"github.com/nikpivkin/roasti-app-backend/internal/users"
@@ -97,8 +97,8 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 	commentService := comments.NewService(commentRepo)
 	likeEnricher := likes.NewEnricher(likeService)
 	recipeService := recipes.NewService(recipeRepo, uploader, likeEnricher, likeService, bus, commentService)
-	postRepo := posts.NewRepository(database, runner)
-	postService := posts.NewService(postRepo, uploader, likeEnricher, likeService, bus, commentService)
+	articleRepo := articles.NewRepository(database, runner)
+	articleService := articles.NewService(articleRepo, uploader, likeEnricher, likeService, bus, commentService)
 	userRepo := users.NewUserRepository(database)
 	userService := users.NewUserService(userRepo, &firebaseIdentityCreator{firebaseAuth}, uploader)
 
@@ -125,7 +125,7 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 		return nil, err
 	}
 
-	ul := &userLibrary{users: userRepo, likes: likeService, recipes: recipeService, posts: postService}
+	ul := &userLibrary{users: userRepo, likes: likeService, recipes: recipeService, articles: articleService}
 
 	strictHandler := handlers.NewServerHandler(
 		handlers.Config{
@@ -133,7 +133,7 @@ func New(ctx context.Context, cfg Config, logger *slog.Logger) (*App, error) {
 		},
 		recipeService, authService,
 		userService, uploader,
-		postService,
+		articleService,
 		ul,
 		commentService,
 		notificationService,

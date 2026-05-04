@@ -140,7 +140,7 @@ SELECT
 	return stats, nil
 }
 
-type ListFollowingPostsParams struct {
+type ListFollowingArticlesParams struct {
 	FollowerID string
 	Limit      int
 	Offset     int

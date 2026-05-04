@@ -86,8 +86,8 @@ func (s *ServerHandler) ListUserLikes(ctx context.Context, request ListUserLikes
 	var page any
 	var err error
 	switch request.Params.Type {
-	case models.LikeTargetTypePost:
-		page, err = s.userLibrary.ListLikedPosts(ctx, currentUserID, request.UserId, params)
+	case models.LikeTargetTypeArticle:
+		page, err = s.userLibrary.ListLikedArticles(ctx, currentUserID, request.UserId, params)
 	case models.LikeTargetTypeRecipe:
 		page, err = s.userLibrary.ListLikedRecipes(ctx, currentUserID, request.UserId, params)
 	case models.LikeTargetTypeBean:

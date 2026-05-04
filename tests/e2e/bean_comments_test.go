@@ -18,7 +18,7 @@ func TestCreateBeanComment(t *testing.T) {
 		c := newAuthenticatedTestClient(t, srv)
 		bean := createBean(t, c, defaultBeanPayload)
 
-		resp, err := c.CreateBeanCommentWithResponse(t.Context(), bean.Id, models.CreatePostCommentRequest{Text: "great bean!"})
+		resp, err := c.CreateBeanCommentWithResponse(t.Context(), bean.Id, models.CreateCommentRequest{Text: "great bean!"})
 		require.NoError(t, err)
 		assert.Equal(t, 201, resp.StatusCode())
 		assert.Equal(t, "great bean!", resp.JSON201.Text)
@@ -31,7 +31,7 @@ func TestCreateBeanComment(t *testing.T) {
 		c2 := newAuthenticatedTestClient(t, srv)
 		bean := createBean(t, c1, defaultBeanPayload)
 
-		resp, err := c2.CreateBeanCommentWithResponse(t.Context(), bean.Id, models.CreatePostCommentRequest{Text: "nice!"})
+		resp, err := c2.CreateBeanCommentWithResponse(t.Context(), bean.Id, models.CreateCommentRequest{Text: "nice!"})
 		require.NoError(t, err)
 		assert.Equal(t, 201, resp.StatusCode())
 		assert.Equal(t, c2.Username, resp.JSON201.Author.Username)
@@ -41,12 +41,12 @@ func TestCreateBeanComment(t *testing.T) {
 		c := newAuthenticatedTestClient(t, srv)
 		bean := createBean(t, c, defaultBeanPayload)
 
-		parentResp, err := c.CreateBeanCommentWithResponse(t.Context(), bean.Id, models.CreatePostCommentRequest{Text: "root comment"})
+		parentResp, err := c.CreateBeanCommentWithResponse(t.Context(), bean.Id, models.CreateCommentRequest{Text: "root comment"})
 		require.NoError(t, err)
 		require.Equal(t, 201, parentResp.StatusCode())
 
 		parentID := parentResp.JSON201.Id
-		replyResp, err := c.CreateBeanCommentWithResponse(t.Context(), bean.Id, models.CreatePostCommentRequest{
+		replyResp, err := c.CreateBeanCommentWithResponse(t.Context(), bean.Id, models.CreateCommentRequest{
 			Text:     "reply",
 			ParentId: &parentID,
 		})
@@ -61,7 +61,7 @@ func TestCreateBeanComment(t *testing.T) {
 		bean := createBean(t, c, defaultBeanPayload)
 
 		nonExistent := "non-existent-comment"
-		resp, err := c.CreateBeanCommentWithResponse(t.Context(), bean.Id, models.CreatePostCommentRequest{
+		resp, err := c.CreateBeanCommentWithResponse(t.Context(), bean.Id, models.CreateCommentRequest{
 			Text:     "reply",
 			ParentId: &nonExistent,
 		})
@@ -72,7 +72,7 @@ func TestCreateBeanComment(t *testing.T) {
 	t.Run("non-existent bean returns 404", func(t *testing.T) {
 		c := newAuthenticatedTestClient(t, srv)
 
-		resp, err := c.CreateBeanCommentWithResponse(t.Context(), "non-existent-id", models.CreatePostCommentRequest{Text: "hi"})
+		resp, err := c.CreateBeanCommentWithResponse(t.Context(), "non-existent-id", models.CreateCommentRequest{Text: "hi"})
 		require.NoError(t, err)
 		assert.Equal(t, 404, resp.StatusCode())
 	})
@@ -82,7 +82,7 @@ func TestCreateBeanComment(t *testing.T) {
 		bean := createBean(t, c, defaultBeanPayload)
 
 		unauth := newTestClient(t, srv)
-		resp, err := unauth.CreateBeanCommentWithResponse(t.Context(), bean.Id, models.CreatePostCommentRequest{Text: "hi"})
+		resp, err := unauth.CreateBeanCommentWithResponse(t.Context(), bean.Id, models.CreateCommentRequest{Text: "hi"})
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode())
 	})
@@ -106,11 +106,11 @@ func TestListBeanComments(t *testing.T) {
 		c := newAuthenticatedTestClient(t, srv)
 		bean := createBean(t, c, defaultBeanPayload)
 
-		rootResp, err := c.CreateBeanCommentWithResponse(t.Context(), bean.Id, models.CreatePostCommentRequest{Text: "root"})
+		rootResp, err := c.CreateBeanCommentWithResponse(t.Context(), bean.Id, models.CreateCommentRequest{Text: "root"})
 		require.NoError(t, err)
 		require.Equal(t, 201, rootResp.StatusCode())
 
-		_, err = c.CreateBeanCommentWithResponse(t.Context(), bean.Id, models.CreatePostCommentRequest{
+		_, err = c.CreateBeanCommentWithResponse(t.Context(), bean.Id, models.CreateCommentRequest{
 			Text:     "reply",
 			ParentId: &rootResp.JSON201.Id,
 		})
@@ -129,10 +129,10 @@ func TestListBeanComments(t *testing.T) {
 		c := newAuthenticatedTestClient(t, srv)
 		bean := createBean(t, c, defaultBeanPayload)
 
-		rootResp, err := c.CreateBeanCommentWithResponse(t.Context(), bean.Id, models.CreatePostCommentRequest{Text: "root"})
+		rootResp, err := c.CreateBeanCommentWithResponse(t.Context(), bean.Id, models.CreateCommentRequest{Text: "root"})
 		require.NoError(t, err)
 
-		_, err = c.CreateBeanCommentWithResponse(t.Context(), bean.Id, models.CreatePostCommentRequest{
+		_, err = c.CreateBeanCommentWithResponse(t.Context(), bean.Id, models.CreateCommentRequest{
 			Text:     "reply",
 			ParentId: &rootResp.JSON201.Id,
 		})
@@ -148,7 +148,7 @@ func TestListBeanComments(t *testing.T) {
 		bean := createBean(t, c, defaultBeanPayload)
 
 		for i := range 3 {
-			_, err := c.CreateBeanCommentWithResponse(t.Context(), bean.Id, models.CreatePostCommentRequest{
+			_, err := c.CreateBeanCommentWithResponse(t.Context(), bean.Id, models.CreateCommentRequest{
 				Text: fmt.Sprintf("comment %d", i),
 			})
 			require.NoError(t, err)
@@ -166,7 +166,7 @@ func TestListBeanComments(t *testing.T) {
 		c := newAuthenticatedTestClient(t, srv)
 		bean := createBean(t, c, defaultBeanPayload)
 
-		commentResp, err := c.CreateBeanCommentWithResponse(t.Context(), bean.Id, models.CreatePostCommentRequest{Text: "hello"})
+		commentResp, err := c.CreateBeanCommentWithResponse(t.Context(), bean.Id, models.CreateCommentRequest{Text: "hello"})
 		require.NoError(t, err)
 
 		_, err = c.DeleteCommentWithResponse(t.Context(), commentResp.JSON201.Id)

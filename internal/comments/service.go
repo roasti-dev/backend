@@ -14,8 +14,8 @@ import (
 const textMaxLen = 1000
 
 type repository interface {
-	Create(ctx context.Context, comment models.PostComment, targetID, targetType string) error
-	GetByID(ctx context.Context, commentID string) (models.PostComment, error)
+	Create(ctx context.Context, comment models.Comment, targetID, targetType string) error
+	GetByID(ctx context.Context, commentID string) (models.Comment, error)
 	Update(ctx context.Context, commentID, text string) error
 	GetAuthorID(ctx context.Context, commentID string) (string, error)
 	Delete(ctx context.Context, commentID string) error
@@ -35,24 +35,24 @@ func NewService(repo repository) *Service {
 	}
 }
 
-func (s *Service) Create(ctx context.Context, userID, targetID, targetType, text string, parentID *string) (models.PostComment, error) {
+func (s *Service) Create(ctx context.Context, userID, targetID, targetType, text string, parentID *string) (models.Comment, error) {
 	text = normalizeComment(text)
 	if err := validateComment(text); err != nil {
-		return models.PostComment{}, err
+		return models.Comment{}, err
 	}
 	if parentID != nil {
 		exists, err := s.repo.ExistsInTarget(ctx, *parentID, targetID)
 		if err != nil {
-			return models.PostComment{}, err
+			return models.Comment{}, err
 		}
 		if !exists {
-			return models.PostComment{}, ErrNotFound
+			return models.Comment{}, ErrNotFound
 		}
 	}
 
 	author := models.UserPreview{Id: userID}
 	now := time.Now().UTC()
-	comment := models.PostComment{
+	comment := models.Comment{
 		Id:        id.NewID(),
 		Author:    &author,
 		Text:      text,
@@ -61,28 +61,28 @@ func (s *Service) Create(ctx context.Context, userID, targetID, targetType, text
 		UpdatedAt: now,
 	}
 	if err := s.repo.Create(ctx, comment, targetID, targetType); err != nil {
-		return models.PostComment{}, err
+		return models.Comment{}, err
 	}
 	return s.repo.GetByID(ctx, comment.Id)
 }
 
-func (s *Service) Update(ctx context.Context, userID, commentID, text string) (models.PostComment, error) {
+func (s *Service) Update(ctx context.Context, userID, commentID, text string) (models.Comment, error) {
 	authorID, err := s.repo.GetAuthorID(ctx, commentID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return models.PostComment{}, ErrNotFound
+			return models.Comment{}, ErrNotFound
 		}
-		return models.PostComment{}, err
+		return models.Comment{}, err
 	}
 	if authorID != userID {
-		return models.PostComment{}, ErrForbidden
+		return models.Comment{}, ErrForbidden
 	}
 	text = normalizeComment(text)
 	if err := validateComment(text); err != nil {
-		return models.PostComment{}, err
+		return models.Comment{}, err
 	}
 	if err := s.repo.Update(ctx, commentID, text); err != nil {
-		return models.PostComment{}, err
+		return models.Comment{}, err
 	}
 	return s.repo.GetByID(ctx, commentID)
 }

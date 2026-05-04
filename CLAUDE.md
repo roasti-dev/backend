@@ -117,7 +117,7 @@ Use `s.logger` (injected via constructor) for all logging inside services — ne
 
 ## Pagination Pattern
 
-- Services return `models.GenericPage[T]`; handlers cast to the concrete page type (e.g. `models.PostPage(page)`)
+- Services return `models.GenericPage[T]`; handlers cast to the concrete page type (e.g. `models.ArticlePage(page)`)
 - Build empty page responses with `models.EmptyPage[T]()`, not manual struct literals
 - Params structs expose `.Pagination() models.PaginationParams` — use `ptr.GetOr` inside
 
@@ -133,7 +133,7 @@ For breaking changes: `<type>(<scope>)!: <description>`
 **Types:** `feat`, `fix`, `refactor`, `perf`, `test`, `chore`
 
 **Scopes:**
-- `auth`, `users`, `recipes`, `likes`, `uploads`, `posts` — domain changes
+- `auth`, `users`, `recipes`, `likes`, `uploads`, `articles` — domain changes
 - `api` — api/spec.yaml, api/models.yaml
 
 Always sign commits with `-s` flag (DCO sign-off).

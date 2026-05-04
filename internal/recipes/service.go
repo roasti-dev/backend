@@ -44,7 +44,7 @@ type eventPublisher interface {
 }
 
 type commentService interface {
-	Create(ctx context.Context, userID, targetID, targetType, text string, parentID *string) (models.PostComment, error)
+	Create(ctx context.Context, userID, targetID, targetType, text string, parentID *string) (models.Comment, error)
 	List(ctx context.Context, targetID string, pag models.PaginationParams) (models.GenericPage[models.CommentThread], error)
 }
 
@@ -328,20 +328,20 @@ func (s *Service) DeleteRecipe(ctx context.Context, userID, recipeID string) err
 	return nil
 }
 
-func (s *Service) CreateComment(ctx context.Context, userID, recipeID, text string, parentID *string) (models.PostComment, error) {
+func (s *Service) CreateComment(ctx context.Context, userID, recipeID, text string, parentID *string) (models.Comment, error) {
 	recipe, err := s.repo.GetRecipeByID(ctx, recipeID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return models.PostComment{}, ErrNotFound
+			return models.Comment{}, ErrNotFound
 		}
-		return models.PostComment{}, err
+		return models.Comment{}, err
 	}
 	if !recipe.Public && recipe.AuthorId != userID {
-		return models.PostComment{}, ErrNotFound
+		return models.Comment{}, ErrNotFound
 	}
 	created, err := s.commentService.Create(ctx, userID, recipeID, "recipe", text, parentID)
 	if err != nil {
-		return models.PostComment{}, err
+		return models.Comment{}, err
 	}
 	if s.publisher != nil {
 		s.publisher.Publish(events.RecipeCommentCreated{

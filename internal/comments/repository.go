@@ -26,7 +26,7 @@ func NewRepository(runner sq.StdSqlCtx) *Repo {
 	}
 }
 
-func (r *Repo) Create(ctx context.Context, comment models.PostComment, targetID, targetType string) error {
+func (r *Repo) Create(ctx context.Context, comment models.Comment, targetID, targetType string) error {
 	var parentID interface{}
 	if comment.ParentId != nil {
 		parentID = *comment.ParentId
@@ -42,11 +42,11 @@ func (r *Repo) Create(ctx context.Context, comment models.PostComment, targetID,
 	return nil
 }
 
-func (r *Repo) GetByID(ctx context.Context, commentID string) (models.PostComment, error) {
+func (r *Repo) GetByID(ctx context.Context, commentID string) (models.Comment, error) {
 	var (
 		avatarID        sql.NullString
 		scannedParentID sql.NullString
-		comment         models.PostComment
+		comment         models.Comment
 		author          models.UserPreview
 	)
 	comment.Author = &author
@@ -64,7 +64,7 @@ func (r *Repo) GetByID(ctx context.Context, commentID string) (models.PostCommen
 		&author.Id, &author.Username, &avatarID,
 	)
 	if err != nil {
-		return models.PostComment{}, fmt.Errorf("fetch comment: %w", err)
+		return models.Comment{}, fmt.Errorf("fetch comment: %w", err)
 	}
 	if avatarID.Valid {
 		comment.Author.AvatarId = &avatarID.String
@@ -180,7 +180,7 @@ func (r *Repo) ListForTarget(ctx context.Context, targetID string, pag models.Pa
 			author := sqlutil.BuildUserPreview(authorID.String, authorUsername.String, authorName, authorAvatarID)
 			c.Author = &author
 		}
-		c.Replies = []models.PostComment{}
+		c.Replies = []models.Comment{}
 		roots = append(roots, c)
 		rootIDs = append(rootIDs, c.Id)
 	}
@@ -227,7 +227,7 @@ func (r *Repo) ListForTarget(ctx context.Context, targetID string, pag models.Pa
 
 	for replyRows.Next() {
 		var (
-			c                                                    models.PostComment
+			c                                                    models.Comment
 			parentID, deletedAt                                  sql.NullString
 			authorID, authorUsername, authorName, authorAvatarID sql.NullString
 		)

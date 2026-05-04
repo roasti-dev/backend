@@ -577,7 +577,7 @@ components:
       type: string
       enum:
         - recipe
-        - post
+        - article
         - bean
       description: Type of likeable resource
 
@@ -704,17 +704,17 @@ components:
               items:
                 $ref: "#/components/schemas/LikedRecipe"
 
-    PostBlockType:
+    ArticleBlockType:
       type: string
-      description: Type of a post content block
+      description: Type of a article content block
       enum:
         - images
         - text
         - recipe
 
-    PostRecipeRef:
+    ArticleRecipeRef:
       type: object
-      description: Reference to a recipe embedded in a post block
+      description: Reference to a recipe embedded in a article block
       required:
         - id
         - status
@@ -729,14 +729,14 @@ components:
             - unavailable
           description: Whether the recipe is currently accessible
 
-    PostBlock:
+    ArticleBlock:
       type: object
-      description: A single content block within a post. The active field is determined by `type`; other fields are omitted.
+      description: A single content block within a article. The active field is determined by `type`; other fields are omitted.
       required:
         - type
       properties:
         type:
-          $ref: "#/components/schemas/PostBlockType"
+          $ref: "#/components/schemas/ArticleBlockType"
         images:
           type: array
           description: Ordered list of image IDs (populated when type=images)
@@ -746,18 +746,18 @@ components:
           type: string
           description: Text content (populated when type=text)
         recipe:
-          $ref: "#/components/schemas/PostRecipeRef"
+          $ref: "#/components/schemas/ArticleRecipeRef"
           description: Recipe reference (populated when type=recipe)
 
-    PostBlockPayload:
+    ArticleBlockPayload:
       type: object
-      description: Content block for post create/update requests
+      description: Content block for article create/update requests
       additionalProperties: false
       required:
         - type
       properties:
         type:
-          $ref: "#/components/schemas/PostBlockType"
+          $ref: "#/components/schemas/ArticleBlockType"
         images:
           type: array
           description: Ordered list of image IDs (required when type=images)
@@ -770,9 +770,9 @@ components:
           type: string
           description: Recipe ID reference (required when type=recipe)
 
-    PostComment:
+    Comment:
       type: object
-      description: A comment on a post
+      description: A comment on a resource
       required:
         - id
         - is_deleted
@@ -807,7 +807,7 @@ components:
     CommentThread:
       description: A root comment with its direct replies
       allOf:
-        - $ref: "#/components/schemas/PostComment"
+        - $ref: "#/components/schemas/Comment"
         - type: object
           required:
             - replies
@@ -816,7 +816,7 @@ components:
               type: array
               description: Direct replies to this comment
               items:
-                $ref: "#/components/schemas/PostComment"
+                $ref: "#/components/schemas/Comment"
 
     CommentPage:
       allOf:
@@ -828,9 +828,9 @@ components:
               items:
                 $ref: "#/components/schemas/CommentThread"
 
-    Post:
+    Article:
       type: object
-      description: A user post in the feed
+      description: A user article in the feed
       required:
         - id
         - title
@@ -844,39 +844,39 @@ components:
       properties:
         id:
           type: string
-          description: Unique post identifier
+          description: Unique article identifier
         title:
           type: string
-          description: Post title
+          description: article title
         blocks:
           type: array
           description: Ordered list of content blocks
           items:
-            $ref: "#/components/schemas/PostBlock"
+            $ref: "#/components/schemas/ArticleBlock"
         author:
           $ref: "#/components/schemas/UserPreview"
         comments:
           type: array
-          description: Comments on this post
+          description: Comments on this article
           items:
-            $ref: "#/components/schemas/PostComment"
+            $ref: "#/components/schemas/Comment"
         created_at:
           type: string
           format: date-time
-          description: Timestamp when the post was created
+          description: Timestamp when the article was created
         updated_at:
           type: string
           format: date-time
-          description: Timestamp when the post was last updated
+          description: Timestamp when the article was last updated
         is_liked:
           type: boolean
-          description: Whether the current user has liked this post
+          description: Whether the current user has liked this article
         likes_count:
           type: integer
           format: int32
           description: Total number of likes
 
-    PostPayload:
+    ArticlePayload:
       type: object
       additionalProperties: false
       required:
@@ -885,20 +885,20 @@ components:
       properties:
         title:
           type: string
-          description: Post title
+          description: Article title
         blocks:
           type: array
           description: Ordered list of content blocks
           items:
-            $ref: "#/components/schemas/PostBlockPayload"
+            $ref: "#/components/schemas/ArticleBlockPayload"
 
-    CreatePostRequest:
-      $ref: "#/components/schemas/PostPayload"
+    CreateArticleRequest:
+      $ref: "#/components/schemas/ArticlePayload"
 
-    UpdatePostRequest:
-      $ref: "#/components/schemas/PostPayload"
+    UpdateArticleRequest:
+      $ref: "#/components/schemas/ArticlePayload"
 
-    CreatePostCommentRequest:
+    CreateCommentRequest:
       type: object
       additionalProperties: false
       required:
@@ -911,7 +911,7 @@ components:
           type: string
           description: ID of the parent comment. Omit for top-level comments.
 
-    UpdatePostCommentRequest:
+    UpdateCommentRequest:
       type: object
       additionalProperties: false
       required:
@@ -921,7 +921,7 @@ components:
           type: string
           description: New comment text
 
-    PostPage:
+    ArticlePage:
       allOf:
         - $ref: "#/components/schemas/Page"
         - type: object
@@ -929,22 +929,22 @@ components:
             items:
               type: array
               items:
-                $ref: "#/components/schemas/Post"
+                $ref: "#/components/schemas/Article"
 
-    LikedPost:
+    LikedArticle:
       type: object
       required:
         - liked_at
-        - post
+        - article
       properties:
         liked_at:
           type: string
           format: date-time
-          description: Timestamp when the post was liked
-        post:
-          $ref: "#/components/schemas/Post"
+          description: Timestamp when the article was liked
+        article:
+          $ref: "#/components/schemas/Article"
 
-    LikedPostPage:
+    LikedArticlePage:
       allOf:
         - $ref: "#/components/schemas/Page"
         - type: object
@@ -952,17 +952,17 @@ components:
             items:
               type: array
               items:
-                $ref: "#/components/schemas/LikedPost"
+                $ref: "#/components/schemas/LikedArticle"
 
     NotificationType:
       type: string
       description: Type of notification
       enum:
         - like_recipe
-        - like_post
+        - like_article
         - like_bean
         - comment_recipe
-        - comment_post
+        - comment_article
         - comment_bean
 
     Notification:
@@ -986,7 +986,7 @@ components:
           description: User who triggered the notification
         entity_id:
           type: string
-          description: ID of the recipe or post this notification relates to
+          description: ID of the recipe or article this notification relates to
         read_at:
           type: string
           format: date-time

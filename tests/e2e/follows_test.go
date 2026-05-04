@@ -171,20 +171,20 @@ func TestListFollowingAndFollowers(t *testing.T) {
 	})
 }
 
-func TestFollowingPostsFeed(t *testing.T) {
+func TestFollowingArticlesFeed(t *testing.T) {
 	srv := setupTestServer(t)
 
 	filterFollowing := client.Following
 
-	t.Run("returns posts from followed users", func(t *testing.T) {
+	t.Run("returns articles from followed users", func(t *testing.T) {
 		follower := newAuthenticatedTestClient(t, srv)
 		author := newAuthenticatedTestClient(t, srv)
 
 		followUser(t, follower, author.ID)
-		createPost(t, author, defaultPostPayload)
-		createPost(t, author, defaultPostPayload)
+		createArticle(t, author, defaultArticlePayload)
+		createArticle(t, author, defaultArticlePayload)
 
-		resp, err := follower.ListPostsWithResponse(t.Context(), &client.ListPostsParams{
+		resp, err := follower.ListArticlesWithResponse(t.Context(), &client.ListArticlesParams{
 			Filter: &filterFollowing,
 		})
 		require.NoError(t, err)
@@ -192,13 +192,13 @@ func TestFollowingPostsFeed(t *testing.T) {
 		assert.Len(t, resp.JSON200.Items, 2)
 	})
 
-	t.Run("does not return posts from non-followed users", func(t *testing.T) {
+	t.Run("does not return articles from non-followed users", func(t *testing.T) {
 		follower := newAuthenticatedTestClient(t, srv)
 		other := newAuthenticatedTestClient(t, srv)
 
-		createPost(t, other, defaultPostPayload)
+		createArticle(t, other, defaultArticlePayload)
 
-		resp, err := follower.ListPostsWithResponse(t.Context(), &client.ListPostsParams{
+		resp, err := follower.ListArticlesWithResponse(t.Context(), &client.ListArticlesParams{
 			Filter: &filterFollowing,
 		})
 		require.NoError(t, err)
@@ -208,7 +208,7 @@ func TestFollowingPostsFeed(t *testing.T) {
 	t.Run("empty when not following anyone", func(t *testing.T) {
 		follower := newAuthenticatedTestClient(t, srv)
 
-		resp, err := follower.ListPostsWithResponse(t.Context(), &client.ListPostsParams{
+		resp, err := follower.ListArticlesWithResponse(t.Context(), &client.ListArticlesParams{
 			Filter: &filterFollowing,
 		})
 		require.NoError(t, err)
@@ -218,7 +218,7 @@ func TestFollowingPostsFeed(t *testing.T) {
 
 	t.Run("unauthenticated returns 401", func(t *testing.T) {
 		unauth := newTestClient(t, srv)
-		resp, err := unauth.ListPostsWithResponse(t.Context(), &client.ListPostsParams{
+		resp, err := unauth.ListArticlesWithResponse(t.Context(), &client.ListArticlesParams{
 			Filter: &filterFollowing,
 		})
 		require.NoError(t, err)

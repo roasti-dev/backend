@@ -35,7 +35,7 @@ type likeToggler interface {
 }
 
 type commentService interface {
-	Create(ctx context.Context, userID, targetID, targetType, text string, parentID *string) (models.PostComment, error)
+	Create(ctx context.Context, userID, targetID, targetType, text string, parentID *string) (models.Comment, error)
 	List(ctx context.Context, targetID string, pag models.PaginationParams) (models.GenericPage[models.CommentThread], error)
 }
 
@@ -173,17 +173,17 @@ func (s *Service) DeleteBean(ctx context.Context, userID, beanID string) error {
 	return s.repo.SoftDelete(ctx, beanID)
 }
 
-func (s *Service) CreateComment(ctx context.Context, userID, beanID, text string, parentID *string) (models.PostComment, error) {
+func (s *Service) CreateComment(ctx context.Context, userID, beanID, text string, parentID *string) (models.Comment, error) {
 	bean, err := s.repo.GetByID(ctx, beanID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return models.PostComment{}, ErrNotFound
+			return models.Comment{}, ErrNotFound
 		}
-		return models.PostComment{}, err
+		return models.Comment{}, err
 	}
 	created, err := s.commentService.Create(ctx, userID, beanID, "bean", text, parentID)
 	if err != nil {
-		return models.PostComment{}, err
+		return models.Comment{}, err
 	}
 	if s.publisher != nil {
 		s.publisher.Publish(events.BeanCommentCreated{
