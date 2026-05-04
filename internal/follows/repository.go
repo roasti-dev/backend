@@ -62,32 +62,6 @@ func (r *Repository) Delete(ctx context.Context, followerID, targetID, targetTyp
 	return nil
 }
 
-func (r *Repository) CountFollowers(ctx context.Context, targetID, targetType string) (int, error) {
-	var count int
-	err := r.psql.Select("COUNT(1)").
-		From(followsTable).
-		Where(sq.Eq{"target_id": targetID, "target_type": targetType}).
-		QueryRowContext(ctx).
-		Scan(&count)
-	if err != nil {
-		return 0, fmt.Errorf("count followers: %w", err)
-	}
-	return count, nil
-}
-
-func (r *Repository) CountFollowing(ctx context.Context, followerID, targetType string) (int, error) {
-	var count int
-	err := r.psql.Select("COUNT(1)").
-		From(followsTable).
-		Where(sq.Eq{"follower_id": followerID, "target_type": targetType}).
-		QueryRowContext(ctx).
-		Scan(&count)
-	if err != nil {
-		return 0, fmt.Errorf("count following: %w", err)
-	}
-	return count, nil
-}
-
 func (r *Repository) ListFollowing(ctx context.Context, followerID, targetType string, limit, offset int) ([]string, int, error) {
 	q := `
 SELECT target_id, COUNT(*) OVER() AS total
